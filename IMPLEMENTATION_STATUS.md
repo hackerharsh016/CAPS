@@ -7,6 +7,7 @@
 | 1 | `P01-M01-F01` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | pnpm/Turborepo foundation | Completed | **PASS** |
 | 2 | `P01-M01-F02` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Shared TypeScript quality gates | Completed | **PASS** |
 | 3 | `P01-M01-F03` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Three independent TS app shells | Completed | **PASS** |
+| 4 | `P01-M01-F04` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Python agent package shell | Completed | **PASS** |
 
 ---
 
@@ -217,3 +218,80 @@
   - **PASS**
 - **Next Task:**
   - `P01-M01-F04` — Python agent package shell (`apps/print-agent`)
+
+---
+
+### Task: `P01-M01-F04` — Python agent package shell
+- **Phase:** 01 Foundation and Setup
+- **Module:** 01 Monorepo Foundation
+- **Timestamp:** 2026-10-16
+- **Scope Delivered:**
+  - Established Python standard `src`-layout package `caps_agent` under `apps/print-agent/src/caps_agent/`.
+  - Configured `pyproject.toml` targeting Python `>=3.11` with `setuptools`, `ruff`, and `pytest` definitions.
+  - Implemented strict configuration validation (`config.py`):
+    - URL scheme validation (HTTP/HTTPS for API, WS/WSS for Realtime).
+    - Port range enforcement (1024..65535).
+    - **Security Rule:** Strict loopback validation prohibiting non-loopback hosts (e.g. `0.0.0.0`) from binding to local diagnostic interfaces.
+    - Zero hardcoded credentials; device tokens are loaded securely from environment / Windows credential manager.
+  - Implemented structured metadata-only logging and sensitive data redaction (`utils/logging.py`):
+    - Redacts token keys, auth headers, passwords, secrets, customer phones, and names.
+    - Regular expression redaction for `Bearer [TOKEN]` strings.
+    - Standard `StructuredMetadataFormatter` for JSON telemetry.
+  - Implemented the core printing protocol interfaces (`printing/engine.py`):
+    - `PrintSettings` (frozen dataclass: paper_size, color_mode, duplex, copies, page_range, orientation).
+    - `PrintResult` (frozen dataclass: accepted, spooler_job_id, error).
+    - `PrintEngine` (runtime-checkable Protocol).
+    - `FakePrintEngine` (`printing/fake_engine.py`) test double modeling success/failure simulation and call tracking without requiring Windows drivers.
+  - Implemented daemon bootstrapper `main.py` with exit status handling.
+  - Created comprehensive test suite in `tests/` covering package import, configuration validation, security loopback checks, logging redaction, and protocol adherence.
+- **Files Created / Edited:**
+  - `apps/print-agent/pyproject.toml` (New)
+  - `apps/print-agent/src/caps_agent/__init__.py` (New)
+  - `apps/print-agent/src/caps_agent/config.py` (New)
+  - `apps/print-agent/src/caps_agent/main.py` (New)
+  - `apps/print-agent/src/caps_agent/utils/__init__.py` (New)
+  - `apps/print-agent/src/caps_agent/utils/logging.py` (New)
+  - `apps/print-agent/src/caps_agent/printing/__init__.py` (New)
+  - `apps/print-agent/src/caps_agent/printing/engine.py` (New)
+  - `apps/print-agent/src/caps_agent/printing/fake_engine.py` (New)
+  - `apps/print-agent/tests/__init__.py` (New)
+  - `apps/print-agent/tests/test_import.py` (New)
+  - `apps/print-agent/tests/test_config.py` (New)
+  - `apps/print-agent/tests/test_logging.py` (New)
+  - `apps/print-agent/tests/test_protocol.py` (New)
+  - `apps/print-agent/README.md` (New)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - None.
+- **Commands Executed:**
+  - `python --version` — PASS (`Python 3.12.8`)
+  - `python -m venv apps/print-agent/.venv` — PASS
+  - `python -m unittest discover -s tests -p "test_*.py" -v` — PASS (15/15 tests passed in 0.002s)
+  - `python src/caps_agent/main.py` (without config) — PASS (Failed as expected with exit code 1 and logged missing `CAPS_AGENT_CLOUD_API_URL`)
+  - `python src/caps_agent/main.py` (with valid config) — PASS (Exited with code 0, logged startup banner with `[TOKEN CONFIGURED - REDACTED]`)
+  - `pnpm run format:check` — PASS
+  - `pnpm run lint` — PASS (All 4 TS workspaces clean)
+  - `pnpm run typecheck` — PASS (All 4 TS workspaces clean)
+  - `pnpm run test` — PASS (All 3 TS test suites passed)
+- **Test Results & Evidence:**
+  - 15 unit tests in Python verified:
+    - Package imports and `__version__ = "0.1.0"` export.
+    - Configuration loads valid values correctly.
+    - Missing `CAPS_AGENT_CLOUD_API_URL` and `CAPS_AGENT_REALTIME_URL` raise `ConfigurationError`.
+    - Malformed URLs and out-of-range ports raise `ConfigurationError`.
+    - Attempting to set `CAPS_AGENT_LOCAL_BIND = "0.0.0.0"` raises security violation `ConfigurationError`.
+    - Redacting filter removes Bearer tokens from string messages.
+    - Redaction utility strips `device_token`, `auth_token`, `password`, `customer_phone` from dictionary metadata.
+    - `FakePrintEngine` implements `PrintEngine` protocol and successfully simulates accepted and failed print submissions.
+- **Security & Privacy Review:**
+  - Enforced loopback restriction (`127.0.0.1`, `localhost`) preventing exposure of local diagnostics to local network or internet.
+  - Zero hardcoded device credentials or cloud secrets in the codebase.
+  - Logging layer actively redacts tokens and sensitive data in transit before serialization.
+- **Manual Verification Pending:**
+  - Physical printer spooler driver validation (scheduled for Phase 02 on Windows).
+- **Open Blockers / ADRs:**
+  - None.
+- **Gate Status:**
+  - **PASS**
+- **Next Task:**
+  - `P01-M02-F01` — Shared type and Zod schemas (`packages/types`, `packages/validation`)
