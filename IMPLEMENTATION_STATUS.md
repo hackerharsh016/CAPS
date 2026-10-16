@@ -8,6 +8,7 @@
 | 2 | `P01-M01-F02` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Shared TypeScript quality gates | Completed | **PASS** |
 | 3 | `P01-M01-F03` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Three independent TS app shells | Completed | **PASS** |
 | 4 | `P01-M01-F04` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Python agent package shell | Completed | **PASS** |
+| 5 | `P01-M02-F01` | 01_Foundation_and_Setup / 02_Shared_Contracts | Shared type and Zod schemas | Completed | **PASS** |
 
 ---
 
@@ -295,3 +296,108 @@
   - **PASS**
 - **Next Task:**
   - `P01-M02-F01` — Shared type and Zod schemas (`packages/types`, `packages/validation`)
+
+---
+
+### Task: `P01-M02-F01` — Shared type and Zod schemas
+- **Phase:** 01 Foundation and Setup
+- **Module:** 02 Shared Contracts
+- **Timestamp:** 2026-10-16
+- **Scope Delivered:**
+  - Created domain types package `@caps/types` under `packages/types/`:
+    - `users.ts`: User roles (`customer`, `shop_owner`, `operator`, `system_admin`), permissions, profile models.
+    - `settings.ts`: Paper sizes (`a4`, `a3`, `legal`, `letter`), color modes (`bw`, `color`), duplex modes (`simplex`, `duplex_long`, `duplex_short`), orientation (`portrait`, `landscape`), binding options (`none`, `corner_staple`, `side_staple`, `comb`, `spiral`, `hardbound`), print settings interface.
+    - `pricing.ts`: Price breakdown structure with all fields in integer paise (`base_price_paise`, `color_charge_paise`, `binding_charge_paise`, `urgency_charge_paise`, `discount_paise`, `final_price_paise`), quote request and response.
+    - `shops.ts`: Shop status, hours, location coordinates (`latitude`, `longitude`), pricing models.
+    - `printers.ts`: Printer status, paper sizes, color capabilities, connection interfaces (`network`, `usb`, `virtual`).
+    - `jobs.ts`: 10-state job lifecycle (`SUBMITTED`, `PENDING_PAYMENT`, `PAYMENT_CONFIRMED`, `PENDING_COUNTER_APPROVAL`, `OWNER_CONFIRMED`, `CLAIMED`, `PRINTING`, `COMPLETED`, `FAILED`, `CANCELLED`), priority tiers (`urgent`, `flexible`), create job input, full job model.
+    - `payments.ts`: Payment status, payment providers (`razorpay`, `cash_counter`), payment order and verification models.
+    - `agent.ts`: Desktop print agent contracts including registration, heartbeat, job claim request/response with lease token, and job status updates with attempt ID and page counters.
+    - Exported full type contract surface from `index.ts` with compiled `.d.ts` declaration files.
+  - Created runtime validation package `@caps/validation` under `packages/validation/`:
+    - Strict schemas using Zod 3.x with `.strict()` preventing rogue property injection.
+    - `helpers.ts`: `isValidPageRange()` and `parsePageRange()` implementing page range syntax validation (`'all'` or comma-separated numbers/ranges like `'1-5, 8'`), strictly rejecting inverted ranges (`5-2`), non-positive numbers (`0`), and malformed delimiters (`1,,2`, `1--5`).
+    - `settings.schema.ts`: `PrintSettingsSchema` with strict boundaries: copies constrained to integer range `1..100`, page range syntax validation, and enum bounds on paper size, color, duplex, orientation, and binding.
+    - `pricing.schema.ts`: `PriceBreakdownSchema`, `QuoteRequestSchema`, `QuoteResponseSchema` with strict non-negative integer validation for all currency values in paise.
+    - `jobs.schema.ts`: `CreatePrintJobSchema` requiring file URL, page count `>= 1`, strict print settings, shop UUID, and priority tier (`urgent` vs `flexible`). `JobStatusSchema` validating all 10 lifecycle states.
+    - `shops.schema.ts` & `printers.schema.ts`: Geo coordinates constrained to valid latitude `[-90, 90]` and longitude `[-180, 180]`, printer registration and capabilities schemas.
+    - `payments.schema.ts`: `CreatePaymentOrderSchema` and payment verification payload validation.
+    - `agent.schema.ts`: `JobClaimRequestSchema` (printer capabilities, lease duration, agent version), `JobStatusUpdateRequestSchema` (UUID job ID, non-empty attempt ID, lease token, physical page counter, spooler job ID, failure reasons).
+  - Implemented 36 unit tests across 4 test suites in `packages/validation/tests/`:
+    - `settings.test.ts` (21 tests): Valid settings, copies boundaries 1-100, rejection of 0 and 101, page range parsing (`all`, `1-5, 8`, inverted `5-2` rejection, malformed syntax rejection), unknown property rejection via `.strict()`.
+    - `jobs.test.ts` (6 tests): Valid job creation, urgent vs flexible priority tiers, rejection of rogue properties, UUID format checks, complete 10-state status enum checks.
+    - `pricing.test.ts` (5 tests): Paise non-negative integer checks, rejection of negative amounts and floating-point paise, quote request validation.
+    - `shops_printers.test.ts` (4 tests): Latitude/longitude boundaries, printer capability validation.
+  - Verified monorepo pipeline integration:
+    - Root `pnpm run format:check`, `pnpm run lint`, `pnpm run typecheck`, `pnpm run test`, and `pnpm run build` all pass cleanly.
+- **Files Created / Edited:**
+  - `packages/types/package.json` (New)
+  - `packages/types/tsconfig.json` (New)
+  - `packages/types/eslint.config.js` (New)
+  - `packages/types/README.md` (New)
+  - `packages/types/src/index.ts` (New)
+  - `packages/types/src/users.ts` (New)
+  - `packages/types/src/settings.ts` (New)
+  - `packages/types/src/pricing.ts` (New)
+  - `packages/types/src/shops.ts` (New)
+  - `packages/types/src/printers.ts` (New)
+  - `packages/types/src/jobs.ts` (New)
+  - `packages/types/src/payments.ts` (New)
+  - `packages/types/src/agent.ts` (New)
+  - `packages/validation/package.json` (New)
+  - `packages/validation/tsconfig.json` (New)
+  - `packages/validation/eslint.config.js` (New)
+  - `packages/validation/vitest.config.ts` (New)
+  - `packages/validation/README.md` (New)
+  - `packages/validation/src/index.ts` (New)
+  - `packages/validation/src/helpers.ts` (New)
+  - `packages/validation/src/settings.schema.ts` (New)
+  - `packages/validation/src/pricing.schema.ts` (New)
+  - `packages/validation/src/jobs.schema.ts` (New)
+  - `packages/validation/src/shops.schema.ts` (New)
+  - `packages/validation/src/printers.schema.ts` (New)
+  - `packages/validation/src/payments.schema.ts` (New)
+  - `packages/validation/src/agent.schema.ts` (New)
+  - `packages/validation/tests/settings.test.ts` (New)
+  - `packages/validation/tests/jobs.test.ts` (New)
+  - `packages/validation/tests/pricing.test.ts` (New)
+  - `packages/validation/tests/shops_printers.test.ts` (New)
+  - `pnpm-lock.yaml` (Updated with zod dependencies)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - Shared domain models and validation schemas established for print settings, priority tiers, job statuses, pricing breakdowns, payments, and agent claims.
+- **Commands Executed:**
+  - `pnpm install` — PASS (Dependencies installed, `@caps/types` and `@caps/validation` linked)
+  - `pnpm --filter @caps/types build` — PASS (Generated `dist/` with `.d.ts` and `.js`)
+  - `pnpm --filter @caps/validation test` — PASS (36/36 tests passed)
+  - `pnpm --filter @caps/validation build` — PASS (Generated `dist/` with `.d.ts` and `.js`)
+  - `pnpm run format:check` — PASS (Prettier check clean across all files)
+  - `pnpm run lint` — PASS (All 6 workspaces clean)
+  - `pnpm run typecheck` — PASS (All 6 workspaces clean)
+  - `pnpm run test` — PASS (5 test suites, 44 tests passed across cloud-api, customer-web, owner-dashboard, and validation)
+  - `pnpm run build` — PASS (All workspaces build successfully)
+  - `python -m unittest discover -s apps/print-agent/tests -p "test_*.py" -v` — PASS (15/15 tests passed)
+- **Test Results & Evidence:**
+  - 36 Zod validation tests confirmed:
+    - Rejection of copies outside `1..100` (`0` and `101` rejected with exact error messages).
+    - Rejection of invalid page range syntax (`5-2`, `abc`, `0`, `1,,2`).
+    - Correct calculation and parsing of page lists (`parsePageRange('1-3, 5')` yields `[1, 2, 3, 5]`).
+    - Rejection of rogue/unknown properties via `.strict()`.
+    - Verification that non-integer and negative paise values are rejected.
+    - Verification of geo coordinates boundaries (`latitude` in `[-90, 90]`, `longitude` in `[-180, 180]`).
+  - Total TypeScript tests across monorepo: 44 passed across 5 test suites.
+  - Total Python tests: 15 passed in `apps/print-agent`.
+- **Security & Privacy Review:**
+  - All input schemas enforce `.strict()`, rejecting parameter tampering, prototype pollution, or rogue payload injection.
+  - Financial quantities are strictly bounded to non-negative integers in paise, preventing floating-point rounding errors and negative-cost exploits.
+  - Copies are strictly bounded to `1..100` to prevent denial-of-service / spooler flooding attacks.
+  - Zero credentials or secrets in types/validation packages.
+- **Manual Verification Pending:**
+  - None.
+- **Open Blockers / ADRs:**
+  - None.
+- **Gate Status:**
+  - **PASS**
+- **Next Task:**
+  - `P01-M02-F02` — Cross-language print contracts (`packages/print-contracts` OpenAPI and JSON Schema)
+
