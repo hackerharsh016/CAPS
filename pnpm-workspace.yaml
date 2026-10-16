@@ -1,0 +1,5 @@
+packages:
+  - "apps/customer-web"
+  - "apps/owner-dashboard"
+  - "apps/cloud-api"
+  - "packages/*"

@@ -1,0 +1,22 @@
+{
+  "name": "caps",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CAPS — Cloud Automated Printing Solution with User-Side Configuration",
+  "packageManager": "pnpm@10.26.2",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4"
+  }
+}
