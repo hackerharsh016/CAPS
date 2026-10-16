@@ -1,0 +1,12 @@
+{
+  "error": {
+    "code": "CAPABILITIES_MISMATCH",
+    "message": "Assigned printer does not support requested color mode: color",
+    "request_id": "req-mismatch-55443322",
+    "details": {
+      "printer_id": "hp-laserjet-pro",
+      "supported_color_modes": ["bw"],
+      "requested_color_mode": "color"
+    }
+  }
+}

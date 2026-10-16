@@ -1,0 +1,13 @@
+{
+  "contract_version": "1.0.0",
+  "job_id": "22222222-2222-4222-8222-222222222222",
+  "attempt_id": "attempt-9f8e7d6c5b4a",
+  "lease_token": "lease-sec-token-998877665544332211",
+  "status": "PRINTING",
+  "spooler_job_id": 412,
+  "pages_printed": 5,
+  "total_pages": 10,
+  "error_code": null,
+  "error_message": null,
+  "timestamp": "2026-10-16T12:01:00Z"
+}

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://caps.internal/schemas/capabilities.schema.json",
+  "title": "CAPS Desktop Agent Capabilities Schema",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "agent_device_id",
+    "agent_version",
+    "shop_id",
+    "printers",
+    "reported_at"
+  ],
+  "properties": {
+    "contract_version": { "$ref": "common.schema.json#/$defs/SemVer" },
+    "agent_device_id": { "type": "string", "minLength": 1 },
+    "agent_version": { "$ref": "common.schema.json#/$defs/SemVer" },
+    "shop_id": { "$ref": "common.schema.json#/$defs/UUID" },
+    "printers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "printer_id",
+          "name",
+          "is_default",
+          "status",
+          "supported_paper_sizes",
+          "supported_color_modes",
+          "supported_duplex"
+        ],
+        "properties": {
+          "printer_id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "is_default": { "type": "boolean" },
+          "status": { "$ref": "common.schema.json#/$defs/PrinterStatus" },
+          "supported_paper_sizes": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/PaperSize" },
+            "minItems": 1
+          },
+          "supported_color_modes": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/ColorMode" },
+            "minItems": 1
+          },
+          "supported_duplex": {
+            "type": "array",
+            "items": { "$ref": "common.schema.json#/$defs/DuplexMode" },
+            "minItems": 1
+          },
+          "last_seen_at": { "$ref": "common.schema.json#/$defs/ISO8601" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "reported_at": { "$ref": "common.schema.json#/$defs/ISO8601" }
+  },
+  "additionalProperties": false
+}

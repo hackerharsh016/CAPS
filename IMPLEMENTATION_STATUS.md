@@ -9,6 +9,8 @@
 | 3 | `P01-M01-F03` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Three independent TS app shells | Completed | **PASS** |
 | 4 | `P01-M01-F04` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Python agent package shell | Completed | **PASS** |
 | 5 | `P01-M02-F01` | 01_Foundation_and_Setup / 02_Shared_Contracts | Shared type and Zod schemas | Completed | **PASS** |
+| 6 | `P01-M02-F02` | 01_Foundation_and_Setup / 02_Shared_Contracts | Cross-language print contracts | Completed | **PASS** |
+
 
 ---
 
@@ -400,4 +402,106 @@
   - **PASS**
 - **Next Task:**
   - `P01-M02-F02` — Cross-language print contracts (`packages/print-contracts` OpenAPI and JSON Schema)
+
+---
+
+### Task: `P01-M02-F02` — Cross-language print contracts
+- **Phase:** 01 Foundation and Setup
+- **Module:** 02 Shared Contracts
+- **Timestamp:** 2026-10-16
+- **Scope Delivered:**
+  - Established `@caps/print-contracts` workspace package providing language-neutral OpenAPI 3.1.0 specifications and JSON Schema Draft 2020-12 contracts.
+  - Published comprehensive OpenAPI 3.1.0 specification in `openapi/v1.json`:
+    - `/api/v1/agent/heartbeat`: periodic liveness and attached printer capabilities reporting.
+    - `/api/v1/agent/jobs/claim`: atomic job claim with temporary lease, short-lived download grant, sha256 checksum, and validated settings.
+    - `/api/v1/agent/jobs/{job_id}/status`: idempotent attempt status update requiring `Idempotency-Key` header, validating lease tokens, and tracking physical page counters and spooler job IDs.
+    - Configured security schemes (`AgentBearerAuth`) and full component schema definitions.
+  - Authored language-neutral JSON Schemas in `schema/`:
+    - `common.schema.json`: reusable definitions for `SemVer`, `UUID`, `ISO8601`, `SHA256`, `PaperSize`, `ColorMode`, `DuplexMode`, `Orientation`, `BindingType`, `PrintSettings` (copies 1..100, page range regex), `ErrorCode`, `PrinterStatus`, `JobAgentStatus`.
+    - `capabilities.schema.json`: printer hardware capabilities and status schema.
+    - `job-claim-request.schema.json`: agent claim parameters with lease duration constraints.
+    - `job-claim-response.schema.json`: claimed job payload or empty claim payload with strict property constraints.
+    - `job-status-update-request.schema.json`: progress and completion payload with spooler tracking, physical page counters, and error taxonomy codes.
+    - `job-status-update-response.schema.json`: status acknowledgment schema.
+    - `error-response.schema.json`: standard `{ "error": { "code", "message", "request_id", "details" } }` schema.
+  - Built canonical example payloads in `examples/` and test fixtures in `examples/fixtures/`:
+    - `fixtures/v1.0.0/`: 7 backwards compatibility fixtures covering valid claim requests/responses, status transitions (completed/failed), capabilities, and error envelopes.
+    - `fixtures/invalid/`: 7 negative validation fixtures verifying strict rejection of missing shop UUIDs, invalid SHA-256 patterns, negative printed pages, copies < 1 and copies > 100, non-whitelisted status enums, and missing error codes.
+  - Implemented TypeScript schema loaders and AJV 2020 validators (`src/index.ts`) supporting Draft 2020-12 and format checking.
+  - Authored TypeScript Vitest suite (`tests/openapi.test.ts`, `tests/schemas.test.ts`) with 26 tests covering OpenAPI structure, schema validation, backward compatibility, and invalid payload rejection.
+  - Authored Python contract conformance suite (`apps/print-agent/tests/test_contracts.py`) with 21 tests validating JSON Schemas using Python's `jsonschema` library, testing cross-language parity and alignment between `caps_agent.printing.engine.PrintSettings` and `common.schema.json`.
+  - Documented version compatibility policies, error taxonomy, and execution correctness invariants in `packages/print-contracts/README.md`.
+- **Files Created / Edited:**
+  - `packages/print-contracts/package.json` (New)
+  - `packages/print-contracts/tsconfig.json` (New)
+  - `packages/print-contracts/eslint.config.js` (New)
+  - `packages/print-contracts/vitest.config.ts` (New)
+  - `packages/print-contracts/README.md` (New)
+  - `packages/print-contracts/openapi/v1.json` (New)
+  - `packages/print-contracts/schema/common.schema.json` (New)
+  - `packages/print-contracts/schema/capabilities.schema.json` (New)
+  - `packages/print-contracts/schema/job-claim-request.schema.json` (New)
+  - `packages/print-contracts/schema/job-claim-response.schema.json` (New)
+  - `packages/print-contracts/schema/job-status-update-request.schema.json` (New)
+  - `packages/print-contracts/schema/job-status-update-response.schema.json` (New)
+  - `packages/print-contracts/schema/error-response.schema.json` (New)
+  - `packages/print-contracts/examples/capabilities.json` (New)
+  - `packages/print-contracts/examples/job-claim-request.json` (New)
+  - `packages/print-contracts/examples/job-claim-response.json` (New)
+  - `packages/print-contracts/examples/job-status-update-request.json` (New)
+  - `packages/print-contracts/examples/job-status-update-response.json` (New)
+  - `packages/print-contracts/examples/error-response.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-claim-request.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-claim-response.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-claim-response-empty.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-status-update-completed.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-status-update-failed.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-capabilities.json` (New)
+  - `packages/print-contracts/examples/fixtures/v1.0.0/valid-error.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/claim-request-missing-shop.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/claim-response-bad-checksum.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/status-update-invalid-status.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/status-update-negative-pages.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/settings-copies-zero.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/settings-copies-101.json` (New)
+  - `packages/print-contracts/examples/fixtures/invalid/error-missing-code.json` (New)
+  - `packages/print-contracts/src/index.ts` (New)
+  - `packages/print-contracts/tests/openapi.test.ts` (New)
+  - `packages/print-contracts/tests/schemas.test.ts` (New)
+  - `apps/print-agent/pyproject.toml` (Updated with `jsonschema>=4.20.0`)
+  - `apps/print-agent/tests/test_contracts.py` (New)
+  - `pnpm-lock.yaml` (Updated with `@caps/print-contracts` and AJV dependencies)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - Published canonical OpenAPI 3.1 specification (`packages/print-contracts/openapi/v1.json`) and 7 JSON Schemas (`packages/print-contracts/schema/`) governing cloud API and desktop agent communication.
+- **Commands Executed:**
+  - `pnpm install` — PASS (Dependencies resolved, `@caps/print-contracts` workspace linked)
+  - `pnpm --filter @caps/print-contracts build` — PASS (`tsc` compiled ESM code and `.d.ts` declaration maps)
+  - `pnpm --filter @caps/print-contracts test` — PASS (26/26 tests passed across OpenAPI and JSON Schema suites)
+  - `python -m unittest discover -s apps/print-agent/tests -p "test_*.py" -v` — PASS (36/36 tests passed, including 21 contract tests)
+  - `pnpm run format:check` — PASS (All matched files use Prettier code style)
+  - `pnpm run lint` — PASS (All 7 packages clean)
+  - `pnpm run typecheck` — PASS (All 7 packages clean)
+  - `pnpm run test` — PASS (All 6 test suites, 70 tests passed across monorepo)
+  - `pnpm run build` — PASS (All packages built successfully via Turborepo)
+- **Test Results & Evidence:**
+  - TypeScript contracts test suite: 26 passed (5 OpenAPI structural tests, 6 canonical examples, 7 v1.0.0 backwards compatibility fixtures, 8 negative rejection tests).
+  - Python agent test suite: 36 passed (15 unit tests from previous tasks, 6 canonical contract validations, 7 v1.0.0 backwards compatibility fixtures, 7 negative rejection tests, and 1 dataclass schema alignment test).
+  - Monorepo-wide TypeScript tests: 70 passed across 6 test suites (`@caps/print-contracts`, `@caps/validation`, `@caps/cloud-api`, `@caps/customer-web`, `@caps/owner-dashboard`).
+- **Security & Privacy Review:**
+  - OpenAPI specification mandates `AgentBearerAuth` for all agent operations; unauthenticated claim attempts are rejected with 401.
+  - Job status updates mandate the `Idempotency-Key` header and require matching lease tokens to prevent replayed or hijacked requests.
+  - Schemas set `additionalProperties: false`, blocking parameter tampering or prototype pollution.
+  - Print copies are bounded strictly to `1..100`.
+  - Checksums are strictly validated to 64-character SHA-256 hex strings.
+  - Zero secrets or internal credentials logged or embedded in schemas.
+- **Manual Verification Pending:**
+  - Physical printer spooler driver validation (scheduled for Phase 02 on Windows).
+- **Open Blockers / ADRs:**
+  - None.
+- **Gate Status:**
+  - **PASS**
+- **Next Task:**
+  - `P01-M02-F03`
+
 

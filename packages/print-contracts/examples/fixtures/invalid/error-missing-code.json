@@ -1,0 +1,6 @@
+{
+  "error": {
+    "message": "Missing required code field",
+    "request_id": "req-invalid-1234"
+  }
+}

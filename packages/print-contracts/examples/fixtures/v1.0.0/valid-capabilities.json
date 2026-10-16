@@ -1,0 +1,19 @@
+{
+  "contract_version": "1.0.0",
+  "agent_device_id": "win-agent-shop-01",
+  "agent_version": "0.1.0",
+  "shop_id": "33333333-3333-4333-8333-333333333333",
+  "printers": [
+    {
+      "printer_id": "hp-laserjet-pro",
+      "name": "HP LaserJet Pro M404dn",
+      "is_default": true,
+      "status": "online",
+      "supported_paper_sizes": ["a4", "letter", "legal"],
+      "supported_color_modes": ["bw"],
+      "supported_duplex": ["simplex", "duplex_long"],
+      "last_seen_at": "2026-10-16T12:00:00Z"
+    }
+  ],
+  "reported_at": "2026-10-16T12:00:00Z"
+}

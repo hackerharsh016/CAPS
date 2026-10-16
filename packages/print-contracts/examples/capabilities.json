@@ -1,0 +1,29 @@
+{
+  "contract_version": "1.0.0",
+  "agent_device_id": "win-agent-shop-01",
+  "agent_version": "0.1.0",
+  "shop_id": "11111111-1111-4111-8111-111111111111",
+  "printers": [
+    {
+      "printer_id": "canon-ir2006",
+      "name": "Canon imageRUNNER 2006",
+      "is_default": true,
+      "status": "online",
+      "supported_paper_sizes": ["a4", "a3"],
+      "supported_color_modes": ["bw"],
+      "supported_duplex": ["simplex", "duplex_long"],
+      "last_seen_at": "2026-10-16T12:00:00Z"
+    },
+    {
+      "printer_id": "epson-l805",
+      "name": "Epson L805 Photo Inkjet",
+      "is_default": false,
+      "status": "online",
+      "supported_paper_sizes": ["a4", "letter"],
+      "supported_color_modes": ["bw", "color"],
+      "supported_duplex": ["simplex"],
+      "last_seen_at": "2026-10-16T12:00:00Z"
+    }
+  ],
+  "reported_at": "2026-10-16T12:00:00Z"
+}

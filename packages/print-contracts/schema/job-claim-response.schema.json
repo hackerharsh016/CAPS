@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://caps.internal/schemas/job-claim-response.schema.json",
+  "title": "CAPS Job Claim Response Schema",
+  "type": "object",
+  "required": ["contract_version", "claimed"],
+  "properties": {
+    "contract_version": { "$ref": "common.schema.json#/$defs/SemVer" },
+    "claimed": { "type": "boolean" },
+    "job": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": [
+            "job_id",
+            "attempt_id",
+            "lease_token",
+            "lease_expires_at",
+            "shop_id",
+            "printer_id",
+            "download_url",
+            "checksum_sha256",
+            "content_type",
+            "file_size_bytes",
+            "settings",
+            "created_at"
+          ],
+          "properties": {
+            "job_id": { "$ref": "common.schema.json#/$defs/UUID" },
+            "attempt_id": { "type": "string", "minLength": 1 },
+            "lease_token": { "type": "string", "minLength": 16 },
+            "lease_expires_at": { "$ref": "common.schema.json#/$defs/ISO8601" },
+            "shop_id": { "$ref": "common.schema.json#/$defs/UUID" },
+            "printer_id": { "type": "string", "minLength": 1 },
+            "download_url": { "type": "string", "format": "uri" },
+            "checksum_sha256": { "$ref": "common.schema.json#/$defs/SHA256" },
+            "content_type": { "type": "string", "enum": ["application/pdf"] },
+            "file_size_bytes": { "type": "integer", "minimum": 1 },
+            "settings": { "$ref": "common.schema.json#/$defs/PrintSettings" },
+            "created_at": { "$ref": "common.schema.json#/$defs/ISO8601" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

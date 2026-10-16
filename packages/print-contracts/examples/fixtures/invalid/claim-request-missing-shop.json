@@ -1,0 +1,7 @@
+{
+  "contract_version": "1.0.0",
+  "agent_device_id": "win-agent-shop-01",
+  "requested_printer_id": "hp-laserjet-pro",
+  "lease_duration_seconds": 180,
+  "timestamp": "2026-10-16T12:00:00Z"
+}

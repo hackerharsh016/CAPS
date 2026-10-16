@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://caps.internal/schemas/job-claim-request.schema.json",
+  "title": "CAPS Job Claim Request Schema",
+  "type": "object",
+  "required": ["contract_version", "agent_device_id", "shop_id", "timestamp"],
+  "properties": {
+    "contract_version": { "$ref": "common.schema.json#/$defs/SemVer" },
+    "agent_device_id": { "type": "string", "minLength": 1 },
+    "shop_id": { "$ref": "common.schema.json#/$defs/UUID" },
+    "requested_printer_id": { "type": "string" },
+    "lease_duration_seconds": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 600,
+      "default": 120
+    },
+    "timestamp": { "$ref": "common.schema.json#/$defs/ISO8601" }
+  },
+  "additionalProperties": false
+}

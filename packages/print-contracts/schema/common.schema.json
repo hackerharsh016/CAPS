@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://caps.internal/schemas/common.schema.json",
+  "title": "CAPS Common Print Contract Definitions",
+  "type": "object",
+  "$defs": {
+    "SemVer": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic versioning identifier (e.g. 1.0.0)"
+    },
+    "UUID": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+      "description": "RFC 4122 compliant UUID"
+    },
+    "ISO8601": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp"
+    },
+    "SHA256": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$",
+      "description": "Hex-encoded SHA-256 hash"
+    },
+    "PaperSize": {
+      "type": "string",
+      "enum": ["a4", "a3", "legal", "letter"]
+    },
+    "ColorMode": {
+      "type": "string",
+      "enum": ["bw", "color"]
+    },
+    "DuplexMode": {
+      "type": "string",
+      "enum": ["simplex", "duplex_long", "duplex_short"]
+    },
+    "Orientation": {
+      "type": "string",
+      "enum": ["portrait", "landscape"]
+    },
+    "BindingType": {
+      "type": "string",
+      "enum": ["none", "corner_staple", "side_staple", "comb", "spiral", "hardbound"]
+    },
+    "PageRange": {
+      "type": "string",
+      "pattern": "^(all|(\\d+(-\\d+)?)(,\\s*\\d+(-\\d+)?)*)$",
+      "description": "Page range specification: 'all' or comma/dash separated numbers (e.g. 1-5, 8)"
+    },
+    "PrintSettings": {
+      "type": "object",
+      "required": [
+        "paper_size",
+        "color_mode",
+        "duplex",
+        "orientation",
+        "copies",
+        "page_range",
+        "binding"
+      ],
+      "properties": {
+        "paper_size": { "$ref": "#/$defs/PaperSize" },
+        "color_mode": { "$ref": "#/$defs/ColorMode" },
+        "duplex": { "$ref": "#/$defs/DuplexMode" },
+        "orientation": { "$ref": "#/$defs/Orientation" },
+        "copies": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "page_range": { "$ref": "#/$defs/PageRange" },
+        "binding": { "$ref": "#/$defs/BindingType" }
+      },
+      "additionalProperties": false
+    },
+    "PrinterStatus": {
+      "type": "string",
+      "enum": ["online", "offline", "busy", "error"]
+    },
+    "JobAgentStatus": {
+      "type": "string",
+      "enum": ["CLAIMED", "DOWNLOADING", "RENDERING", "PRINTING", "COMPLETED", "FAILED"]
+    },
+    "ErrorCode": {
+      "type": "string",
+      "enum": [
+        "UNAUTHORIZED",
+        "FORBIDDEN",
+        "NOT_FOUND",
+        "LEASE_EXPIRED",
+        "JOB_ALREADY_CLAIMED",
+        "CAPABILITIES_MISMATCH",
+        "INVALID_PAYLOAD",
+        "IDEMPOTENCY_CONFLICT",
+        "PRINTER_OFFLINE",
+        "PAPER_JAM",
+        "SPOOLER_ERROR",
+        "DOWNLOAD_FAILED",
+        "CHECKSUM_MISMATCH",
+        "UNKNOWN_OUTCOME",
+        "INTERNAL_ERROR"
+      ]
+    }
+  }
+}

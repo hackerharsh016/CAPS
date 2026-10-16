@@ -1,0 +1,26 @@
+{
+  "contract_version": "1.0.0",
+  "claimed": true,
+  "job": {
+    "job_id": "44444444-4444-4444-8444-444444444444",
+    "attempt_id": "attempt-11223344",
+    "lease_token": "lease-token-secure-hash-random-bytes-12345",
+    "lease_expires_at": "2026-10-16T12:03:00Z",
+    "shop_id": "33333333-3333-4333-8333-333333333333",
+    "printer_id": "hp-laserjet-pro",
+    "download_url": "https://storage.caps.internal/temp/prints/44444444-4444-4444-8444-444444444444.pdf",
+    "checksum_sha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+    "content_type": "application/pdf",
+    "file_size_bytes": 524288,
+    "settings": {
+      "paper_size": "legal",
+      "color_mode": "color",
+      "duplex": "simplex",
+      "orientation": "landscape",
+      "copies": 101,
+      "page_range": "all",
+      "binding": "none"
+    },
+    "created_at": "2026-10-16T12:00:00Z"
+  }
+}

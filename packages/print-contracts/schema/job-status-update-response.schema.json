@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://caps.internal/schemas/job-status-update-response.schema.json",
+  "title": "CAPS Job Status Update Response Schema",
+  "type": "object",
+  "required": ["contract_version", "success", "job_id", "status", "acknowledged_at"],
+  "properties": {
+    "contract_version": { "$ref": "common.schema.json#/$defs/SemVer" },
+    "success": { "type": "boolean" },
+    "job_id": { "$ref": "common.schema.json#/$defs/UUID" },
+    "status": { "$ref": "common.schema.json#/$defs/JobAgentStatus" },
+    "acknowledged_at": { "$ref": "common.schema.json#/$defs/ISO8601" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,13 @@
+{
+  "contract_version": "1.0.0",
+  "job_id": "44444444-4444-4444-8444-444444444444",
+  "attempt_id": "attempt-11223344",
+  "lease_token": "lease-token-secure-hash-random-bytes-12345",
+  "status": "YOLO_PRINTING",
+  "spooler_job_id": 108,
+  "pages_printed": 5,
+  "total_pages": 25,
+  "error_code": null,
+  "error_message": null,
+  "timestamp": "2026-10-16T12:02:15Z"
+}

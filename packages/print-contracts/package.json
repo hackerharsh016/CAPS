@@ -1,0 +1,40 @@
+{
+  "name": "@caps/print-contracts",
+  "version": "0.1.0",
+  "description": "CAPS cross-language OpenAPI and JSON Schema contracts for desktop print agent and cloud API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./openapi": "./openapi/v1.json",
+    "./schema/*": "./schema/*.schema.json",
+    "./examples/*": "./examples/*.json"
+  },
+  "files": [
+    "dist",
+    "openapi",
+    "schema",
+    "examples"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@caps/types": "workspace:*",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "devDependencies": {
+    "@caps/config": "workspace:*",
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

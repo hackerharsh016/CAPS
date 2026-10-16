@@ -1,0 +1,11 @@
+{
+  "error": {
+    "code": "LEASE_EXPIRED",
+    "message": "The atomic execution lease for this job has expired. Status update rejected.",
+    "request_id": "req-98765-abcd-1234",
+    "details": {
+      "job_id": "22222222-2222-4222-8222-222222222222",
+      "lease_expired_at": "2026-10-16T12:02:05Z"
+    }
+  }
+}
