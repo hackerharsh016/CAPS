@@ -1,0 +1,30 @@
+{
+  "name": "@caps/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared TypeScript, ESLint, and Prettier configurations for CAPS",
+  "main": "index.js",
+  "exports": {
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./tsconfig.next.json": "./tsconfig.next.json",
+    "./tsconfig.node.json": "./tsconfig.node.json",
+    "./eslint.base.js": "./eslint.base.js",
+    "./eslint.next.js": "./eslint.next.js",
+    "./eslint.node.js": "./eslint.node.js",
+    "./prettier.config.js": "./prettier.config.js"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.20.0",
+    "typescript-eslint": "^8.24.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.20.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3"
+  }
+}

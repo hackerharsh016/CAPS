@@ -1,0 +1,11 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+.turbo/
+coverage/
+pnpm-lock.yaml
+docs/
+*.md
+.editorconfig
