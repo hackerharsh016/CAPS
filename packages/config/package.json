@@ -6,6 +6,7 @@
   "description": "Shared TypeScript, ESLint, and Prettier configurations for CAPS",
   "main": "index.js",
   "exports": {
+    ".": "./index.js",
     "./tsconfig.base.json": "./tsconfig.base.json",
     "./tsconfig.next.json": "./tsconfig.next.json",
     "./tsconfig.node.json": "./tsconfig.node.json",

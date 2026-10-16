@@ -6,6 +6,7 @@
 | :---: | :---: | :---: | :---: | :---: | :---: |
 | 1 | `P01-M01-F01` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | pnpm/Turborepo foundation | Completed | **PASS** |
 | 2 | `P01-M01-F02` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Shared TypeScript quality gates | Completed | **PASS** |
+| 3 | `P01-M01-F03` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Three independent TS app shells | Completed | **PASS** |
 
 ---
 
@@ -123,3 +124,96 @@
   - **PASS**
 - **Next Task:**
   - `P01-M01-F03` — Three independent TS app shells (`apps/customer-web`, `apps/owner-dashboard`, `apps/cloud-api`)
+
+---
+
+### Task: `P01-M01-F03` — Three independent TS app shells
+- **Phase:** 01 Foundation and Setup
+- **Module:** 01 Monorepo Foundation
+- **Timestamp:** 2026-10-16
+- **Scope Delivered:**
+  - Scaffolded **Cloud API** (`apps/cloud-api`):
+    - Fastify server construction with CORS support (`src/app.ts`).
+    - Robust Zod-backed environment validator (`src/config/env.ts`) testing valid, default, and malformed configurations.
+    - Health check route `GET /health` delivering service status, timestamp, uptime, and version metadata.
+    - Process boot with graceful termination handling on SIGINT/SIGTERM (`src/main.ts`).
+    - Unit tests (`tests/health.test.ts`, `tests/env.test.ts`) covering endpoint responses and malformed env rejections.
+  - Scaffolded **Customer Web App** (`apps/customer-web`):
+    - Next.js 15 App Router architecture with Tailwind CSS.
+    - Branded customer layout and landing portal (`src/app/layout.tsx`, `src/app/page.tsx`).
+    - Component smoke test (`tests/smoke.test.ts`).
+  - Scaffolded **Owner Operations Dashboard** (`apps/owner-dashboard`):
+    - Next.js 15 App Router architecture with Tailwind CSS.
+    - Operational layout, metrics overview, live FIFO queue card, and single-click print confirmation button (`src/app/layout.tsx`, `src/app/page.tsx`).
+    - Component smoke test (`tests/smoke.test.ts`).
+  - Verified independent execution, typechecking, linting, testing, and production compilation (`next build`, `tsc`) across all three application workspaces.
+- **Files Created / Edited:**
+  - `apps/cloud-api/package.json` (New)
+  - `apps/cloud-api/tsconfig.json` (New)
+  - `apps/cloud-api/eslint.config.js` (New)
+  - `apps/cloud-api/src/config/env.ts` (New)
+  - `apps/cloud-api/src/app.ts` (New)
+  - `apps/cloud-api/src/main.ts` (New)
+  - `apps/cloud-api/tests/health.test.ts` (New)
+  - `apps/cloud-api/tests/env.test.ts` (New)
+  - `apps/customer-web/package.json` (New)
+  - `apps/customer-web/tsconfig.json` (New)
+  - `apps/customer-web/eslint.config.js` (New)
+  - `apps/customer-web/next.config.ts` (New)
+  - `apps/customer-web/postcss.config.mjs` (New)
+  - `apps/customer-web/tailwind.config.ts` (New)
+  - `apps/customer-web/vitest.config.ts` (New)
+  - `apps/customer-web/src/app/globals.css` (New)
+  - `apps/customer-web/src/app/layout.tsx` (New)
+  - `apps/customer-web/src/app/page.tsx` (New)
+  - `apps/customer-web/tests/smoke.test.ts` (New)
+  - `apps/owner-dashboard/package.json` (New)
+  - `apps/owner-dashboard/tsconfig.json` (New)
+  - `apps/owner-dashboard/eslint.config.js` (New)
+  - `apps/owner-dashboard/next.config.ts` (New)
+  - `apps/owner-dashboard/postcss.config.mjs` (New)
+  - `apps/owner-dashboard/tailwind.config.ts` (New)
+  - `apps/owner-dashboard/vitest.config.ts` (New)
+  - `apps/owner-dashboard/src/app/globals.css` (New)
+  - `apps/owner-dashboard/src/app/layout.tsx` (New)
+  - `apps/owner-dashboard/src/app/page.tsx` (New)
+  - `apps/owner-dashboard/tests/smoke.test.ts` (New)
+  - `packages/config/package.json` (Updated with root export entry)
+  - `package.json` (Updated with `onlyBuiltDependencies` for esbuild)
+  - `pnpm-lock.yaml` (Updated with application dependencies)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - None.
+- **Commands Executed:**
+  - `pnpm install` — PASS (Dependencies downloaded and workspaces linked)
+  - `pnpm --filter @caps/cloud-api typecheck` — PASS
+  - `pnpm --filter @caps/cloud-api test` — PASS (6 tests passed)
+  - `pnpm --filter @caps/cloud-api build` — PASS (TypeScript output generated in `dist/`)
+  - `pnpm --filter @caps/customer-web typecheck` — PASS
+  - `pnpm --filter @caps/customer-web test` — PASS (1 smoke test passed)
+  - `pnpm --filter @caps/customer-web build` — PASS (`next build` compiled in 10.7s)
+  - `pnpm --filter @caps/owner-dashboard typecheck` — PASS
+  - `pnpm --filter @caps/owner-dashboard test` — PASS (1 smoke test passed)
+  - `pnpm --filter @caps/owner-dashboard build` — PASS (`next build` compiled in 18.4s)
+  - `pnpm run format:check` — PASS
+  - `pnpm run lint` — PASS (4/4 packages passed with zero errors)
+  - `pnpm run typecheck` — PASS (4/4 packages passed with zero errors)
+  - `pnpm run test` — PASS (3/3 test suites passed, 8 tests total)
+  - `pnpm run build` — PASS (Turborepo built all workspaces successfully in 57.5s)
+- **Test Results & Evidence:**
+  - Health check test verified `GET /health` returns 200 with JSON payload containing `status: "ok"`, `service: "caps-cloud-api"`, and uptime.
+  - Environment test confirmed missing/malformed `NODE_ENV`, `PORT`, and `SUPABASE_URL` values trigger descriptive Zod validation errors.
+  - Smoke tests confirmed Next.js App Router root page components render without exceptions.
+  - Production builds generated static route outputs (`/`, `/_not-found`) for both web applications.
+- **Security & Privacy Review:**
+  - Cloud API strictly validates origins via `@fastify/cors`.
+  - Sensitive server keys (`SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_SECRET`) are isolated in Cloud API env schema and never referenced in frontend client packages.
+  - No secret values are hardcoded in source trees.
+- **Manual Verification Pending:**
+  - None.
+- **Open Blockers / ADRs:**
+  - None.
+- **Gate Status:**
+  - **PASS**
+- **Next Task:**
+  - `P01-M01-F04` — Python agent package shell (`apps/print-agent`)
