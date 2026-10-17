@@ -1,0 +1,28 @@
+# CAPS Monorepo Codeowners
+# Source: docs/development/ownership-map.md (Four-Developer Work Partition)
+
+# Global fallback maintainers
+* @caps-team/core-maintainers
+
+# Track 1: Customer Web Experience (Developer 1)
+apps/customer-web/ @caps-team/customer-web-leads @caps-team/frontend-engineers
+packages/ui/ @caps-team/customer-web-leads @caps-team/owner-dashboard-leads
+packages/api-client/ @caps-team/customer-web-leads @caps-team/backend-engineers
+
+# Track 2: Shop Owner Dashboard & Operations (Developer 2)
+apps/owner-dashboard/ @caps-team/owner-dashboard-leads @caps-team/frontend-engineers
+
+# Track 3: Cloud API, Database & Payments (Developer 3)
+apps/cloud-api/ @caps-team/backend-engineers
+supabase/ @caps-team/backend-engineers @caps-team/database-admins
+packages/types/ @caps-team/backend-engineers @caps-team/core-maintainers
+packages/validation/ @caps-team/backend-engineers @caps-team/core-maintainers
+packages/print-contracts/ @caps-team/backend-engineers @caps-team/agent-engineers
+
+# Track 4: Windows Desktop Print Agent & Win32 Integration (Developer 4)
+apps/print-agent/ @caps-team/agent-engineers @caps-team/windows-engineers
+infra/windows-installer/ @caps-team/agent-engineers @caps-team/windows-engineers
+
+# Infrastructure & CI/CD
+.github/ @caps-team/devops-engineers @caps-team/core-maintainers
+infra/ @caps-team/devops-engineers

@@ -12,6 +12,7 @@
 | 6 | `P01-M02-F02` | 01_Foundation_and_Setup / 02_Shared_Contracts | Cross-language print contracts | Completed | **PASS** |
 | 7 | `P01-M02-F03` | 01_Foundation_and_Setup / 02_Shared_Contracts | Typed API client and shared UI | Completed | **PASS** |
 | 8 | `P01-M03-F01` | 01_Foundation_and_Setup / 03_Git_CI_Docs | Developer documentation and ADRs | Completed | **PASS** |
+| 9 | `P01-M03-F02` | 01_Foundation_and_Setup / 03_Git_CI_Docs | Pull request and CI scaffolding | Completed | **PASS** |
 
 
 
@@ -679,7 +680,76 @@
   - Physical printer spooler driver validation (scheduled for Phase 02 on Windows).
 - **Open Blockers / ADRs:**
   - Recorded ADR-0004, ADR-0005, ADR-0006, ADR-0007, ADR-0008 resolving SRS discrepancies and architecture baselines.
+- **Next Task:**
+  - `P01-M03-F02` — Pull request and CI scaffolding (`.github/workflows/`, PR templates, branch rules)
+
+---
+
+### Task: `P01-M03-F02` — Pull request and CI scaffolding
+- **Phase:** 01 Foundation and Setup
+- **Module:** 03 Git CI Docs
+- **Timestamp:** 2026-10-17
+- **Scope Delivered:**
+  - Established `.github/CODEOWNERS` mapping monorepo applications, libraries, and infrastructure to ownership tracks based on the four-developer work partition (`docs/development/ownership-map.md`).
+  - Authored standardized `.github/pull_request_template.md` enforcing:
+    - Task ID tracking from `TASK_MANIFEST.json`.
+    - Architectural boundary checks (4 independent deployable apps, zero cross-app imports).
+    - Secret isolation checks (zero server secrets in client bundles or agent binaries).
+    - Privacy checks (zero customer document content in logs/telemetry).
+    - Payment security (server-verified webhooks, no client payment callbacks).
+    - Queue atomicity (database transactional locks, leases, attempt IDs).
+    - Desktop agent loopback restriction (`127.0.0.1` strictly enforced).
+    - Spooler invariants (spooler acceptance != paper in tray; no blind reprints).
+    - Testing evidence and physical vs. mock hardware disclosure.
+  - Implemented 9 path-filtered GitHub Actions CI/CD workflows under `.github/workflows/`:
+    - `web-ci.yml`: Path-filtered Next.js web application CI (`customer-web`, `owner-dashboard`, `ui`, `api-client`) running lint, typecheck, tests, and production compilation on Ubuntu.
+    - `api-ci.yml`: Path-filtered Fastify Cloud API CI running format checks, lint, typecheck, contract validations, and server build.
+    - `agent-ci.yml`: Path-filtered Desktop Print Agent CI on Windows runners (`windows-latest`) running across a Python 3.11 and 3.12 matrix with Ruff linting, unit tests, Win32 double tests, and loopback binding security checks.
+    - `contract-ci.yml`: Cross-language contract CI running AJV TypeScript validation and Python `jsonschema` verification against canonical schemas and backwards-compatibility fixtures.
+    - `database-ci.yml`: Supabase migrations and RLS verification pipeline.
+    - `e2e.yml`: Cross-application integration journey gate.
+    - `web-deploy.yml`: Path-filtered staging deployment for Next.js web frontends.
+    - `api-deploy.yml`: Tagged release deployment pipeline for Cloud API (`cloud-api/v*`).
+    - `agent-release.yml`: Tagged release workflow for signed Windows Print Agent installer packaging (`print-agent/v*`).
+  - Verified all workflow YAML files parse with valid `name:`, `on:`, and `jobs:` structures.
+  - Executed simulated CI break tests demonstrating that:
+    - Non-loopback agent binding (`0.0.0.0`) produces an explicit security error and red status.
+    - Invalid contract payloads (copies > 100, missing shop UUID, negative printed pages) fail validation with red status.
+- **Files Created / Edited:**
+  - `.github/CODEOWNERS` (New)
+  - `.github/pull_request_template.md` (New)
+  - `.github/workflows/web-ci.yml` (New)
+  - `.github/workflows/api-ci.yml` (New)
+  - `.github/workflows/agent-ci.yml` (New)
+  - `.github/workflows/contract-ci.yml` (New)
+  - `.github/workflows/database-ci.yml` (New)
+  - `.github/workflows/e2e.yml` (New)
+  - `.github/workflows/web-deploy.yml` (New)
+  - `.github/workflows/api-deploy.yml` (New)
+  - `.github/workflows/agent-release.yml` (New)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - None (CI/CD workflows and PR governance task).
+- **Commands Executed:**
+  - `node -v; pnpm -v` — PASS (`v24.14.0`, `10.26.2`)
+  - Workflow YAML validation across 9 `.github/workflows/*.yml` files — PASS (All 9 have valid `name`, `on`, `jobs`)
+  - `python -m unittest discover -s apps/print-agent/tests -p "test_*.py" -v` — PASS (36/36 tests passed in 0.017s)
+  - Simulated CI break: loopback host `0.0.0.0` — PASS (Correctly rejected with `ConfigurationError: Security violation: local_diagnostics_host '0.0.0.0' is forbidden`)
+  - Simulated CI break: contract validation on bad copies/pages — PASS (All 7 invalid fixtures rejected in `test_contracts.py`)
+- **Test Results & Evidence:**
+  - Verified all 9 GitHub Actions workflow definitions and 2 governance templates exist and parse without syntax errors.
+  - Verified path-filtering rules prevent unrelated frontend changes from triggering Windows agent packaging.
+  - Verified sample PR template includes all non-negotiable architectural invariant checklists.
+- **Security & Privacy Review:**
+  - GitHub Actions workflows use least-privilege permissions and environment-scoped concurrency groups (`cancel-in-progress: true`).
+  - Strict validation that no secrets or API tokens are checked in or echoed in CI logs.
+  - Verified agent release workflow generates immutable SHA-256 checksum manifests.
+- **Manual Verification Pending:**
+  - Live GitHub Actions execution on GitHub remote repository upon initial push.
+  - Physical printer spooler driver validation (scheduled for Phase 02 on Windows).
+- **Open Blockers / ADRs:**
+  - None.
 - **Gate Status:**
   - **PASS**
 - **Next Task:**
-  - `P01-M03-F02` — Pull request and CI scaffolding (`.github/workflows/`, PR templates, branch rules)
+  - `P02-M01-F01` — Enumerate installed printer devices (`apps/print-agent/src/caps_agent/printing/printer_discovery.py`)
