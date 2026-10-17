@@ -10,6 +10,8 @@
 | 4 | `P01-M01-F04` | 01_Foundation_and_Setup / 01_Monorepo_Foundation | Python agent package shell | Completed | **PASS** |
 | 5 | `P01-M02-F01` | 01_Foundation_and_Setup / 02_Shared_Contracts | Shared type and Zod schemas | Completed | **PASS** |
 | 6 | `P01-M02-F02` | 01_Foundation_and_Setup / 02_Shared_Contracts | Cross-language print contracts | Completed | **PASS** |
+| 7 | `P01-M02-F03` | 01_Foundation_and_Setup / 02_Shared_Contracts | Typed API client and shared UI | Completed | **PASS** |
+
 
 
 ---
@@ -502,6 +504,101 @@
 - **Gate Status:**
   - **PASS**
 - **Next Task:**
-  - `P01-M02-F03`
+  - `P01-M02-F03` — Typed API client and shared UI (`packages/api-client`, `packages/ui`)
+
+---
+
+### Task: `P01-M02-F03` — Typed API client and shared UI
+- **Phase:** 01 Foundation and Setup
+- **Module:** 02 Shared Contracts
+- **Timestamp:** 2026-10-16
+- **Scope Delivered:**
+  - Established typed HTTP API client package `@caps/api-client`:
+    - Built `ApiClient` and `createApiClient()` supporting baseUrl configuration, custom fetch adapters, default headers, and timeout cancellation via `AbortController`.
+    - Implemented authentication propagation supporting static JWT bearer tokens and dynamic asynchronous token providers (e.g. Supabase session tokens) with selective `skipAuth` options.
+    - Implemented error taxonomy mapping from backend response envelopes (`{ error: { code, message, request_id, details } }`) to typed exception classes: `ApiClientError`, `ApiAuthError` (401/403), `ApiValidationError` (400/422), `ApiNotFoundError` (404), `ApiConflictError` (409), `ApiServerError` (500..599), and `ApiNetworkError`.
+    - Implemented safe idempotent retry engine (`retry.ts`):
+      - Automatically retries transient network errors, HTTP 429, and 502/503/504 server errors with exponential backoff and jitter.
+      - Enforces RFC 9110 and platform safety: retries *only* idempotent calls (`GET`, `HEAD`, `PUT`, `DELETE`, or requests carrying `Idempotency-Key` or marked `idempotent: true`).
+      - Strictly prohibits retrying standard non-idempotent `POST` requests without an `Idempotency-Key`, guarding against duplicate payment charges or duplicate job enqueueing.
+    - Implemented typed domain endpoints for `health`, `quotes`, `jobs`, `shops`, `printers`, and `agent` telemetry.
+    - Wrote 23 Vitest tests in `packages/api-client/tests/` covering core HTTP operations, authentication propagation, error taxonomy parsing, retry policies, and secret isolation.
+  - Established shared accessible presentational UI package `@caps/ui`:
+    - `Button`: accessible interactive button with variants (`primary`, `secondary`, `danger`, `outline`, `ghost`), sizes (`sm`, `md`, `lg`), `isLoading` spinner state with `aria-busy="true"`, `disabled` state with `aria-disabled="true"`, and focus-visible keyboard navigation rings.
+    - `Input`: accessible form input with label association, `errorMessage` linked via `role="alert"` and `aria-describedby`, `aria-invalid` state, `helperText`, and `required` indicator.
+    - `Card`: layout component composed of `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, and `CardFooter`.
+    - `Badge`: status badge with variants (`default`, `success`, `warning`, `danger`, `info`, `urgent` with pulsing dot).
+    - `Alert`: accessible notification banner with `role="alert"`, title, and variant containers (`info`, `success`, `warning`, `error`).
+    - Wrote 17 Vitest tests in `packages/ui/tests/` covering button accessibility, input form semantics, card/badge/alert composition, and secret isolation.
+  - Updated domain type definitions in `@caps/types` (`jobs.ts`, `agent.ts`) with `CreatePrintJobInput`, `JobStatusUpdateResponse`, and `AgentHeartbeatResponse`.
+  - Verified secret isolation: zero server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_SECRET`) in client bundles or UI source trees.
+- **Files Created / Edited:**
+  - `packages/api-client/package.json` (New)
+  - `packages/api-client/tsconfig.json` (New)
+  - `packages/api-client/eslint.config.js` (New)
+  - `packages/api-client/vitest.config.ts` (New)
+  - `packages/api-client/README.md` (New)
+  - `packages/api-client/src/index.ts` (New)
+  - `packages/api-client/src/types.ts` (New)
+  - `packages/api-client/src/errors.ts` (New)
+  - `packages/api-client/src/retry.ts` (New)
+  - `packages/api-client/src/client.ts` (New)
+  - `packages/api-client/tests/client.test.ts` (New)
+  - `packages/api-client/tests/auth.test.ts` (New)
+  - `packages/api-client/tests/errors.test.ts` (New)
+  - `packages/api-client/tests/retry.test.ts` (New)
+  - `packages/api-client/tests/security.test.ts` (New)
+  - `packages/ui/package.json` (New)
+  - `packages/ui/tsconfig.json` (New)
+  - `packages/ui/eslint.config.js` (New)
+  - `packages/ui/vitest.config.ts` (New)
+  - `packages/ui/README.md` (New)
+  - `packages/ui/src/index.ts` (New)
+  - `packages/ui/src/components/Button.tsx` (New)
+  - `packages/ui/src/components/Input.tsx` (New)
+  - `packages/ui/src/components/Card.tsx` (New)
+  - `packages/ui/src/components/Badge.tsx` (New)
+  - `packages/ui/src/components/Alert.tsx` (New)
+  - `packages/ui/tests/button.test.tsx` (New)
+  - `packages/ui/tests/input.test.tsx` (New)
+  - `packages/ui/tests/card_badge_alert.test.tsx` (New)
+  - `packages/ui/tests/security.test.ts` (New)
+  - `packages/types/src/jobs.ts` (Updated with `CreatePrintJobInput`)
+  - `packages/types/src/agent.ts` (Updated with `JobStatusUpdateResponse` and `AgentHeartbeatResponse`)
+  - `pnpm-lock.yaml` (Updated workspace dependencies)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - Added `CreatePrintJobInput`, `JobStatusUpdateResponse`, and `AgentHeartbeatResponse` to `@caps/types`.
+- **Commands Executed:**
+  - `pnpm install` — PASS (Dependencies linked across all 10 workspace projects)
+  - `pnpm --filter @caps/types build` — PASS (Regenerated `.d.ts` declaration maps)
+  - `pnpm --filter @caps/api-client build` — PASS (`tsc` compiled client package)
+  - `pnpm --filter @caps/api-client test` — PASS (23/23 tests passed)
+  - `pnpm --filter @caps/ui build` — PASS (`tsc` compiled UI components)
+  - `pnpm --filter @caps/ui test` — PASS (17/17 tests passed)
+  - `pnpm run format:check` — PASS (Prettier style verified)
+  - `pnpm run lint` — PASS (All 9 packages clean)
+  - `pnpm run typecheck` — PASS (All 9 packages clean)
+  - `pnpm run test` — PASS (All 8 test suites, 110 tests passed across monorepo)
+  - `pnpm run build` — PASS (All packages and web applications compiled via Turborepo)
+  - `python -m unittest discover -s apps/print-agent/tests -p "test_*.py" -v` — PASS (36/36 tests passed)
+- **Test Results & Evidence:**
+  - `@caps/api-client`: 23 tests passed (Core client operations, async auth propagation, error taxonomy parsing, retry safety, secret isolation).
+  - `@caps/ui`: 17 tests passed (Button accessibility/loading states, input form semantics/aria-describedby, card/badge/alert composition, secret isolation).
+  - Total TypeScript tests across monorepo: 110 passed across 8 test suites.
+  - Total Python tests: 36 passed in `apps/print-agent`.
+- **Security & Privacy Review:**
+  - Secret Isolation: Source inspection tests in both `@caps/api-client` and `@caps/ui` assert zero server secrets (`SUPABASE_SERVICE_ROLE_KEY`, `RAZORPAY_KEY_SECRET`, private keys) are referenced or bundled.
+  - Double Billing Prevention: Non-idempotent `POST` requests without `Idempotency-Key` are strictly never retried on transient server errors.
+  - Safe Auth Propagation: Dynamic token suppliers inject tokens only into requests where `skipAuth` is not set; public endpoints explicitly omit credentials.
+- **Manual Verification Pending:**
+  - None for foundation packages.
+- **Open Blockers / ADRs:**
+  - None.
+- **Gate Status:**
+  - **PASS**
+- **Next Task:**
+  - `P01-M03-F01`
+
 
 

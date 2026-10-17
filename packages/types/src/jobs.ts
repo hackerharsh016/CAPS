@@ -19,6 +19,15 @@ export type JobStatus =
   | 'cancelled'
   | 'requires_review';
 
+export interface CreatePrintJobInput {
+  shop_id: string;
+  customer_id: string;
+  printer_id?: string;
+  document_storage_key: string;
+  settings: PrintSettings;
+  priority_tier: PriorityTier;
+}
+
 export interface PrintJob {
   id: string; // UUID primary key & queue token
   shop_id: string; // UUID references Shop

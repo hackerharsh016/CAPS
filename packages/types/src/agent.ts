@@ -35,3 +35,17 @@ export interface JobStatusUpdateRequest {
   spooler_job_id?: number;
   error_message?: string;
 }
+
+export interface JobStatusUpdateResponse {
+  contract_version?: string;
+  success: boolean;
+  job_id: string;
+  status: string;
+  acknowledged_at: string;
+}
+
+export interface AgentHeartbeatResponse {
+  contract_version: string;
+  acknowledged: boolean;
+  server_time: string;
+}
