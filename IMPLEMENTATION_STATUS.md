@@ -11,6 +11,7 @@
 | 5 | `P01-M02-F01` | 01_Foundation_and_Setup / 02_Shared_Contracts | Shared type and Zod schemas | Completed | **PASS** |
 | 6 | `P01-M02-F02` | 01_Foundation_and_Setup / 02_Shared_Contracts | Cross-language print contracts | Completed | **PASS** |
 | 7 | `P01-M02-F03` | 01_Foundation_and_Setup / 02_Shared_Contracts | Typed API client and shared UI | Completed | **PASS** |
+| 8 | `P01-M03-F01` | 01_Foundation_and_Setup / 03_Git_CI_Docs | Developer documentation and ADRs | Completed | **PASS** |
 
 
 
@@ -598,7 +599,87 @@
 - **Gate Status:**
   - **PASS**
 - **Next Task:**
-  - `P01-M03-F01`
+  - `P01-M03-F01` — Developer documentation and ADRs (`docs/architecture/`, `docs/decisions/`, `docs/development/`, `README.md`)
 
+---
 
-
+### Task: `P01-M03-F01` — Developer documentation and ADRs
+- **Phase:** 01 Foundation and Setup
+- **Module:** 03 Git CI Docs
+- **Timestamp:** 2026-10-17
+- **Scope Delivered:**
+  - Authored foundational System Architecture & Data Flow specification (`docs/architecture/overview.md`):
+    - Detailed 3-tier model (Cloud Layer, Local Agent Layer, Hardware Layer).
+    - Mermaid sequence diagram mapping end-to-end customer upload to Win32 spooler submission.
+    - Explicit resolution of fundamental architectural invariants (owner confirmation before spooler submission, spooler acceptance != paper in tray, no blind auto-reprints, outbound-only topology, transactional queue claiming, zero raw content in telemetry).
+  - Authored Lifecycle State Machines specification (`docs/architecture/state-machines.md`):
+    - Documented 10-state print job lifecycle with terminal and recovery transitions.
+    - Server-side verified payment lifecycle (initiated, captured, failed, expired, refunded).
+    - Desktop agent attempt leases with heartbeat renewals and stale recovery.
+  - Authored Two-Tier Dynamic Queue Design specification (`docs/architecture/queue-design.md`):
+    - Urgent vs. Flexible queue discipline with FIFO-within-tier sorting logic.
+    - Derived ephemeral queue position calculation via SQL window functions.
+    - Dynamic customer ETA recomputation and fairness caps against queue starvation.
+  - Authored Privacy Lifecycle & Document Retention specification (`docs/architecture/privacy-lifecycle.md`):
+    - Transient private cloud storage with 5-minute scoped download grants.
+    - Immediate local file deletion post-spooler submission.
+    - Automated cloud purge worker (30 min post-completion, max 24h) and physical hardware boundary disclaimers.
+  - Established Architecture Decision Record (ADR) repository (`docs/decisions/`):
+    - `README.md`: ADR process, lifecycle states, and MADR format standards.
+    - `0001-record-architecture-decisions.md`: Standardizing ADRs for architectural decisions.
+    - `0002-modular-monorepo-structure.md`: Monorepo with Turborepo & pnpm workspaces.
+    - `0003-desktop-agent-outbound-only-and-loopback.md`: Outbound-only agent and strict 127.0.0.1 loopback.
+    - `0004-owner-approval-precedes-spooler-submission.md`: Resolving SRS UC-2 sequencing flaw.
+    - `0005-two-tier-dynamic-priority-queue.md`: Two-tier dynamic queue with leased claims.
+    - `0006-spooler-acceptance-and-physical-completion.md`: Spooler acceptance vs. physical paper completion.
+    - `0007-privacy-lifecycle-and-transient-storage.md`: Transient storage lifecycle and purge policies.
+    - `0008-sequence-deferral-p01-m02-f03.md`: Auditing task sequence alignment.
+  - Authored Developer Guides & Runbooks (`docs/development/`):
+    - `setup.md`: Step-by-step developer onboarding, prerequisites, and bootstrap walkthrough.
+    - `environment-matrix.md`: Comprehensive classification of all environment variables into client-safe, server-secret, and device-secret tiers.
+    - `ownership-map.md`: Four-developer work partition map, domain assignments, and review protocols.
+    - `runbooks.md`: Development startup, testing, and troubleshooting runbooks (Python path resolution, loopback security violations, port conflicts).
+  - Enhanced root `README.md` with links to all new documentation guides, architecture overviews, ADRs, ownership map, and operational runbooks.
+- **Files Created / Edited:**
+  - `docs/architecture/overview.md` (New)
+  - `docs/architecture/state-machines.md` (New)
+  - `docs/architecture/queue-design.md` (New)
+  - `docs/architecture/privacy-lifecycle.md` (New)
+  - `docs/decisions/README.md` (New)
+  - `docs/decisions/0001-record-architecture-decisions.md` (New)
+  - `docs/decisions/0002-modular-monorepo-structure.md` (New)
+  - `docs/decisions/0003-desktop-agent-outbound-only-and-loopback.md` (New)
+  - `docs/decisions/0004-owner-approval-precedes-spooler-submission.md` (New)
+  - `docs/decisions/0005-two-tier-dynamic-priority-queue.md` (New)
+  - `docs/decisions/0006-spooler-acceptance-and-physical-completion.md` (New)
+  - `docs/decisions/0007-privacy-lifecycle-and-transient-storage.md` (New)
+  - `docs/decisions/0008-sequence-deferral-p01-m02-f03.md` (New)
+  - `docs/development/setup.md` (New)
+  - `docs/development/environment-matrix.md` (New)
+  - `docs/development/ownership-map.md` (New)
+  - `docs/development/runbooks.md` (New)
+  - `README.md` (Updated with comprehensive documentation index)
+  - `IMPLEMENTATION_STATUS.md` (Updated)
+- **Contracts / Migrations Changed:**
+  - None (Documentation, architecture baseline, and ADR task).
+- **Commands Executed:**
+  - `node -v` — PASS (`v24.14.0`)
+  - `pnpm -v` — PASS (`10.26.2` installed in global npm prefix)
+  - `python -m unittest discover -s apps/print-agent/tests -p "test_*.py" -v` — PASS (36/36 tests passed in 0.012s using `.venv`)
+  - Verification of 17 documentation paths via PowerShell `Test-Path` — PASS (17/17 returned `True`)
+- **Test Results & Evidence:**
+  - Verified all 17 markdown documentation files, architectural diagrams, state machines, and ADRs exist and resolve cleanly.
+  - Verified 36/36 Python agent tests pass (unit tests, configuration tests, security loopback checks, logging redaction, and contract conformance tests).
+  - Verified new developer can follow `README.md` and `docs/development/setup.md` with verified paths and executable commands.
+- **Security & Privacy Review:**
+  - Verified `docs/development/environment-matrix.md` strictly demarcates server-private secrets and warns against exposing service-role keys or payment secrets to web bundles or desktop agents.
+  - Verified `docs/architecture/privacy-lifecycle.md` documents transient storage boundaries, automated purges, and physical hardware limitations.
+  - Zero credentials or private keys committed to documentation.
+- **Manual Verification Pending:**
+  - Physical printer spooler driver validation (scheduled for Phase 02 on Windows).
+- **Open Blockers / ADRs:**
+  - Recorded ADR-0004, ADR-0005, ADR-0006, ADR-0007, ADR-0008 resolving SRS discrepancies and architecture baselines.
+- **Gate Status:**
+  - **PASS**
+- **Next Task:**
+  - `P01-M03-F02` — Pull request and CI scaffolding (`.github/workflows/`, PR templates, branch rules)
