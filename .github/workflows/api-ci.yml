@@ -1,0 +1,96 @@
+name: Cloud API CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/cloud-api/**'
+      - 'packages/print-contracts/**'
+      - 'packages/types/**'
+      - 'packages/validation/**'
+      - 'packages/config/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/api-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/cloud-api/**'
+      - 'packages/print-contracts/**'
+      - 'packages/types/**'
+      - 'packages/validation/**'
+      - 'packages/config/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/api-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api-gate:
+    name: Cloud API Quality & Server Build Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.2
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Code Formatting Check
+        run: pnpm run format:check
+
+      - name: Lint Cloud API & Core Contracts
+        run: |
+          pnpm --filter @caps/cloud-api lint
+          pnpm --filter @caps/types lint
+          pnpm --filter @caps/validation lint
+          pnpm --filter @caps/print-contracts lint
+
+      - name: Typecheck Backend Workspaces
+        run: |
+          pnpm --filter @caps/types typecheck
+          pnpm --filter @caps/validation typecheck
+          pnpm --filter @caps/print-contracts typecheck
+          pnpm --filter @caps/cloud-api typecheck
+
+      - name: Run Backend Unit & Integration Tests
+        run: |
+          pnpm --filter @caps/validation test
+          pnpm --filter @caps/print-contracts test
+          pnpm --filter @caps/cloud-api test
+
+      - name: Build Cloud API Server & Packages
+        run: |
+          pnpm --filter @caps/types build
+          pnpm --filter @caps/validation build
+          pnpm --filter @caps/print-contracts build
+          pnpm --filter @caps/cloud-api build

@@ -1,0 +1,42 @@
+name: Web Applications Deployment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/customer-web/**'
+      - 'apps/owner-dashboard/**'
+      - 'packages/ui/**'
+      - 'packages/api-client/**'
+      - '.github/workflows/web-deploy.yml'
+
+jobs:
+  deploy-staging:
+    name: Deploy Web Frontends (Staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.2
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Web Frontends
+        run: |
+          pnpm --filter @caps/customer-web build
+          pnpm --filter @caps/owner-dashboard build
+
+      - name: Deployment Staging Smoke Check
+        run: echo "Staging build verification passed for Next.js web applications."

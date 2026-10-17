@@ -1,0 +1,64 @@
+name: Windows Print Agent CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/print-agent/**'
+      - 'packages/print-contracts/**'
+      - '.github/workflows/agent-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/print-agent/**'
+      - 'packages/print-contracts/**'
+      - '.github/workflows/agent-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  agent-test-gate:
+    name: Python Agent Gate (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: 'apps/print-agent/pyproject.toml'
+
+      - name: Install Agent & Test Dependencies
+        run: |
+          cd apps/print-agent
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install jsonschema ruff pytest
+
+      - name: Ruff Code Formatting & Lint Check
+        run: |
+          cd apps/print-agent
+          python -m ruff check src tests
+
+      - name: Execute Python Unit & Conformance Tests
+        run: |
+          cd apps/print-agent
+          $env:PYTHONPATH = "src"
+          python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Security & Loopback Binding Verification
+        run: |
+          cd apps/print-agent
+          $env:PYTHONPATH = "src"
+          python -m unittest tests/test_config.py -v

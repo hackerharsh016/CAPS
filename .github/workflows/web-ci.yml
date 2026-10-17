@@ -1,0 +1,99 @@
+name: Web CI (Customer Web & Owner Dashboard)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/customer-web/**'
+      - 'apps/owner-dashboard/**'
+      - 'packages/ui/**'
+      - 'packages/api-client/**'
+      - 'packages/config/**'
+      - 'packages/types/**'
+      - 'packages/validation/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/web-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/customer-web/**'
+      - 'apps/owner-dashboard/**'
+      - 'packages/ui/**'
+      - 'packages/api-client/**'
+      - 'packages/config/**'
+      - 'packages/types/**'
+      - 'packages/validation/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/web-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-check:
+    name: Web Quality & Build Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.2
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Code Formatting Check
+        run: pnpm run format:check
+
+      - name: Lint Web Applications & Shared UI
+        run: |
+          pnpm --filter @caps/customer-web lint
+          pnpm --filter @caps/owner-dashboard lint
+          pnpm --filter @caps/ui lint
+          pnpm --filter @caps/api-client lint
+
+      - name: TypeScript Typecheck
+        run: |
+          pnpm --filter @caps/customer-web typecheck
+          pnpm --filter @caps/owner-dashboard typecheck
+          pnpm --filter @caps/ui typecheck
+          pnpm --filter @caps/api-client typecheck
+
+      - name: Run Unit & Component Tests
+        run: |
+          pnpm --filter @caps/customer-web test
+          pnpm --filter @caps/owner-dashboard test
+          pnpm --filter @caps/ui test
+          pnpm --filter @caps/api-client test
+
+      - name: Build Next.js Production Applications
+        run: |
+          pnpm --filter @caps/customer-web build
+          pnpm --filter @caps/owner-dashboard build

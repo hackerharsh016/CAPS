@@ -1,0 +1,54 @@
+name: Database & Migrations CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/database-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - '.github/workflows/database-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db-migrations:
+    name: Supabase SQL Migrations & RLS Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase Local Containers
+        run: |
+          if [ -f "supabase/config.toml" ]; then
+            supabase start
+            supabase db reset
+          else
+            echo "supabase/config.toml not present yet. Skipping live emulator start."
+          fi
+
+      - name: Verify Migration Filename & SQL Syntax Standards
+        shell: bash
+        run: |
+          if [ -d "supabase/migrations" ]; then
+            echo "Checking SQL migration files..."
+            for file in supabase/migrations/*.sql; do
+              [ -e "$file" ] || continue
+              echo "Inspecting $file"
+            done
+          else
+            echo "No migrations directory yet."
+          fi

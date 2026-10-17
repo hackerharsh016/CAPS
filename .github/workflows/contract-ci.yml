@@ -1,0 +1,66 @@
+name: Cross-Language Contract CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/print-contracts/**'
+      - 'packages/types/**'
+      - 'packages/validation/**'
+      - '.github/workflows/contract-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/print-contracts/**'
+      - 'packages/types/**'
+      - 'packages/validation/**'
+      - '.github/workflows/contract-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-sync:
+    name: Cross-Language Schema & Contract Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.2
+          run_install: false
+
+      - name: Install Monorepo Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Contracts & Validation Packages
+        run: |
+          pnpm --filter @caps/types build
+          pnpm --filter @caps/validation build
+          pnpm --filter @caps/print-contracts build
+
+      - name: Run TypeScript AJV Contract Tests
+        run: pnpm --filter @caps/print-contracts test
+
+      - name: Run Python jsonschema Contract Tests
+        run: |
+          cd apps/print-agent
+          python -m pip install jsonschema
+          export PYTHONPATH="src"
+          python -m unittest tests/test_contracts.py -v
