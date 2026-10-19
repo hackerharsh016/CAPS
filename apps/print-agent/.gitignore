@@ -1,0 +1,4 @@
+# Local gitignore for print-agent app
+# Allow PyInstaller packaging spec file to be version controlled
+!packaging/agent.spec
+!packaging/*.spec

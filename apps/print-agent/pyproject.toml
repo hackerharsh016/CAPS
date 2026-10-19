@@ -25,6 +25,10 @@ dev = [
 windows = [
     "pywin32>=306; sys_platform == 'win32'",
 ]
+packaging = [
+    "pyinstaller>=6.4.0",
+    "pefile>=2024.8.26",
+]
 
 [project.scripts]
 caps-agent = "caps_agent.main:main"

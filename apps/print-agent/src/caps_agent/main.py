@@ -9,8 +9,18 @@ from caps_agent.config import ConfigurationError, load_config
 from caps_agent.utils.logging import setup_logging
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     """Bootstrap agent, validate configuration, and initialize subsystems."""
+    args = argv if argv is not None else sys.argv[1:]
+
+    if "--version" in args or "-v" in args:
+        sys.stdout.write(f"caps-agent {__version__}\n")
+        return 0
+
+    if "--smoke" in args:
+        sys.stdout.write(f"caps-agent {__version__}: binary runner smoke check OK\n")
+        return 0
+
     logger = setup_logging(use_json=False)
 
     try:
