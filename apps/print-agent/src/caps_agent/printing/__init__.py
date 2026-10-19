@@ -66,6 +66,19 @@ from caps_agent.printing.settings_mapper import (
     SettingsMapper,
     UnsupportedSettingError,
 )
+from caps_agent.printing.windows_spooler import (
+    FakeWin32SpoolerAdapter,
+    InvalidJobDataError,
+    PrinterAccessDeniedError,
+    PrinterOfflineError,
+    PyWin32SpoolerAdapter,
+    SpoolerError,
+    SpoolerJobSubmission,
+    SpoolerSubmissionError,
+    SpoolerSubmissionResult,
+    Win32SpoolerAdapter,
+    WindowsSpooler,
+)
 
 __all__ = [
     "PrintEngine",
@@ -132,4 +145,16 @@ __all__ = [
     "DMDUP_SIMPLEX",
     "DMDUP_VERTICAL",
     "DMDUP_HORIZONTAL",
+    # Windows Spooler exports
+    "SpoolerError",
+    "PrinterAccessDeniedError",
+    "PrinterOfflineError",
+    "SpoolerSubmissionError",
+    "InvalidJobDataError",
+    "SpoolerJobSubmission",
+    "SpoolerSubmissionResult",
+    "Win32SpoolerAdapter",
+    "FakeWin32SpoolerAdapter",
+    "PyWin32SpoolerAdapter",
+    "WindowsSpooler",
 ]
