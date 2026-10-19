@@ -357,3 +357,174 @@ VALUES
         'success'
     )
 ON CONFLICT (id) DO NOTHING;
+
+-- Add a completed print job whose private document has already been purged for privacy
+INSERT INTO public.print_jobs (
+    id,
+    shop_id,
+    customer_id,
+    printer_id,
+    document_storage_key,
+    settings,
+    priority_tier,
+    price_total_paise,
+    price_breakdown,
+    status,
+    enqueued_at,
+    document_expires_at
+)
+VALUES (
+    '77777777-7777-7777-7777-777777777773',
+    '11111111-1111-1111-1111-111111111111',
+    '00000000-0000-0000-0000-000000000003',
+    '66666666-6666-6666-6666-666666666661',
+    '[PURGED]',
+    '{
+        "paper_size": "a4",
+        "color_mode": "bw",
+        "duplex": "simplex",
+        "orientation": "portrait",
+        "copies": 1,
+        "page_range": "1",
+        "binding": "none"
+    }'::jsonb,
+    'flexible',
+    100,
+    '{
+        "base_pages_paise": 100,
+        "color_surcharge_paise": 0,
+        "duplex_discount_paise": 0,
+        "binding_fee_paise": 0,
+        "urgent_surcharge_paise": 0,
+        "subtotal_paise": 100,
+        "gst_paise": 18,
+        "total_paise": 118
+    }'::jsonb,
+    'completed',
+    now() - INTERVAL '3 hours',
+    now() - INTERVAL '1 hour'
+)
+ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status,
+    document_storage_key = EXCLUDED.document_storage_key;
+
+INSERT INTO public.payments (
+    id,
+    print_job_id,
+    amount_paise,
+    currency,
+    method,
+    gateway_ref,
+    status
+)
+VALUES (
+    '88888888-8888-8888-8888-888888888883',
+    '77777777-7777-7777-7777-777777777773',
+    118,
+    'INR',
+    'upi',
+    'pay_rzp_mock_demo_003',
+    'success'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 10. Demo Job Execution Attempts
+INSERT INTO public.job_attempts (
+    id,
+    job_id,
+    printer_id,
+    agent_device_id,
+    lease_token,
+    lease_expires_at,
+    spooler_job_id,
+    idempotency_key,
+    status
+)
+VALUES
+    (
+        '99999999-9999-9999-9999-999999999991',
+        '77777777-7777-7777-7777-777777777773',
+        '66666666-6666-6666-6666-666666666661',
+        '44444444-4444-4444-4444-444444444444',
+        'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        now() - INTERVAL '2 hours',
+        101,
+        'idem_demo_attempt_completed_001',
+        'completed'
+    ),
+    (
+        '99999999-9999-9999-9999-999999999992',
+        '77777777-7777-7777-7777-777777777772',
+        '66666666-6666-6666-6666-666666666661',
+        '44444444-4444-4444-4444-444444444444',
+        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        now() + INTERVAL '5 minutes',
+        102,
+        'idem_demo_attempt_active_002',
+        'printing'
+    )
+ON CONFLICT (job_id, idempotency_key) DO UPDATE SET
+    status = EXCLUDED.status,
+    spooler_job_id = EXCLUDED.spooler_job_id;
+
+-- 11. Demo Job Events (Immutable Audit Ledger)
+INSERT INTO public.job_events (
+    job_id,
+    attempt_id,
+    actor_type,
+    actor_id,
+    from_status,
+    to_status,
+    event_name,
+    metadata
+)
+VALUES
+    (
+        '77777777-7777-7777-7777-777777777773',
+        NULL,
+        'customer',
+        '00000000-0000-0000-0000-000000000003',
+        'pending_payment',
+        'queued',
+        'payment_confirmed',
+        '{"gateway_ref": "pay_rzp_mock_demo_003", "amount_paise": 118}'::jsonb
+    ),
+    (
+        '77777777-7777-7777-7777-777777777773',
+        '99999999-9999-9999-9999-999999999991',
+        'agent',
+        NULL,
+        'queued',
+        'claimed',
+        'job_claimed_by_agent',
+        '{"device_id": "44444444-4444-4444-4444-444444444444", "lease_token": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}'::jsonb
+    ),
+    (
+        '77777777-7777-7777-7777-777777777773',
+        '99999999-9999-9999-9999-999999999991',
+        'agent',
+        NULL,
+        'printing',
+        'completed',
+        'print_job_completed',
+        '{"spooler_job_id": 101, "pages_printed": 1}'::jsonb
+    );
+
+-- 12. Demo Document Deletion Logs (Privacy Audit Ledger)
+INSERT INTO public.document_deletion_logs (
+    id,
+    job_id,
+    document_storage_key,
+    deleted_by,
+    reason,
+    deleted_at
+)
+VALUES (
+    'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    '77777777-7777-7777-7777-777777777773',
+    'private/docs/sample_receipt_completed.pdf',
+    'agent_post_spool',
+    'print_completed',
+    now() - INTERVAL '2 hours'
+)
+ON CONFLICT (id) DO NOTHING;
