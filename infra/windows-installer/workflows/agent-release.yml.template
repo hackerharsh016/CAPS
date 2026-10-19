@@ -1,0 +1,93 @@
+name: Windows Agent Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'print-agent/v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 0.1.0)'
+        required: true
+        default: '0.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-sign:
+    name: Build, Sign, and Publish Windows Agent
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/print-agent
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies and packaging tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev,windows,packaging]
+
+      - name: Run test gates and linting
+        run: |
+          python -m ruff check .
+          python -m pytest tests/ -v
+
+      - name: Install Inno Setup 6
+        run: |
+          choco install innosetup -y --no-progress
+
+      - name: Compile PyInstaller Executable
+        run: |
+          powershell -ExecutionPolicy Bypass -File scripts/build.ps1 -Clean
+
+      - name: Build Inno Setup Installer
+        run: |
+          powershell -ExecutionPolicy Bypass -File ../../infra/windows-installer/build-installer.ps1
+
+      - name: Authenticode Sign Binaries (Production Release)
+        if: env.SIGNING_CERT_BASE64 != ''
+        env:
+          SIGNING_CERT_BASE64: ${{ secrets.SIGNING_CERT_BASE64 }}
+          SIGNING_CERT_PASSWORD: ${{ secrets.SIGNING_CERT_PASSWORD }}
+        run: |
+          # Decode certificate to temporary file
+          $certBytes = [System.Convert]::FromBase64String($env:SIGNING_CERT_BASE64)
+          $certPath = "$env:RUNNER_TEMP\release_cert.pfx"
+          [System.IO.File]::WriteAllBytes($certPath, $certBytes)
+
+          # Execute signing pipeline
+          powershell -ExecutionPolicy Bypass -File ../../infra/windows-installer/sign-release.ps1 `
+            -PfxPath $certPath `
+            -PfxPassword $env:SIGNING_CERT_PASSWORD `
+            -Verify
+
+          # Remove certificate after signing
+          Remove-Item -Force $certPath
+
+      - name: Generate Release Checksums
+        run: |
+          Get-FileHash -Path dist/caps-agent/caps-agent.exe -Algorithm SHA256 | Out-File -FilePath dist/checksums.txt
+          Get-FileHash -Path dist/installer/CAPS-Print-Agent-Setup-*.exe -Algorithm SHA256 | Out-File -FilePath dist/checksums.txt -Append
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            apps/print-agent/dist/caps-agent/caps-agent.exe
+            apps/print-agent/dist/installer/CAPS-Print-Agent-Setup-*.exe
+            apps/print-agent/dist/build_manifest.json
+            apps/print-agent/dist/installer/installer_manifest.json
+            apps/print-agent/dist/checksums.txt
+          generate_release_notes: true
+          draft: false
+          prerelease: false
