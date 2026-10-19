@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * Customer Print Settings Configuration Page (P04-M04-F01).
+ * Customer Print Settings Configuration Page (P04-M04-F01 / P04-M04-F02).
  * Allows customers to configure paper size, color mode, sides, orientation,
- * copies, page ranges, and finishing services for an uploaded document.
+ * copies, page ranges, and finishing services with printer capability awareness.
  */
 
 import React, { useState, useEffect, Suspense } from 'react';
@@ -12,6 +12,8 @@ import { defaultShopsService } from '../../../../features/shop-discovery/shops-s
 import type { Shop } from '../../../../features/shop-discovery/types';
 import { PrintSettingsForm } from '../../../../features/print-settings/components/PrintSettingsForm';
 import type { PrintSettings, PrintSettingsCalculation } from '../../../../features/print-settings/types';
+import { defaultCapabilitiesService } from '../../../../features/print-settings/capabilities-service';
+import type { ShopPrinterCapabilities } from '../../../../features/print-settings/capabilities-types';
 
 interface DocumentInfo {
   id: string;
@@ -29,16 +31,22 @@ function PrintSettingsContent() {
   const shopId = searchParams.get('shopId');
 
   const [shop, setShop] = useState<Shop | null>(null);
+  const [capabilities, setCapabilities] = useState<ShopPrinterCapabilities | null>(null);
   const [docInfo, setDocInfo] = useState<DocumentInfo | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState<boolean>(false);
 
-  // 1. Fetch Shop details if shopId provided
+  // 1. Fetch Shop details & discovered printer capabilities if shopId provided
   useEffect(() => {
     if (shopId) {
       defaultShopsService.getShopById(shopId).then((found) => {
         setShop(found);
       });
+      defaultCapabilitiesService.getShopPrinterCapabilities(shopId).then((caps) => {
+        setCapabilities(caps);
+      });
+    } else {
+      setCapabilities(null);
     }
   }, [shopId]);
 
@@ -93,7 +101,7 @@ function PrintSettingsContent() {
 
       setSubmissionSuccess(true);
 
-      // In production / subsequent tasks, route to capability check / price quote preview (P04-M04-F02 / P04-M05-F01)
+      // In production / subsequent tasks, route to capability check / price quote preview (P04-M05-F01)
       setTimeout(() => {
         const nextUrl = `/print/quote?docId=${encodeURIComponent(docId)}${shopId ? `&shopId=${encodeURIComponent(shopId)}` : ''}`;
         router.push(nextUrl);
@@ -189,12 +197,22 @@ function PrintSettingsContent() {
           </div>
         </div>
 
-        <a
-          href={shopId ? `/print/new?shopId=${encodeURIComponent(shopId)}` : '/print/new'}
-          className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline shrink-0"
-        >
-          Change File
-        </a>
+        <div className="flex items-center space-x-3">
+          <a
+            href={shopId ? `/print/new?shopId=${encodeURIComponent(shopId)}` : '/print/new'}
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline shrink-0"
+          >
+            Change File
+          </a>
+          {shop && (
+            <a
+              href={`/shops?docId=${encodeURIComponent(docId)}`}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-700 hover:underline shrink-0"
+            >
+              Change Shop
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Success Notification Banner */}
@@ -214,6 +232,9 @@ function PrintSettingsContent() {
       {/* Main Settings Form */}
       <PrintSettingsForm
         totalDocumentPages={docInfo?.pageCount}
+        capabilities={capabilities || undefined}
+        shopName={shop?.name}
+        onChangeShopUrl={`/shops?docId=${encodeURIComponent(docId)}`}
         storageKey={`caps_draft_settings_${docId}`}
         isSubmitting={isSubmitting}
         onSubmit={handleSubmitSettings}

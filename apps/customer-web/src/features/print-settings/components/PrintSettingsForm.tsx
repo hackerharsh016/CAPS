@@ -1,13 +1,14 @@
 'use client';
 
 /**
- * Composite Print Settings Form for CAPS Customer Web (P04-M04-F01).
+ * Composite Capability-Aware Print Settings Form for CAPS Customer Web (P04-M04-F01 / P04-M04-F02).
  * Ties together paper size, color, duplex, orientation, copies, page range,
- * and finishing services into a fully accessible form.
+ * finishing services, and discovered printer capability constraints into a fully accessible form.
  */
 
-import React from 'react';
-import type { PrintSettings, PrintSettingsCalculation } from '../types';
+import React, { useMemo } from 'react';
+import type { PrintSettings, PrintSettingsCalculation, PaperSize, ColorMode, SideMode } from '../types';
+import type { ShopPrinterCapabilities } from '../capabilities-types';
 import { usePrintSettings } from '../use-print-settings';
 import { PaperSizeSelector } from './PaperSizeSelector';
 import { ColorModeSelector } from './ColorModeSelector';
@@ -17,10 +18,14 @@ import { CopiesInput } from './CopiesInput';
 import { PageRangeInput } from './PageRangeInput';
 import { BindingSelector } from './BindingSelector';
 import { PrintSettingsSummary } from './PrintSettingsSummary';
+import { CapabilityWarningBanner } from './CapabilityWarningBanner';
 
 export interface PrintSettingsFormProps {
   initialSettings?: Partial<PrintSettings> | undefined;
   totalDocumentPages?: number | undefined;
+  capabilities?: ShopPrinterCapabilities | undefined;
+  shopName?: string | undefined;
+  onChangeShopUrl?: string | undefined;
   storageKey?: string | undefined;
   isSubmitting?: boolean | undefined;
   disabled?: boolean | undefined;
@@ -31,6 +36,9 @@ export interface PrintSettingsFormProps {
 export function PrintSettingsForm({
   initialSettings,
   totalDocumentPages,
+  capabilities,
+  shopName,
+  onChangeShopUrl = '/shops',
   storageKey,
   isSubmitting = false,
   disabled = false,
@@ -42,6 +50,7 @@ export function PrintSettingsForm({
     errors,
     isValid,
     calculation,
+    capabilityCheck,
     isDirty,
     updatePaperSize,
     updateColorMode,
@@ -50,13 +59,45 @@ export function PrintSettingsForm({
     updateCopies,
     updatePageRange,
     updateBinding,
+    applyCompatibleSettings,
     resetSettings,
     validateNow
   } = usePrintSettings({
     initialSettings,
     totalDocumentPages,
+    capabilities,
     storageKey
   });
+
+  // Calculate disabled options based on shop capabilities
+  const { disabledPapers, disabledColors, disabledSides, paperReasons } = useMemo(() => {
+    const disabledPapers: PaperSize[] = [];
+    const paperReasons: Partial<Record<PaperSize, string>> = {};
+    const disabledColors: ColorMode[] = [];
+    const disabledSides: SideMode[] = [];
+
+    if (capabilities && capabilities.online_printers_count > 0) {
+      // Paper size restrictions
+      for (const p of ['A4', 'A3', 'Legal'] as const) {
+        if (!capabilities.supported_paper_sizes.includes(p)) {
+          disabledPapers.push(p);
+          paperReasons[p] = `${p} is unsupported by ${shopName || 'this shop'}'s printers`;
+        }
+      }
+
+      // Color mode restrictions
+      if (!capabilities.supported_color_modes.includes('color')) {
+        disabledColors.push('color');
+      }
+
+      // Duplex restrictions
+      if (!capabilities.duplex_supported) {
+        disabledSides.push('double');
+      }
+    }
+
+    return { disabledPapers, disabledColors, disabledSides, paperReasons };
+  }, [capabilities, shopName]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -69,6 +110,7 @@ export function PrintSettingsForm({
   };
 
   const hasErrors = Object.keys(errors).length > 0;
+  const isOffline = capabilities && capabilities.online_printers_count === 0;
 
   return (
     <form
@@ -77,8 +119,17 @@ export function PrintSettingsForm({
       aria-label="Print configuration settings form"
       className="space-y-8"
     >
+      {/* Capability Warning & Incompatibility Banner */}
+      <CapabilityWarningBanner
+        checkResult={capabilityCheck}
+        capabilities={capabilities}
+        shopName={shopName}
+        onApplySupportedSettings={applyCompatibleSettings}
+        onChangeShopUrl={onChangeShopUrl}
+      />
+
       {/* General validation error summary if form invalid on submit */}
-      {hasErrors && (
+      {hasErrors && !capabilityCheck?.incompatibilities.length && (
         <div
           role="alert"
           className="rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800 space-y-1"
@@ -105,7 +156,9 @@ export function PrintSettingsForm({
           value={settings.paper_size}
           onChange={updatePaperSize}
           error={errors.paper_size}
-          disabled={disabled || isSubmitting}
+          disabled={disabled || isSubmitting || isOffline}
+          disabledOptions={disabledPapers}
+          unsupportedReasons={paperReasons}
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
@@ -113,14 +166,18 @@ export function PrintSettingsForm({
             value={settings.sides}
             onChange={updateSides}
             error={errors.sides}
-            disabled={disabled || isSubmitting}
+            disabled={disabled || isSubmitting || isOffline}
+            disabledOptions={disabledSides}
+            unsupportedReasons={{
+              double: `Double-sided printing is unsupported by ${shopName || 'this shop'}`
+            }}
           />
 
           <OrientationSelector
             value={settings.orientation}
             onChange={updateOrientation}
             error={errors.orientation}
-            disabled={disabled || isSubmitting}
+            disabled={disabled || isSubmitting || isOffline}
           />
         </div>
       </div>
@@ -135,7 +192,11 @@ export function PrintSettingsForm({
           value={settings.color_mode}
           onChange={updateColorMode}
           error={errors.color_mode}
-          disabled={disabled || isSubmitting}
+          disabled={disabled || isSubmitting || isOffline}
+          disabledOptions={disabledColors}
+          unsupportedReasons={{
+            color: `Color printing is unsupported by ${shopName || 'this shop'} (B&W only)`
+          }}
         />
 
         <div className="pt-2">
@@ -143,7 +204,7 @@ export function PrintSettingsForm({
             value={settings.copies}
             onChange={updateCopies}
             error={errors.copies}
-            disabled={disabled || isSubmitting}
+            disabled={disabled || isSubmitting || isOffline}
           />
         </div>
       </div>
@@ -159,7 +220,7 @@ export function PrintSettingsForm({
           onChange={updatePageRange}
           totalDocumentPages={totalDocumentPages}
           error={errors.page_range}
-          disabled={disabled || isSubmitting}
+          disabled={disabled || isSubmitting || isOffline}
         />
 
         <div className="pt-2">
@@ -167,7 +228,7 @@ export function PrintSettingsForm({
             value={settings.binding}
             onChange={updateBinding}
             error={errors.binding}
-            disabled={disabled || isSubmitting}
+            disabled={disabled || isSubmitting || isOffline}
           />
         </div>
       </div>
@@ -207,7 +268,7 @@ export function PrintSettingsForm({
 
         <button
           type="submit"
-          disabled={!isValid || disabled || isSubmitting}
+          disabled={!isValid || disabled || isSubmitting || isOffline}
           className="w-full sm:w-auto flex items-center justify-center space-x-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           {isSubmitting ? (
