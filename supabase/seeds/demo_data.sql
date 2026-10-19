@@ -247,3 +247,113 @@ ON CONFLICT (shop_id, name) DO UPDATE SET
     role = EXCLUDED.role,
     status = EXCLUDED.status,
     capabilities = EXCLUDED.capabilities;
+
+-- 8. Demo Print Jobs (Queued Flexible, Queued Urgent, and Pending Payment)
+INSERT INTO public.print_jobs (
+    id,
+    shop_id,
+    customer_id,
+    printer_id,
+    document_storage_key,
+    settings,
+    priority_tier,
+    price_total_paise,
+    price_breakdown,
+    status,
+    enqueued_at
+)
+VALUES
+    (
+        '77777777-7777-7777-7777-777777777771',
+        '11111111-1111-1111-1111-111111111111',
+        '00000000-0000-0000-0000-000000000003',
+        '66666666-6666-6666-6666-666666666661',
+        'private/docs/sample_assignment_flexible.pdf',
+        '{
+            "paper_size": "a4",
+            "color_mode": "bw",
+            "duplex": "duplex_long",
+            "orientation": "portrait",
+            "copies": 1,
+            "page_range": "all",
+            "binding": "none"
+        }'::jsonb,
+        'flexible',
+        354,
+        '{
+            "base_pages_paise": 300,
+            "color_surcharge_paise": 0,
+            "duplex_discount_paise": 0,
+            "binding_fee_paise": 0,
+            "urgent_surcharge_paise": 0,
+            "subtotal_paise": 300,
+            "gst_paise": 54,
+            "total_paise": 354
+        }'::jsonb,
+        'queued',
+        now() - INTERVAL '10 minutes'
+    ),
+    (
+        '77777777-7777-7777-7777-777777777772',
+        '11111111-1111-1111-1111-111111111111',
+        '00000000-0000-0000-0000-000000000003',
+        '66666666-6666-6666-6666-666666666661',
+        'private/docs/sample_urgent_lab_report.pdf',
+        '{
+            "paper_size": "a4",
+            "color_mode": "bw",
+            "duplex": "simplex",
+            "orientation": "portrait",
+            "copies": 2,
+            "page_range": "1-5",
+            "binding": "staple"
+        }'::jsonb,
+        'urgent',
+        2950,
+        '{
+            "base_pages_paise": 200,
+            "color_surcharge_paise": 0,
+            "duplex_discount_paise": 0,
+            "binding_fee_paise": 500,
+            "urgent_surcharge_paise": 2000,
+            "subtotal_paise": 2700,
+            "gst_paise": 250,
+            "total_paise": 2950
+        }'::jsonb,
+        'queued',
+        now() - INTERVAL '2 minutes'
+    )
+ON CONFLICT (id) DO UPDATE SET
+    status = EXCLUDED.status,
+    price_total_paise = EXCLUDED.price_total_paise;
+
+-- 9. Demo Payments
+INSERT INTO public.payments (
+    id,
+    print_job_id,
+    amount_paise,
+    currency,
+    method,
+    gateway_ref,
+    status
+)
+VALUES
+    (
+        '88888888-8888-8888-8888-888888888881',
+        '77777777-7777-7777-7777-777777777771',
+        354,
+        'INR',
+        'upi',
+        'pay_rzp_mock_demo_001',
+        'success'
+    ),
+    (
+        '88888888-8888-8888-8888-888888888882',
+        '77777777-7777-7777-7777-777777777772',
+        2950,
+        'INR',
+        'upi',
+        'pay_rzp_mock_demo_002',
+        'success'
+    )
+ON CONFLICT (id) DO NOTHING;
