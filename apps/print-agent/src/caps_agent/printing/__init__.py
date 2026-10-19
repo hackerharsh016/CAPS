@@ -11,6 +11,27 @@ from caps_agent.printing.capabilities import (
 )
 from caps_agent.printing.engine import PrintEngine, PrintResult, PrintSettings
 from caps_agent.printing.fake_engine import FakePrintEngine
+from caps_agent.printing.pdf_renderer import (
+    STANDARD_PAPER_SIZES_PTS,
+    BuiltinPdfBackend,
+    PageBoundingBox,
+    PdfBackend,
+    PdfCorruptedError,
+    PdfError,
+    PdfInvalidHeaderError,
+    PdfiumBackend,
+    PdfPageInfo,
+    PdfPageRangeError,
+    PdfPasswordProtectedError,
+    PdfRenderer,
+    PdfRenderError,
+    PdfValidationResult,
+    RenderedPage,
+    ScalingMode,
+    ScalingResult,
+    calculate_page_scaling,
+    parse_page_range,
+)
 from caps_agent.printing.printer_discovery import (
     DiscoveredPrinter,
     FakeWin32PrintAdapter,
@@ -48,4 +69,24 @@ __all__ = [
     "CANON_IR2006_CAPABILITIES",
     "EPSON_L805_CAPABILITIES",
     "HP_LASERJET_P1102_CAPABILITIES",
+    # PDF Rendering and Validation exports
+    "PdfError",
+    "PdfInvalidHeaderError",
+    "PdfCorruptedError",
+    "PdfPasswordProtectedError",
+    "PdfPageRangeError",
+    "PdfRenderError",
+    "PageBoundingBox",
+    "PdfPageInfo",
+    "PdfValidationResult",
+    "ScalingMode",
+    "ScalingResult",
+    "RenderedPage",
+    "STANDARD_PAPER_SIZES_PTS",
+    "parse_page_range",
+    "calculate_page_scaling",
+    "PdfBackend",
+    "BuiltinPdfBackend",
+    "PdfiumBackend",
+    "PdfRenderer",
 ]
