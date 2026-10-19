@@ -109,3 +109,29 @@ export interface UploadState {
   uploadedDoc: UploadedDocumentMetadata | null;
   error: UploadValidationError | null;
 }
+
+export type ConversionStatus =
+  | 'not_required'
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed';
+
+export interface DocumentPagePreview {
+  pageNumber: number;
+  width: number;
+  height: number;
+  thumbnailUrl?: string | undefined;
+}
+
+export interface DocumentPreviewData {
+  documentId: string;
+  fileName: string;
+  pageCount: number;
+  conversionStatus: ConversionStatus;
+  conversionError?: string | null | undefined;
+  isPasswordProtected: boolean;
+  isCorrupted: boolean;
+  pages: DocumentPagePreview[];
+}
+

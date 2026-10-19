@@ -11,7 +11,12 @@ import { useSearchParams } from 'next/navigation';
 import { defaultShopsService } from '../../../../features/shop-discovery/shops-service';
 import type { Shop } from '../../../../features/shop-discovery/types';
 import { UploadDropzone } from '../../../../features/document-upload/components/UploadDropzone';
-import type { UploadedDocumentMetadata } from '../../../../features/document-upload/types';
+import { DocumentPreview } from '../../../../features/document-upload/components/DocumentPreview';
+import { defaultConversionService } from '../../../../features/document-upload/conversion-service';
+import type {
+  UploadedDocumentMetadata,
+  DocumentPreviewData
+} from '../../../../features/document-upload/types';
 
 function PrintOrderContent() {
   const searchParams = useSearchParams();
@@ -19,6 +24,8 @@ function PrintOrderContent() {
 
   const [shop, setShop] = useState<Shop | null>(null);
   const [uploadedDoc, setUploadedDoc] = useState<UploadedDocumentMetadata | null>(null);
+  const [preview, setPreview] = useState<DocumentPreviewData | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
 
   useEffect(() => {
     if (shopId) {
@@ -27,6 +34,25 @@ function PrintOrderContent() {
       });
     }
   }, [shopId]);
+
+  const handleUploadSuccess = async (doc: UploadedDocumentMetadata) => {
+    setUploadedDoc(doc);
+    setIsLoadingPreview(true);
+    try {
+      const previewData = await defaultConversionService.getOrStartDocumentPreview(doc);
+      setPreview(previewData);
+    } catch (err) {
+      console.error('Failed to generate preview:', err);
+    } finally {
+      setIsLoadingPreview(false);
+    }
+  };
+
+  const handleUploadReset = () => {
+    setUploadedDoc(null);
+    setPreview(null);
+  };
+
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -94,20 +120,36 @@ function PrintOrderContent() {
         </h2>
         <UploadDropzone
           targetShopId={shop?.id}
-          onUploadSuccess={(doc) => setUploadedDoc(doc)}
-          onUploadReset={() => setUploadedDoc(null)}
+          onUploadSuccess={handleUploadSuccess}
+          onUploadReset={handleUploadReset}
         />
       </section>
 
-      {/* Proceed Action Bar */}
-      {uploadedDoc && (
+      {/* Document Page Preview & Conversion State */}
+      {preview && (
+        <section aria-labelledby="preview-section-heading">
+          <h2 id="preview-section-heading" className="sr-only">
+            Document Inspection and Page Preview
+          </h2>
+          <DocumentPreview
+            preview={preview}
+            isLoading={isLoadingPreview}
+            onChangeFile={handleUploadReset}
+          />
+        </section>
+      )}
+
+      {/* Proceed Action Bar (Only active when document is validated and has pages) */}
+      {uploadedDoc && preview && preview.pageCount > 0 && preview.conversionStatus !== 'failed' && (
         <div
           role="region"
           aria-label="Print order next steps"
           className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4"
         >
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Document Ready</h3>
+            <h3 className="text-sm font-bold text-slate-900">
+              Ready to Print ({preview.pageCount} {preview.pageCount === 1 ? 'Page' : 'Pages'})
+            </h3>
             <p className="text-xs text-slate-500 mt-0.5">
               Proceed to select paper size, color options, duplex mode, and binding.
             </p>
