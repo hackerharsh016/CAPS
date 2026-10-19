@@ -1,5 +1,14 @@
-"""Printing subsystem interfaces and adapters."""
-
+from caps_agent.printing.capabilities import (
+    CANON_IR2006_CAPABILITIES,
+    EPSON_L805_CAPABILITIES,
+    HP_LASERJET_P1102_CAPABILITIES,
+    CapabilityDetector,
+    PrinterCapabilities,
+    map_color_modes,
+    map_duplex_modes,
+    map_paper_sizes,
+    map_trays,
+)
 from caps_agent.printing.engine import PrintEngine, PrintResult, PrintSettings
 from caps_agent.printing.fake_engine import FakePrintEngine
 from caps_agent.printing.printer_discovery import (
@@ -30,4 +39,13 @@ __all__ = [
     "Win32PrintNotAvailableError",
     "map_win32_status",
     "normalize_printer_id",
+    "PrinterCapabilities",
+    "CapabilityDetector",
+    "map_paper_sizes",
+    "map_color_modes",
+    "map_duplex_modes",
+    "map_trays",
+    "CANON_IR2006_CAPABILITIES",
+    "EPSON_L805_CAPABILITIES",
+    "HP_LASERJET_P1102_CAPABILITIES",
 ]

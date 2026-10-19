@@ -223,6 +223,12 @@ class Win32PrintAdapter(Protocol):
         """Return detailed printer properties for the named device."""
         ...
 
+    def device_capabilities(
+        self, printer_name: str, port_name: str, capability: int
+    ) -> Any:
+        """Query documented DeviceCapabilities for printer and port."""
+        ...
+
 
 class PyWin32PrintAdapter(Win32PrintAdapter):
     """Production adapter using pywin32 win32print APIs."""
@@ -298,6 +304,25 @@ class PyWin32PrintAdapter(Win32PrintAdapter):
                 with contextlib.suppress(Exception):
                     self._win32print.ClosePrinter(handle)
 
+    def device_capabilities(
+        self, printer_name: str, port_name: str, capability: int
+    ) -> Any:
+        try:
+            return self._win32print.DeviceCapabilities(
+                printer_name, port_name or "", capability
+            )
+        except Exception as err:
+            logger.debug(
+                "DeviceCapabilities(%s, %s, %s) failed: %s",
+                printer_name,
+                port_name,
+                capability,
+                err,
+            )
+            raise PrinterDiscoveryError(
+                f"DeviceCapabilities({capability}) failed for '{printer_name}': {err}"
+            ) from err
+
 
 class FakeWin32PrintAdapter(Win32PrintAdapter):
     """In-memory test double modeling the Win32 print subsystem."""
@@ -307,10 +332,12 @@ class FakeWin32PrintAdapter(Win32PrintAdapter):
         printers: list[dict[str, Any]] | None = None,
         default_printer: str | None = None,
         simulated_error: Exception | None = None,
+        capabilities: dict[tuple[str, int], Any] | None = None,
     ) -> None:
         self.printers: list[dict[str, Any]] = printers or []
         self.default_printer: str | None = default_printer
         self.simulated_error: Exception | None = simulated_error
+        self.capabilities: dict[tuple[str, int], Any] = capabilities or {}
 
     def enum_printers(self, flags: int) -> list[dict[str, Any]]:
         if self.simulated_error:
@@ -350,6 +377,23 @@ class FakeWin32PrintAdapter(Win32PrintAdapter):
             "location": location,
             "jobs_count": 0,
         })
+
+    def set_capability(self, printer_name: str, capability: int, value: Any) -> None:
+        """Configure mock capability response for a printer and DC_* index."""
+        self.capabilities[(printer_name, capability)] = value
+
+    def device_capabilities(
+        self, printer_name: str, port_name: str, capability: int
+    ) -> Any:
+        if self.simulated_error:
+            raise self.simulated_error
+        key = (printer_name, capability)
+        if key in self.capabilities:
+            val = self.capabilities[key]
+            if isinstance(val, Exception):
+                raise val
+            return val
+        return None
 
 
 # ---------------------------------------------------------------------------
