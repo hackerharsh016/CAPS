@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CAPS Windows Agent Code Signing Policy",
+  "version": "1.0.0",
+  "policy": {
+    "certificate_type": "Authenticode",
+    "required_digest_algorithm": "SHA256",
+    "timestamp_rfc3161_url": "http://timestamp.digicert.com",
+    "fallback_timestamp_url": "http://timestamp.sectigo.com",
+    "targets": [
+      {
+        "pattern": "caps-agent.exe",
+        "description": "Main background print agent daemon executable",
+        "require_nested_signature": false
+      },
+      {
+        "pattern": "CAPS-Print-Agent-Setup-*.exe",
+        "description": "Inno Setup distribution bootstrap installer",
+        "require_nested_signature": false
+      }
+    ],
+    "verification_command": "signtool.exe verify /pa /v /d \"CAPS Desktop Print Agent\" {file}",
+    "revocation_policy": "Online CRL and OCSP checking enabled"
+  }
+}
