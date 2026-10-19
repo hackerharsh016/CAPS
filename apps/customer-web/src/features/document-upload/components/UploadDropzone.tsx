@@ -20,15 +20,18 @@ import {
 } from '../validation';
 import { defaultUploadService } from '../upload-service';
 import { UploadProgress } from './UploadProgress';
+import { PrivacyNotice } from './PrivacyNotice';
 
 export interface UploadDropzoneProps {
   targetShopId?: string | undefined;
+  customerId?: string | undefined;
   onUploadSuccess?: ((doc: UploadedDocumentMetadata) => void) | undefined;
   onUploadReset?: (() => void) | undefined;
 }
 
 export function UploadDropzone({
   targetShopId,
+  customerId,
   onUploadSuccess,
   onUploadReset
 }: UploadDropzoneProps) {
@@ -82,6 +85,7 @@ export function UploadDropzone({
       try {
         const metadata = await defaultUploadService.uploadDocument(fileToUpload, {
           targetShopId,
+          customerId,
           signal: abortController.signal,
           onProgress: (p) => {
             setState((prev) => ({
@@ -385,6 +389,10 @@ export function UploadDropzone({
           </button>
         </div>
       )}
+
+      {/* Privacy Notice Banner */}
+      <PrivacyNotice />
     </div>
   );
 }
+

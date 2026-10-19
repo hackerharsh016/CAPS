@@ -1,7 +1,7 @@
 /**
  * Document Upload Service for CAPS Customer Web.
- * Coordinates client preflight, chunked progress reporting, cancellation via AbortSignal,
- * and contract-first mock upload resolution.
+ * Coordinates client preflight, direct private upload intent negotiation,
+ * chunked storage upload, SHA-256 finalization, and orphan cleanup on cancellation.
  */
 
 import type {
@@ -10,18 +10,30 @@ import type {
   UploadValidationError
 } from './types';
 import { validateDocumentPreflight, getFileExtension } from './validation';
+import {
+  DirectUploadClient,
+  defaultDirectUploadClient,
+  computeSha256Checksum
+} from './direct-upload-client';
 
 export class UploadService {
+  constructor(private client: DirectUploadClient = defaultDirectUploadClient) {}
+
   /**
-   * Uploads a document with progress updates and abort support.
+   * Complete end-to-end direct private upload pipeline:
+   * 1. Preflight validation
+   * 2. Upload intent negotiation
+   * 3. Direct private stream upload with progress
+   * 4. Server-side SHA256 finalize verification
+   * 5. Orphan cleanup on cancellation/abort
    */
   public async uploadDocument(
     file: File,
     options: UploadOptions = {}
   ): Promise<UploadedDocumentMetadata> {
-    const { onProgress, signal, targetShopId } = options;
+    const { onProgress, signal, targetShopId, customerId = 'usr-current-session' } = options;
 
-    // 1. Run client preflight validation
+    // 1. Client-side preflight validation
     const preflight = validateDocumentPreflight(file);
     if (!preflight.valid && preflight.error) {
       throw preflight.error;
@@ -36,85 +48,62 @@ export class UploadService {
       throw err;
     }
 
-    const totalBytes = file.size;
-    const totalSteps = 10;
-    const stepDurationMs = 50; // Fast simulation for responsive UI & testing
+    // 3. Negotiate upload intent with private storage key
+    const intent = await this.client.createUploadIntent(
+      {
+        fileName: file.name,
+        fileSizeBytes: file.size,
+        mimeType: file.type || 'application/octet-stream',
+        targetShopId
+      },
+      customerId
+    );
 
-    return new Promise<UploadedDocumentMetadata>((resolve, reject) => {
-      let currentStep = 0;
-      let intervalId: ReturnType<typeof setInterval> | null = null;
+    // 4. Compute SHA-256 checksum
+    const checksumPromise = computeSha256Checksum(file);
 
-      const cleanup = () => {
-        if (intervalId !== null) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-        if (signal) {
-          signal.removeEventListener('abort', handleAbort);
-        }
-      };
-
-      const handleAbort = () => {
-        cleanup();
-        const err: UploadValidationError = {
-          code: 'ABORTED',
-          message: 'Upload was cancelled by user.'
-        };
-        reject(err);
-      };
-
-      if (signal) {
-        signal.addEventListener('abort', handleAbort);
+    // 5. Direct upload to storage with cancellation & orphan cleanup
+    try {
+      await this.client.uploadToStorage(intent.documentId, file, {
+        onProgress,
+        signal
+      });
+    } catch (err: unknown) {
+      // Orphan cleanup on cancellation or failure
+      try {
+        await this.client.cancelUpload(intent.documentId, customerId);
+      } catch (cleanupErr) {
+        console.warn('Orphan cleanup warning:', cleanupErr);
       }
+      throw err;
+    }
 
-      // Initial progress: 0%
-      if (onProgress) {
-        onProgress({
-          loadedBytes: 0,
-          totalBytes,
-          percentage: 0
-        });
-      }
+    // 6. Finalize server-side checks
+    const sha256Checksum = await checksumPromise;
+    const finalized = await this.client.finalizeUpload(
+      intent.documentId,
+      {
+        sha256Checksum,
+        actualSizeBytes: file.size
+      },
+      customerId
+    );
 
-      intervalId = setInterval(() => {
-        // If aborted between ticks
-        if (signal?.aborted) {
-          handleAbort();
-          return;
-        }
+    const ext = getFileExtension(file.name);
 
-        currentStep++;
-        const loadedBytes = Math.min(totalBytes, Math.round((currentStep / totalSteps) * totalBytes));
-        const percentage = Math.min(100, Math.round((currentStep / totalSteps) * 100));
+    return {
+      id: finalized.documentId,
+      name: finalized.fileName,
+      sizeBytes: finalized.sizeBytes,
+      mimeType: finalized.mimeType,
+      extension: ext,
+      uploadedAt: finalized.finalizedAt,
+      storagePath: finalized.storagePath
+    };
+  }
 
-        if (onProgress) {
-          onProgress({
-            loadedBytes,
-            totalBytes,
-            percentage
-          });
-        }
-
-        if (currentStep >= totalSteps) {
-          cleanup();
-
-          const ext = getFileExtension(file.name);
-          const docId = `doc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-
-          const metadata: UploadedDocumentMetadata = {
-            id: docId,
-            name: file.name,
-            sizeBytes: file.size,
-            mimeType: file.type || 'application/octet-stream',
-            extension: ext,
-            uploadedAt: new Date().toISOString(),
-            storagePath: `private/uploads/${targetShopId || 'general'}/${docId}/${file.name}`
-          };
-
-          resolve(metadata);
-        }
-      }, stepDurationMs);
-    });
+  public getClient(): DirectUploadClient {
+    return this.client;
   }
 }
 
