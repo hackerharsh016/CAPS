@@ -158,3 +158,92 @@ VALUES (
     'operator'
 )
 ON CONFLICT (shop_id, user_id) DO NOTHING;
+
+-- 5. Demo Registered Agent Device
+INSERT INTO public.agent_devices (
+    id,
+    shop_id,
+    device_fingerprint,
+    device_name,
+    agent_version,
+    auth_token_hash,
+    is_revoked,
+    paired_by
+)
+VALUES (
+    '44444444-4444-4444-4444-444444444444',
+    '11111111-1111-1111-1111-111111111111',
+    'win11-counter-pc-fingerprint-001',
+    'Main Shop Windows 11 Counter PC',
+    '0.1.0',
+    'sha256_mock_device_token_hash_value',
+    false,
+    '00000000-0000-0000-0000-000000000002'
+)
+ON CONFLICT (shop_id, device_fingerprint) DO UPDATE SET
+    device_name = EXCLUDED.device_name,
+    agent_version = EXCLUDED.agent_version;
+
+-- 6. Demo Active Agent Session
+INSERT INTO public.agent_sessions (
+    id,
+    device_id,
+    shop_id,
+    agent_version,
+    session_status
+)
+VALUES (
+    '55555555-5555-5555-5555-555555555555',
+    '44444444-4444-4444-4444-444444444444',
+    '11111111-1111-1111-1111-111111111111',
+    '0.1.0',
+    'online'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 7. Demo Shop Physical Printers
+INSERT INTO public.printers (
+    id,
+    shop_id,
+    device_id,
+    name,
+    role,
+    status,
+    is_default,
+    capabilities
+)
+VALUES
+    (
+        '66666666-6666-6666-6666-666666666661',
+        '11111111-1111-1111-1111-111111111111',
+        '44444444-4444-4444-4444-444444444444',
+        'Canon imageRUNNER 2520 B/W',
+        'bw',
+        'online',
+        true,
+        '{
+            "paper_sizes": ["a4", "a3", "legal"],
+            "color_modes": ["bw"],
+            "duplex_supported": true,
+            "max_copies": 99
+        }'::jsonb
+    ),
+    (
+        '66666666-6666-6666-6666-666666666662',
+        '11111111-1111-1111-1111-111111111111',
+        '44444444-4444-4444-4444-444444444444',
+        'Epson EcoTank L805 Color',
+        'color',
+        'online',
+        false,
+        '{
+            "paper_sizes": ["a4", "legal"],
+            "color_modes": ["bw", "color"],
+            "duplex_supported": false,
+            "max_copies": 50
+        }'::jsonb
+    )
+ON CONFLICT (shop_id, name) DO UPDATE SET
+    role = EXCLUDED.role,
+    status = EXCLUDED.status,
+    capabilities = EXCLUDED.capabilities;
