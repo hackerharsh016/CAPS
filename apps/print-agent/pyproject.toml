@@ -22,6 +22,9 @@ dev = [
     "pytest>=8.0.0",
     "ruff>=0.3.0",
 ]
+windows = [
+    "pywin32>=306; sys_platform == 'win32'",
+]
 
 [project.scripts]
 caps-agent = "caps_agent.main:main"

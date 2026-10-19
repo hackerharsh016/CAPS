@@ -84,7 +84,9 @@ def load_config(env: dict[str, str] | None = None) -> AgentConfig:
     try:
         port = int(port_raw)
     except ValueError:
-        raise ConfigurationError(f"CAPS_AGENT_LOCAL_PORT must be an integer, got '{port_raw}'")
+        raise ConfigurationError(
+            f"CAPS_AGENT_LOCAL_PORT must be an integer, got '{port_raw}'"
+        ) from None
 
     temp_raw = e.get("CAPS_AGENT_TEMP_DIR")
     temp_dir = Path(temp_raw) if temp_raw else Path(e.get("TEMP", "/tmp")) / "caps_spool"
