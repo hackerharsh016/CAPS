@@ -3,6 +3,8 @@ import cors from '@fastify/cors';
 import { Env, validateEnv } from './config/env.js';
 import { paymentsRoutes } from './modules/payments/payments.routes.js';
 import { PaymentsService } from './modules/payments/payments.service.js';
+import { webhookRoutes } from './modules/payments/webhook.routes.js';
+import { WebhookService } from './modules/payments/webhook.service.js';
 import { MockPaymentsRepository, IPaymentsRepository } from './modules/payments/payments.repository.js';
 import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-jobs/print-jobs.repository.js';
 import { createRazorpayClient, IRazorpayClient } from './modules/payments/razorpay.service.js';
@@ -15,6 +17,7 @@ export interface AppOptions {
   razorpayClient?: IRazorpayClient | undefined;
   jobEventsRepo?: IJobEventsRepository | undefined;
   paymentsService?: PaymentsService | undefined;
+  webhookService?: WebhookService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -23,6 +26,24 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const app = Fastify({
     logger: env.NODE_ENV !== 'test'
   });
+
+  // Preserve raw body buffer for secure HMAC-SHA256 webhook signature validation
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'buffer' },
+    (req, body, done) => {
+      try {
+        const raw = body.toString('utf-8');
+        (req as unknown as { rawBody: string }).rawBody = raw;
+        const json = raw.trim().length === 0 ? {} : JSON.parse(raw);
+        done(null, json);
+      } catch (err: unknown) {
+        const error = err as Error & { statusCode?: number };
+        error.statusCode = 400;
+        done(error, undefined);
+      }
+    }
+  );
 
   // CORS configuration
   app.register(cors, {
@@ -46,10 +67,27 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     options.paymentsService ??
     new PaymentsService(printJobsRepo, paymentsRepo, razorpayClient, jobEventsRepo);
 
+  const webhookSecret =
+    env.RAZORPAY_WEBHOOK_SECRET ?? 'mock_webhook_secret_for_testing';
+  const webhookService =
+    options.webhookService ??
+    new WebhookService(
+      printJobsRepo,
+      paymentsRepo,
+      razorpayClient,
+      jobEventsRepo,
+      webhookSecret
+    );
+
   // Register feature routes under API v1 namespace
   app.register(paymentsRoutes, {
     prefix: '/api/v1/payments',
     paymentsService
+  });
+
+  app.register(webhookRoutes, {
+    prefix: '/api/v1',
+    webhookService
   });
 
   // Health check endpoint

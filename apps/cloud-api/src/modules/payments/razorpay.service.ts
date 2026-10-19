@@ -1,9 +1,42 @@
+import crypto from 'node:crypto';
 import type { RazorpayOrderInput, RazorpayOrderResponse } from './payments.types.js';
 
 export interface IRazorpayClient {
   createOrder(input: RazorpayOrderInput): Promise<RazorpayOrderResponse>;
   getOrder(orderId: string): Promise<RazorpayOrderResponse | null>;
   getKeyId(): string;
+}
+
+/**
+ * Validates the HMAC-SHA256 signature attached to Razorpay webhook requests.
+ * Uses timingSafeEqual to protect against timing side-channel attacks.
+ */
+export function verifyRazorpayWebhookSignature(
+  rawBody: string,
+  signature: string,
+  secret: string
+): boolean {
+  if (!signature || !secret || !rawBody) {
+    return false;
+  }
+
+  try {
+    const expectedSignature = crypto
+      .createHmac('sha256', secret)
+      .update(rawBody, 'utf-8')
+      .digest('hex');
+
+    if (expectedSignature.length !== signature.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(
+      Buffer.from(expectedSignature, 'utf-8'),
+      Buffer.from(signature, 'utf-8')
+    );
+  } catch {
+    return false;
+  }
 }
 
 export class MockRazorpayClient implements IRazorpayClient {
@@ -16,6 +49,22 @@ export class MockRazorpayClient implements IRazorpayClient {
 
   getKeyId(): string {
     return this.keyId;
+  }
+
+  setOrderStatus(orderId: string, status: 'created' | 'attempted' | 'paid'): void {
+    const order = this.orders.get(orderId);
+    if (order) {
+      this.orders.set(orderId, { ...order, status });
+    } else {
+      this.orders.set(orderId, {
+        id: orderId,
+        amount: 2950,
+        currency: 'INR',
+        receipt: `rcpt_${orderId}`,
+        status,
+        created_at: Math.floor(Date.now() / 1000)
+      });
+    }
   }
 
   async createOrder(input: RazorpayOrderInput): Promise<RazorpayOrderResponse> {
