@@ -29,7 +29,9 @@ export function ShopCard({ shop }: ShopCardProps) {
         <div>
           <div className="flex items-center space-x-2">
             <h3 id={`shop-title-${shop.id}`} className="text-lg font-bold text-slate-900">
-              {shop.name}
+              <a href={`/shops/${shop.id}`} className="hover:text-blue-600 hover:underline">
+                {shop.name}
+              </a>
             </h3>
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
@@ -139,13 +141,31 @@ export function ShopCard({ shop }: ShopCardProps) {
           )}
         </div>
 
-        <a
-          href={`/print/new?shopId=${shop.id}`}
-          className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
-        >
-          Configure & Print →
-        </a>
+        <div className="flex items-center space-x-2">
+          <a
+            href={`/shops/${shop.id}`}
+            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+          >
+            View Services
+          </a>
+          {shop.is_open ? (
+            <a
+              href={`/print/new?shopId=${shop.id}`}
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
+            >
+              Configure & Print →
+            </a>
+          ) : (
+            <span
+              aria-disabled="true"
+              className="inline-flex items-center rounded-lg bg-slate-100 px-4 py-2 text-xs font-bold text-slate-400 cursor-not-allowed"
+            >
+              Shop Closed
+            </span>
+          )}
+        </div>
       </div>
     </article>
   );
 }
+

@@ -77,3 +77,17 @@ export interface GeolocationState {
   coordinates: Coordinates | null;
   errorMessage: string | null;
 }
+
+export type CatalogCategory = 'print' | 'paper' | 'binding' | 'priority';
+
+export interface ServiceCatalogItem {
+  id: string;
+  name: string;
+  category: CatalogCategory;
+  description: string;
+  pricePaise: number;
+  priceFormatted: string;
+  isAvailable: boolean;
+  unavailabilityReason?: string | undefined;
+}
+
