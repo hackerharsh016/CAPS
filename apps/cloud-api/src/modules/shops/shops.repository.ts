@@ -43,6 +43,9 @@ export class MockShopsRepository implements IShopsRepository {
       pricing_config: dto.pricing_config,
       urgent_surcharge_config: dto.urgent_surcharge_config,
       auto_print_enabled: dto.auto_print_enabled ?? false,
+      ...(dto.allow_pay_at_counter !== undefined
+        ? { allow_pay_at_counter: dto.allow_pay_at_counter }
+        : {}),
       created_at: now,
       updated_at: now
     };
@@ -68,6 +71,9 @@ export class MockShopsRepository implements IShopsRepository {
           : existing.urgent_surcharge_config,
       auto_print_enabled:
         dto.auto_print_enabled !== undefined ? dto.auto_print_enabled : existing.auto_print_enabled,
+      ...(dto.allow_pay_at_counter !== undefined
+        ? { allow_pay_at_counter: dto.allow_pay_at_counter }
+        : {}),
       updated_at: new Date().toISOString()
     };
     this.shops.set(id, updated);

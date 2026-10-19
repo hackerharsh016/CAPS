@@ -4,6 +4,7 @@ export interface IPaymentsRepository {
   findById(id: string): Promise<PaymentRecord | null>;
   findByJobId(jobId: string): Promise<PaymentRecord[]>;
   findByGatewayRef(gatewayRef: string): Promise<PaymentRecord | null>;
+  findAll(): Promise<PaymentRecord[]>;
   create(dto: CreatePaymentDto): Promise<PaymentRecord>;
   update(id: string, dto: UpdatePaymentDto): Promise<PaymentRecord | null>;
   delete(id: string): Promise<boolean>;
@@ -30,6 +31,10 @@ export class MockPaymentsRepository implements IPaymentsRepository {
       }
     }
     return null;
+  }
+
+  async findAll(): Promise<PaymentRecord[]> {
+    return Array.from(this.payments.values()).map(p => ({ ...p }));
   }
 
   async create(dto: CreatePaymentDto): Promise<PaymentRecord> {
@@ -75,6 +80,8 @@ export class MockPaymentsRepository implements IPaymentsRepository {
     const updated: PaymentRecord = {
       ...existing,
       status: dto.status ?? existing.status,
+      method: dto.method ?? existing.method,
+      amount_paise: dto.amount_paise ?? existing.amount_paise,
       gateway_ref: dto.gateway_ref !== undefined ? dto.gateway_ref : existing.gateway_ref,
       updated_at: now
     };

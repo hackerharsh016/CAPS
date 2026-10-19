@@ -26,6 +26,8 @@ export interface CreatePaymentDto {
 export interface UpdatePaymentDto {
   status?: PaymentStatus | undefined;
   gateway_ref?: string | undefined;
+  method?: PaymentMethod | undefined;
+  amount_paise?: number | undefined;
 }
 
 export interface RazorpayOrderInput {
@@ -118,4 +120,74 @@ export interface ReconcilePaymentResponseDto {
   job_status: string;
   reconciled: boolean;
   order_id?: string | undefined;
+}
+
+export interface SelectPayAtCounterDto {
+  print_job_id: string;
+}
+
+export interface SelectPayAtCounterResponseDto {
+  success: boolean;
+  print_job_id: string;
+  payment_id: string;
+  amount_paise: number;
+  method: 'pay_at_counter';
+  status: 'initiated';
+  message: string;
+}
+
+export interface ConfirmCashSettlementDto {
+  print_job_id: string;
+  operator_id: string; // Authenticated shop owner / operator ID
+  received_amount_paise?: number | undefined;
+  receipt_number?: string | undefined;
+  notes?: string | undefined;
+}
+
+export interface ConfirmCashSettlementResponseDto {
+  success: boolean;
+  print_job_id: string;
+  payment_id: string;
+  amount_paise: number;
+  status: 'success';
+  method: 'pay_at_counter';
+  settled_by: string;
+  receipt_ref: string;
+  job_status: 'queued';
+  settled_at: string;
+}
+
+export interface CashSettlementItem {
+  payment_id: string;
+  job_id: string;
+  amount_paise: number;
+  receipt_ref: string;
+  settled_at: string;
+}
+
+export interface GatewaySettlementItem {
+  payment_id: string;
+  job_id: string;
+  method: PaymentMethod;
+  amount_paise: number;
+  gateway_ref: string;
+  settled_at: string;
+}
+
+export interface ShopPaymentReportDto {
+  shop_id: string;
+  period: string;
+  total_revenue_paise: number;
+  total_transactions_count: number;
+  cash_settlement: {
+    total_paise: number;
+    transaction_count: number;
+    items: CashSettlementItem[];
+  };
+  gateway_settlement: {
+    total_paise: number;
+    transaction_count: number;
+    by_method: Record<string, number>;
+    items: GatewaySettlementItem[];
+  };
 }

@@ -5,19 +5,24 @@ import { paymentsRoutes } from './modules/payments/payments.routes.js';
 import { PaymentsService } from './modules/payments/payments.service.js';
 import { webhookRoutes } from './modules/payments/webhook.routes.js';
 import { WebhookService } from './modules/payments/webhook.service.js';
+import { payAtCounterRoutes } from './modules/payments/pay-at-counter.routes.js';
+import { PayAtCounterService } from './modules/payments/pay-at-counter.service.js';
 import { MockPaymentsRepository, IPaymentsRepository } from './modules/payments/payments.repository.js';
 import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-jobs/print-jobs.repository.js';
+import { MockShopsRepository, IShopsRepository } from './modules/shops/shops.repository.js';
 import { createRazorpayClient, IRazorpayClient } from './modules/payments/razorpay.service.js';
 import { MockJobEventsRepository, IJobEventsRepository } from './modules/events/events.repository.js';
 
 export interface AppOptions {
   env?: Env | undefined;
+  shopsRepo?: IShopsRepository | undefined;
   printJobsRepo?: IPrintJobsRepository | undefined;
   paymentsRepo?: IPaymentsRepository | undefined;
   razorpayClient?: IRazorpayClient | undefined;
   jobEventsRepo?: IJobEventsRepository | undefined;
   paymentsService?: PaymentsService | undefined;
   webhookService?: WebhookService | undefined;
+  payAtCounterService?: PayAtCounterService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -52,6 +57,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
 
   // Initialize service dependencies if not supplied
+  const shopsRepo = options.shopsRepo ?? new MockShopsRepository();
   const printJobsRepo = options.printJobsRepo ?? new MockPrintJobsRepository();
   const paymentsRepo = options.paymentsRepo ?? new MockPaymentsRepository();
   const razorpayClient =
@@ -79,6 +85,10 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       webhookSecret
     );
 
+  const payAtCounterService =
+    options.payAtCounterService ??
+    new PayAtCounterService(shopsRepo, printJobsRepo, paymentsRepo, jobEventsRepo);
+
   // Register feature routes under API v1 namespace
   app.register(paymentsRoutes, {
     prefix: '/api/v1/payments',
@@ -88,6 +98,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(webhookRoutes, {
     prefix: '/api/v1',
     webhookService
+  });
+
+  app.register(payAtCounterRoutes, {
+    prefix: '/api/v1',
+    payAtCounterService
   });
 
   // Health check endpoint
