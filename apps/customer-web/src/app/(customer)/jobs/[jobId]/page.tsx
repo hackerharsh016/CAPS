@@ -9,6 +9,7 @@ import {
   QueueTrackingCustomError
 } from '../../../../features/queue-tracking/queue-tracking-service';
 import type { JobTrackingInfo } from '../../../../features/queue-tracking/types';
+import { useRealtimeTracking } from '../../../../features/queue-tracking/use-realtime-tracking';
 import { JobTrackingView } from '../../../../features/queue-tracking/components/JobTrackingView';
 
 export default function JobStatusPage() {
@@ -60,6 +61,21 @@ export default function JobStatusPage() {
       fetchTracking();
     }
   }, [isAuthLoading, fetchTracking]);
+
+  const effectiveCustomerId = user?.id || 'usr-customer-alpha';
+
+  const {
+    tracking: liveTracking,
+    connectionState,
+    isRefreshing: isRealtimeRefreshing,
+    lastUpdated,
+    refresh: realtimeRefresh
+  } = useRealtimeTracking({
+    jobId,
+    customerId: effectiveCustomerId,
+    initialTracking: tracking || undefined,
+    enabled: Boolean(tracking && !errorCode)
+  });
 
   // Loading Skeleton State
   if (isLoading || isAuthLoading) {
@@ -183,5 +199,13 @@ export default function JobStatusPage() {
     );
   }
 
-  return <JobTrackingView initialTracking={tracking} onRefresh={fetchTracking} />;
+  return (
+    <JobTrackingView
+      initialTracking={liveTracking || tracking}
+      connectionState={connectionState}
+      isRefreshing={isRealtimeRefreshing}
+      lastRefreshedAt={lastUpdated}
+      onRefresh={realtimeRefresh}
+    />
+  );
 }

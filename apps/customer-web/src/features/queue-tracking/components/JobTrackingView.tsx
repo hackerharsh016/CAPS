@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import type { JobTrackingInfo } from '../types';
+import type { RealtimeConnectionState } from '../realtime-types';
+import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { TokenCard } from './TokenCard';
 import { QueueProgressTracker } from './QueueProgressTracker';
 import { QueueMetricsCard } from './QueueMetricsCard';
@@ -12,16 +14,25 @@ import { JobDetailsCard } from './JobDetailsCard';
 
 interface JobTrackingViewProps {
   initialTracking: JobTrackingInfo;
+  connectionState?: RealtimeConnectionState | undefined;
+  isRefreshing?: boolean | undefined;
+  lastRefreshedAt?: Date | undefined;
   onRefresh?: (() => Promise<void>) | undefined;
 }
 
 export const JobTrackingView: React.FC<JobTrackingViewProps> = ({
   initialTracking,
+  connectionState = 'connected',
+  isRefreshing: propIsRefreshing,
+  lastRefreshedAt: propLastRefreshedAt,
   onRefresh
 }) => {
   const [tracking, setTracking] = useState<JobTrackingInfo>(initialTracking);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
+  const [localIsRefreshing, setLocalIsRefreshing] = useState(false);
+  const [localLastRefreshedAt, setLocalLastRefreshedAt] = useState<Date>(new Date());
+
+  const isRefreshing = propIsRefreshing ?? localIsRefreshing;
+  const lastRefreshedAt = propLastRefreshedAt ?? localLastRefreshedAt;
 
   React.useEffect(() => {
     setTracking(initialTracking);
@@ -29,14 +40,14 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({
 
   const handleRefresh = async () => {
     if (isRefreshing) return;
-    setIsRefreshing(true);
+    setLocalIsRefreshing(true);
     try {
       if (onRefresh) {
         await onRefresh();
       }
-      setLastRefreshedAt(new Date());
+      setLocalLastRefreshedAt(new Date());
     } finally {
-      setIsRefreshing(false);
+      setLocalIsRefreshing(false);
     }
   };
 
@@ -60,19 +71,8 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Agent Heartbeat Status Pill */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-white border border-slate-200 shadow-sm">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                tracking.is_agent_offline
-                  ? 'bg-amber-500 animate-pulse'
-                  : 'bg-emerald-500 animate-pulse'
-              }`}
-            />
-            <span className="text-slate-600">
-              {tracking.is_agent_offline ? 'Station Offline' : 'Station Connected'}
-            </span>
-          </div>
+          {/* Realtime Connection Status Pill */}
+          <ConnectionStatusBadge state={connectionState} isStationOffline={tracking.is_agent_offline} />
 
           {/* Refresh Button */}
           <button
