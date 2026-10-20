@@ -112,6 +112,18 @@ Lifecycle states strictly follow the CAPS architecture baseline:
   - If interrupted prior to spooler submission (`QUEUED`, `CLAIMED`, `DOWNLOADING`, `VALIDATING`, `RENDERING`), transitions to `FAILED` (`AGENT_CRASH_BEFORE_SPOOLER`).
 - **Startup Cleanup:** Triggers immediate residual artifact removal for crashed attempts and runs background orphan scrubbing.
 
+## Hardware Verification & Feasibility Gate (`tests/hardware`)
+
+- **Feasibility Integration Gate:** End-to-end software simulation validating driver capability matrices, multi-printer serialized dispatching, spooler traces, Policy #5 enforcement, and zero document retention (`tests/hardware/test_hardware_gate.py`).
+- **Physical Hardware Test Suite:** Live hardware verification suite (`tests/hardware/test_real_printer.py`).
+  - To run with physical Windows printers:
+    ```powershell
+    $env:CAPS_TEST_PRINTER_NAME = "Your Printer Name"
+    pytest tests/hardware/test_real_printer.py -v -s
+    ```
+  - When no printer is designated, physical tests are cleanly marked `SKIPPED` / `BLOCKED`, faithfully preventing fake pass assertions in automated test environments.
+- **Printing Compatibility Guide & Operator Runbook:** See [docs/printing-compatibility.md](docs/printing-compatibility.md) for full driver compatibility matrix, error recovery procedures, spooler traces, and the official Go/No-Go decision record.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**
