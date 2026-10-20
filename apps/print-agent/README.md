@@ -125,6 +125,37 @@ Lifecycle states strictly follow the CAPS architecture baseline:
 - **Printing Compatibility Guide & Operator Runbook:** See [docs/printing-compatibility.md](docs/printing-compatibility.md) for full driver compatibility matrix, error recovery procedures, spooler traces, and the official Go/No-Go decision record.
 - **Real-Device Compatibility Matrix & High-Volume Stress Suite:** See [docs/real-device-compatibility-matrix.md](docs/real-device-compatibility-matrix.md) and [`tests/hardware/test_compatibility_matrix.py`](tests/hardware/test_compatibility_matrix.py) for the complete parameter permutation matrix (A4, A3, Legal, B&W, Color, Duplex, copies) and multi-job serialized queue stress tests.
 
+## Identity Pairing & Protected Credentials Subsystem (`caps_agent.auth`)
+
+### Credential Protection & Windows DPAPI (`AgentCredentials`, `CredentialStore`)
+
+- **Hardware/User-Scoped Protection:** Secrets (`device_token`, `refresh_token`) are encrypted at rest using Windows DPAPI (`win32crypt.CryptProtectData` with `CRYPTPROTECT_UI_FORBIDDEN`), ensuring only processes running under the authenticated Windows user account on that specific PC can decrypt them.
+- **Clock Skew & Expiration:** `AgentCredentials.is_expired(skew_seconds=30.0)` evaluates token lifetime against UTC time with configurable clock drift tolerance.
+- **Privacy & Redaction:** String representation (`__repr__`) automatically redacts sensitive bearer and refresh tokens (`secr...***`), preventing secrets from leaking into debug consoles, logs, or crash dumps.
+- **Zero-Wipe Clearing:** `CredentialStore.clear()` overwrites stored credential bytes with zeros (`\x00`) before unlinking from the filesystem.
+
+### Device Pairing & Token Lifecycle (`PairingManager`)
+
+- **One-Time Pairing Handshake:** `pair_with_code(pairing_code)` exchanges an owner dashboard pairing code with `POST /api/v1/agent/pair`, storing `shop_id`, `device_id`, and tokens.
+- **Automatic Token Refresh:** `refresh_token()` coordinates renewal via `POST /api/v1/agent/token/refresh` when tokens expire or upon receiving an HTTP 401 Unauthorized signal.
+- **Unpairing Revocation:** `revoke_pairing()` notifies the Cloud via `POST /api/v1/agent/revoke` and wipes local credentials.
+
+## Authenticated Cloud API Client Subsystem (`caps_agent.cloud`)
+
+### Robust HTTPS Client (`CloudApiClient`)
+
+- **Outbound-Only HTTPS:** Initiates outbound requests with `Authorization: Bearer <device_token>`, `X-CAPS-Device-Id`, and `X-CAPS-Shop-Id` headers.
+- **Urllib Transport:** Zero external HTTP dependencies (`urllib.request`) for rock-solid PyInstaller executable packaging and predictable Windows service behavior.
+- **Deterministic Mocking:** Pluggable `HttpTransport` protocol allows 100% in-memory test coverage without external mock servers.
+- **Automatic 401 Refresh Loop:** Automatically catches HTTP 401 responses, executes the configured `token_refresh_hook`, and retries the failed request once.
+- **Exponential Backoff:** Retries on transient 5xx gateway errors (502, 503, 504) and network timeouts with exponential backoff and jitter.
+- **Strict Tenant Isolation:** Rejects any response returning an unexpected `shop_id` or HTTP 403 Forbidden by raising `TenantMismatchError`.
+- **Contract-Conforming Operations:**
+  - `claim_job(lease_duration_seconds)`: Conforms strictly to frozen contract v1 `JobClaimRequestSchema` and `JobClaimResponseSchema`.
+  - `update_job_status(job_id, attempt_id, status, ...)`: Validates statuses against `JobStatusUpdateRequestSchema` (`downloading`, `printing`, `completed`, `failed`, `requires_review`).
+  - `download_document(download_url, dest_path, expected_sha256)`: Streams PDF file and computes SHA-256 hash. If hash mismatches expected value, `ChecksumMismatchError` is raised and the file is immediately deleted from disk.
+  - `heartbeat()`, `sync_printers()`: Synchronizes device telemetry and discovered printer capability profiles.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**

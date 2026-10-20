@@ -1,5 +1,17 @@
 """CAPS Desktop Print Agent package."""
 
+from caps_agent.auth import (
+    AgentCredentials,
+    CredentialStore,
+    PairingManager,
+)
+from caps_agent.cloud import (
+    AuthenticationError,
+    CloudApiClient,
+    CloudApiError,
+    JobClaimResponse,
+    TenantMismatchError,
+)
 from caps_agent.config import AgentConfig, ConfigurationError, load_config
 from caps_agent.jobs import (
     JobDispatcher,
@@ -35,6 +47,14 @@ __all__ = [
     "AgentConfig",
     "ConfigurationError",
     "load_config",
+    "AgentCredentials",
+    "CredentialStore",
+    "PairingManager",
+    "CloudApiClient",
+    "CloudApiError",
+    "AuthenticationError",
+    "TenantMismatchError",
+    "JobClaimResponse",
     "PrintEngine",
     "PrintResult",
     "PrintSettings",

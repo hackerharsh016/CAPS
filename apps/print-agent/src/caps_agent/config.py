@@ -9,7 +9,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    from caps_agent.auth.credentials import AgentCredentials
 
 
 class ConfigurationError(ValueError):
@@ -71,6 +75,18 @@ class AgentConfig:
             raise ConfigurationError(
                 f"Invalid log_level: '{self.log_level}'. Must be one of {allowed_levels}."
             )
+
+    def to_credentials(self) -> AgentCredentials | None:
+        """Convert config fields to AgentCredentials if all required tokens are present."""
+        if self.shop_id and self.device_id and self.device_token:
+            from caps_agent.auth.credentials import AgentCredentials
+
+            return AgentCredentials(
+                shop_id=self.shop_id,
+                device_id=self.device_id,
+                device_token=self.device_token,
+            )
+        return None
 
 
 def load_config(env: dict[str, str] | None = None) -> AgentConfig:

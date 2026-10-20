@@ -31,6 +31,14 @@ class TestPackageImport(unittest.TestCase):
         self.assertTrue(hasattr(caps_agent, "CleanupReport"))
         self.assertTrue(hasattr(caps_agent, "setup_logging"))
         self.assertTrue(hasattr(caps_agent, "redact_sensitive_data"))
+        self.assertTrue(hasattr(caps_agent, "AgentCredentials"))
+        self.assertTrue(hasattr(caps_agent, "CredentialStore"))
+        self.assertTrue(hasattr(caps_agent, "PairingManager"))
+        self.assertTrue(hasattr(caps_agent, "CloudApiClient"))
+        self.assertTrue(hasattr(caps_agent, "CloudApiError"))
+        self.assertTrue(hasattr(caps_agent, "AuthenticationError"))
+        self.assertTrue(hasattr(caps_agent, "TenantMismatchError"))
+        self.assertTrue(hasattr(caps_agent, "JobClaimResponse"))
 
 
 if __name__ == "__main__":
