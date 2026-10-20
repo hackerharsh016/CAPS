@@ -25,7 +25,12 @@ export const DocumentPrivacyNotice: React.FC<DocumentPrivacyNoticeProps> = ({ tr
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div className="flex items-center gap-2">
-        <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="w-4 h-4 text-slate-500 shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -34,11 +39,15 @@ export const DocumentPrivacyNotice: React.FC<DocumentPrivacyNoticeProps> = ({ tr
           />
         </svg>
         <div>
-          <span className="font-semibold text-slate-800">CAPS Zero-Knowledge Privacy Guarantee:</span>{' '}
+          <span className="font-semibold text-slate-800">
+            CAPS Zero-Knowledge Privacy Guarantee:
+          </span>{' '}
           {tracking.document_deleted ? (
             <span>Document file has been permanently deleted from storage.</span>
           ) : (
-            <span>Uploaded document file will be automatically purged 24 hours after submission.</span>
+            <span>
+              Uploaded document file will be automatically purged 24 hours after submission.
+            </span>
           )}
         </div>
       </div>

@@ -40,23 +40,17 @@ export function CheckoutShell({
   onOrderConfirmed,
   onBackToQuote
 }: CheckoutShellProps) {
-  const {
-    paymentMethod,
-    isSubmitting,
-    error,
-    setPaymentMethod,
-    submitOrder,
-    clearError
-  } = useCheckout({
-    shopId: shop.id,
-    customerId,
-    documentStorageKey,
-    documentName,
-    fileSizeBytes,
-    settings,
-    priorityTier: quote.priority_tier,
-    quote
-  });
+  const { paymentMethod, isSubmitting, error, setPaymentMethod, submitOrder, clearError } =
+    useCheckout({
+      shopId: shop.id,
+      customerId,
+      documentStorageKey,
+      documentName,
+      fileSizeBytes,
+      settings,
+      priorityTier: quote.priority_tier,
+      quote
+    });
 
   // Check if shop permits pay at counter
   const counterEligibility = useMemo(() => {
@@ -74,9 +68,7 @@ export function CheckoutShell({
   };
 
   const isClosed = !shop.is_open;
-  const isExpired = quote.expires_at
-    ? Date.now() >= new Date(quote.expires_at).getTime()
-    : false;
+  const isExpired = quote.expires_at ? Date.now() >= new Date(quote.expires_at).getTime() : false;
 
   return (
     <form
@@ -97,8 +89,8 @@ export function CheckoutShell({
           <div>
             <h4 className="font-extrabold text-sm text-red-950">Shop is Currently Closed</h4>
             <p className="mt-0.5 text-red-800">
-              {shop.name} is closed right now (Opening hours: {shop.opening_time} – {shop.closing_time}).
-              New print jobs cannot be submitted while the shop is closed.
+              {shop.name} is closed right now (Opening hours: {shop.opening_time} –{' '}
+              {shop.closing_time}). New print jobs cannot be submitted while the shop is closed.
             </p>
           </div>
         </div>

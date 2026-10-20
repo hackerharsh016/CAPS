@@ -7,7 +7,13 @@
  */
 
 import React, { useMemo } from 'react';
-import type { PrintSettings, PrintSettingsCalculation, PaperSize, ColorMode, SideMode } from '../types';
+import type {
+  PrintSettings,
+  PrintSettingsCalculation,
+  PaperSize,
+  ColorMode,
+  SideMode
+} from '../types';
 import type { ShopPrinterCapabilities } from '../capabilities-types';
 import { usePrintSettings } from '../use-print-settings';
 import { PaperSizeSelector } from './PaperSizeSelector';
@@ -234,11 +240,7 @@ export function PrintSettingsForm({
       </div>
 
       {/* Section 4: Live Summary & Calculation */}
-      <PrintSettingsSummary
-        settings={settings}
-        calculation={calculation}
-        isValid={isValid}
-      />
+      <PrintSettingsSummary settings={settings} calculation={calculation} isValid={isValid} />
 
       {/* Form Action Buttons */}
       <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 pt-2">

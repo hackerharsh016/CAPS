@@ -12,10 +12,7 @@ import type { Coordinates, GeolocationState, GeolocationStatus } from './types';
 /**
  * Calculates distance in meters between two geographical points using Haversine formula.
  */
-export function calculateHaversineDistance(
-  coord1: Coordinates,
-  coord2: Coordinates
-): number {
+export function calculateHaversineDistance(coord1: Coordinates, coord2: Coordinates): number {
   const R = 6371000; // Earth's radius in meters
   const lat1Rad = (coord1.latitude * Math.PI) / 180;
   const lat2Rad = (coord2.latitude * Math.PI) / 180;
@@ -69,10 +66,10 @@ export function useGeolocation(): GeolocationState & { requestLocation: () => vo
       return;
     }
 
-    setState((prev) => ({ ...prev, status: 'loading', errorMessage: null }));
+    setState(prev => ({ ...prev, status: 'loading', errorMessage: null }));
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      position => {
         setState({
           status: 'granted',
           coordinates: {
@@ -82,7 +79,7 @@ export function useGeolocation(): GeolocationState & { requestLocation: () => vo
           errorMessage: null
         });
       },
-      (error) => {
+      error => {
         let status: GeolocationStatus = 'unavailable';
         let errorMessage = 'Unable to determine your location.';
 

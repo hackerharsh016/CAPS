@@ -19,7 +19,7 @@ describe('UploadService (P04-M03-F01)', () => {
 
     const metadata = await service.uploadDocument(file, {
       targetShopId: 'shop-8888-campus-xerox',
-      onProgress: (p) => {
+      onProgress: p => {
         progressHistory.push(p);
       }
     });
@@ -62,11 +62,11 @@ describe('UploadService (P04-M03-F01)', () => {
     const controller = new AbortController();
     controller.abort(); // Pre-aborted
 
-    await expect(
-      service.uploadDocument(file, { signal: controller.signal })
-    ).rejects.toMatchObject({
-      code: 'ABORTED'
-    });
+    await expect(service.uploadDocument(file, { signal: controller.signal })).rejects.toMatchObject(
+      {
+        code: 'ABORTED'
+      }
+    );
   });
 
   it('rejects empty file before initiating upload timer', async () => {

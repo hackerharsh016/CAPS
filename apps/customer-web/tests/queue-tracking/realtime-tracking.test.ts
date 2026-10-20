@@ -23,7 +23,7 @@ describe('Realtime Job Subscription & Resync (P04-M06-F02)', () => {
       });
 
       const stateTransitions: string[] = [];
-      client.onStateChange((state) => stateTransitions.push(state));
+      client.onStateChange(state => stateTransitions.push(state));
 
       expect(stateTransitions).toContain('disconnected');
 

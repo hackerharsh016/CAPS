@@ -399,7 +399,7 @@ describe('Supabase Auth Client and Security Guards', () => {
         customFetch: mockFetch as unknown as typeof fetch
       });
 
-      const unsubscribe = client.onAuthStateChange((event) => {
+      const unsubscribe = client.onAuthStateChange(event => {
         events.push(event);
       });
 

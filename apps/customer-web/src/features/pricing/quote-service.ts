@@ -41,10 +41,7 @@ export class QuoteService {
    * Requests a server-authoritative quote for print settings and priority tier.
    * Supports AbortSignal for canceling outdated requests during rapid user edits.
    */
-  public async requestQuote(
-    req: QuoteRequest,
-    signal?: AbortSignal
-  ): Promise<QuoteResponse> {
+  public async requestQuote(req: QuoteRequest, signal?: AbortSignal): Promise<QuoteResponse> {
     const latency = this.config.mockLatencyMs ?? 80;
 
     if (latency > 0) {

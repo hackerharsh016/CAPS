@@ -44,9 +44,7 @@ export function CapabilityWarningBanner({
               🛑
             </span>
             <div>
-              <h3 className="font-extrabold text-sm text-red-950">
-                Printers Currently Offline
-              </h3>
+              <h3 className="font-extrabold text-sm text-red-950">Printers Currently Offline</h3>
               <p className="mt-0.5 text-red-800">
                 All printers at {shopName} are currently powered off or reporting hardware errors.
                 Orders cannot be queued until a printer reconnects.
@@ -78,8 +76,8 @@ export function CapabilityWarningBanner({
                 Settings Incompatible with {shopName}&apos;s Hardware
               </h3>
               <p className="text-amber-900">
-                CAPS enforces strict fidelity and will <strong>never silently downgrade</strong> your
-                print quality. The following settings are not supported by this shop:
+                CAPS enforces strict fidelity and will <strong>never silently downgrade</strong>{' '}
+                your print quality. The following settings are not supported by this shop:
               </p>
               <ul className="list-disc list-inside space-y-1 pt-1 font-medium text-amber-950">
                 {incompatibilities.map((inc, i) => (
@@ -122,7 +120,8 @@ export function CapabilityWarningBanner({
               ℹ️
             </span>
             <span>
-              Printer capabilities for {shopName} were verified over 30 minutes ago. Real-time tray paper and toner levels may vary.
+              Printer capabilities for {shopName} were verified over 30 minutes ago. Real-time tray
+              paper and toner levels may vary.
             </span>
           </div>
 

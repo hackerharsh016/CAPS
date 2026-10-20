@@ -42,7 +42,7 @@ function QuotePageContent() {
   // 1. Load shop details
   useEffect(() => {
     if (shopId) {
-      defaultShopsService.getShopById(shopId).then((found) => {
+      defaultShopsService.getShopById(shopId).then(found => {
         setShop(found);
       });
     }
@@ -188,11 +188,15 @@ function QuotePageContent() {
               <span>•</span>
               <span>{settings.sides === 'double' ? 'Duplex' : 'Simplex'}</span>
               <span>•</span>
-              <span>{settings.copies} {settings.copies === 1 ? 'copy' : 'copies'}</span>
+              <span>
+                {settings.copies} {settings.copies === 1 ? 'copy' : 'copies'}
+              </span>
               {shop && (
                 <>
                   <span>•</span>
-                  <span>Shop: <strong>{shop.name}</strong></span>
+                  <span>
+                    Shop: <strong>{shop.name}</strong>
+                  </span>
                 </>
               )}
             </div>

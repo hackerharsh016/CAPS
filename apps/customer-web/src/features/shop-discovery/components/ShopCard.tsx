@@ -168,4 +168,3 @@ export function ShopCard({ shop }: ShopCardProps) {
     </article>
   );
 }
-

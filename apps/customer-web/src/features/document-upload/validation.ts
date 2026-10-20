@@ -3,11 +3,7 @@
  * Enforces file format constraints, size ceilings, and non-empty checks.
  */
 
-import type {
-  SupportedMimeType,
-  SupportedExtension,
-  UploadValidationError
-} from './types';
+import type { SupportedMimeType, SupportedExtension, UploadValidationError } from './types';
 
 export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 Megabytes
 

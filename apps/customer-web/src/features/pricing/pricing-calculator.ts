@@ -4,12 +4,7 @@
  * priority tier surcharges, and wait time estimates.
  */
 
-import type {
-  PriceBreakdown,
-  PriorityTier,
-  QuoteRequest,
-  QuoteResponse
-} from './types';
+import type { PriceBreakdown, PriorityTier, QuoteRequest, QuoteResponse } from './types';
 import type { PrintSettings, PaperSize } from '../print-settings/types';
 import { parsePageRange, calculateEstimatedSheets } from '../print-settings/validation';
 
@@ -101,8 +96,7 @@ export function calculatePriceBreakdown(
   }
 
   // 7. Urgent priority surcharge
-  const urgent_surcharge_paise =
-    priorityTier === 'urgent' ? rates.urgent_surcharge_paise : 0;
+  const urgent_surcharge_paise = priorityTier === 'urgent' ? rates.urgent_surcharge_paise : 0;
 
   // 8. Pre-tax subtotal
   const subtotal_paise = Math.max(
@@ -162,7 +156,9 @@ export function generateAuthoritativeQuote(
   customRates?: Partial<ShopPricingRates>,
   baseQueueLoadMinutes?: number
 ): QuoteResponse {
-  const quote_id = crypto.randomUUID ? crypto.randomUUID() : `quote-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const quote_id = crypto.randomUUID
+    ? crypto.randomUUID()
+    : `quote-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const price_breakdown = calculatePriceBreakdown(
     req.settings,
     req.priority_tier,

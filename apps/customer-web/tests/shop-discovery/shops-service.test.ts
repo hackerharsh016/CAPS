@@ -40,15 +40,15 @@ describe('ShopsService', () => {
   describe('Open Status Filtering', () => {
     it('returns only open shops when openOnly is true', async () => {
       const res = await service.getShops({ openOnly: true });
-      expect(res.shops.every((s) => s.is_open)).toBe(true);
+      expect(res.shops.every(s => s.is_open)).toBe(true);
       // 'shop-7777-tech-xerox' is closed
-      const closedShop = res.shops.find((s) => s.id === 'shop-7777-tech-xerox');
+      const closedShop = res.shops.find(s => s.id === 'shop-7777-tech-xerox');
       expect(closedShop).toBeUndefined();
     });
 
     it('includes closed shops when openOnly is false', async () => {
       const res = await service.getShops({ openOnly: false, limit: 10 });
-      const closedShop = res.shops.find((s) => s.id === 'shop-7777-tech-xerox');
+      const closedShop = res.shops.find(s => s.id === 'shop-7777-tech-xerox');
       expect(closedShop).toBeDefined();
     });
   });
@@ -57,31 +57,31 @@ describe('ShopsService', () => {
     it('filters shops by color printing capability', async () => {
       const res = await service.getShops({ supportsColor: true, limit: 10 });
       expect(res.shops.length).toBeGreaterThan(0);
-      expect(res.shops.every((s) => s.capabilities.color)).toBe(true);
+      expect(res.shops.every(s => s.capabilities.color)).toBe(true);
     });
 
     it('filters shops by duplex printing capability', async () => {
       const res = await service.getShops({ supportsDuplex: true, limit: 10 });
       expect(res.shops.length).toBeGreaterThan(0);
-      expect(res.shops.every((s) => s.capabilities.duplex)).toBe(true);
+      expect(res.shops.every(s => s.capabilities.duplex)).toBe(true);
     });
 
     it('filters shops by A3 paper capability', async () => {
       const res = await service.getShops({ supportsA3: true, limit: 10 });
       expect(res.shops.length).toBeGreaterThan(0);
-      expect(res.shops.every((s) => s.capabilities.paper_sizes.includes('A3'))).toBe(true);
+      expect(res.shops.every(s => s.capabilities.paper_sizes.includes('A3'))).toBe(true);
     });
 
     it('filters shops by spiral binding capability', async () => {
       const res = await service.getShops({ supportsSpiral: true, limit: 10 });
       expect(res.shops.length).toBeGreaterThan(0);
-      expect(res.shops.every((s) => s.capabilities.spiral_binding)).toBe(true);
+      expect(res.shops.every(s => s.capabilities.spiral_binding)).toBe(true);
     });
 
     it('filters shops by urgent queue capability', async () => {
       const res = await service.getShops({ supportsUrgent: true, limit: 10 });
       expect(res.shops.length).toBeGreaterThan(0);
-      expect(res.shops.every((s) => s.capabilities.urgent_queue)).toBe(true);
+      expect(res.shops.every(s => s.capabilities.urgent_queue)).toBe(true);
     });
 
     it('filters shops with multiple simultaneous capability constraints', async () => {
@@ -91,11 +91,14 @@ describe('ShopsService', () => {
         supportsA3: true,
         limit: 10
       });
-      expect(res.shops.every((s) =>
-        s.capabilities.color &&
-        s.capabilities.spiral_binding &&
-        s.capabilities.paper_sizes.includes('A3')
-      )).toBe(true);
+      expect(
+        res.shops.every(
+          s =>
+            s.capabilities.color &&
+            s.capabilities.spiral_binding &&
+            s.capabilities.paper_sizes.includes('A3')
+        )
+      ).toBe(true);
     });
   });
 

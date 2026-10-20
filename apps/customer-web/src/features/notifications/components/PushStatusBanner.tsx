@@ -11,14 +11,8 @@ import React, { useState } from 'react';
 import { usePushNotifications } from '../use-push-notifications';
 
 export function PushStatusBanner() {
-  const {
-    permission,
-    isSubscribed,
-    isLoading,
-    isOnline,
-    error,
-    requestPermissionAndSubscribe
-  } = usePushNotifications();
+  const { permission, isSubscribed, isLoading, isOnline, error, requestPermissionAndSubscribe } =
+    usePushNotifications();
 
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -62,8 +56,8 @@ export function PushStatusBanner() {
                 Push Notifications are Blocked by Browser Settings
               </p>
               <p className="text-xs text-slate-600 mt-0.5">
-                To receive instant pickup alerts, enable notifications in your browser&apos;s site permissions.
-                In-app order tracking remains active below.
+                To receive instant pickup alerts, enable notifications in your browser&apos;s site
+                permissions. In-app order tracking remains active below.
               </p>
             </div>
           </div>

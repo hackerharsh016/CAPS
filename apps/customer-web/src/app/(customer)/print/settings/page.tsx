@@ -11,7 +11,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { defaultShopsService } from '../../../../features/shop-discovery/shops-service';
 import type { Shop } from '../../../../features/shop-discovery/types';
 import { PrintSettingsForm } from '../../../../features/print-settings/components/PrintSettingsForm';
-import type { PrintSettings, PrintSettingsCalculation } from '../../../../features/print-settings/types';
+import type {
+  PrintSettings,
+  PrintSettingsCalculation
+} from '../../../../features/print-settings/types';
 import { defaultCapabilitiesService } from '../../../../features/print-settings/capabilities-service';
 import type { ShopPrinterCapabilities } from '../../../../features/print-settings/capabilities-types';
 
@@ -39,10 +42,10 @@ function PrintSettingsContent() {
   // 1. Fetch Shop details & discovered printer capabilities if shopId provided
   useEffect(() => {
     if (shopId) {
-      defaultShopsService.getShopById(shopId).then((found) => {
+      defaultShopsService.getShopById(shopId).then(found => {
         setShop(found);
       });
-      defaultCapabilitiesService.getShopPrinterCapabilities(shopId).then((caps) => {
+      defaultCapabilitiesService.getShopPrinterCapabilities(shopId).then(caps => {
         setCapabilities(caps);
       });
     } else {
@@ -190,7 +193,9 @@ function PrintSettingsContent() {
               {shop && (
                 <>
                   <span>•</span>
-                  <span>Target: <strong>{shop.name}</strong></span>
+                  <span>
+                    Target: <strong>{shop.name}</strong>
+                  </span>
                 </>
               )}
             </div>

@@ -17,12 +17,7 @@ export interface CopiesInputProps {
 
 const PRESET_COPIES = [1, 2, 5, 10];
 
-export function CopiesInput({
-  value,
-  onChange,
-  error,
-  disabled = false
-}: CopiesInputProps) {
+export function CopiesInput({ value, onChange, error, disabled = false }: CopiesInputProps) {
   const handleDecrement = () => {
     if (value > MIN_COPIES && !disabled) {
       onChange(value - 1);
@@ -53,7 +48,9 @@ export function CopiesInput({
         <label htmlFor="print-copies-input" className="text-sm font-bold text-slate-800">
           Number of Copies <span className="text-red-500">*</span>
         </label>
-        <span className="text-xs text-slate-400">Limit: {MIN_COPIES} to {MAX_COPIES}</span>
+        <span className="text-xs text-slate-400">
+          Limit: {MIN_COPIES} to {MAX_COPIES}
+        </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -99,7 +96,7 @@ export function CopiesInput({
 
         {/* Quick Presets */}
         <div className="flex items-center gap-1.5" role="group" aria-label="Quick copy presets">
-          {PRESET_COPIES.map((preset) => (
+          {PRESET_COPIES.map(preset => (
             <button
               key={preset}
               type="button"

@@ -16,12 +16,7 @@ export interface UploadProgressProps {
   onCancel: () => void;
 }
 
-export function UploadProgress({
-  filename,
-  totalSize,
-  progress,
-  onCancel
-}: UploadProgressProps) {
+export function UploadProgress({ filename, totalSize, progress, onCancel }: UploadProgressProps) {
   const percentage = progress?.percentage ?? 0;
   const loadedBytes = progress?.loadedBytes ?? 0;
 

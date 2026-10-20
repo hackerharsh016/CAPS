@@ -53,7 +53,7 @@ function CheckoutPageContent() {
   // 1. Load shop details
   useEffect(() => {
     const targetShopId = shopId || 'shop-8888-campus-xerox';
-    defaultShopsService.getShopById(targetShopId).then((found) => {
+    defaultShopsService.getShopById(targetShopId).then(found => {
       setShop(found);
     });
   }, [shopId]);
@@ -202,8 +202,8 @@ function CheckoutPageContent() {
           <p className="text-xs text-emerald-800">
             {confirmedResult.payment_method === 'pay_at_counter'
               ? 'Your job has been submitted to the shop for counter payment confirmation.'
-              : 'Your payment was initiated and order has entered the print queue.'}
-            {' '}Redirecting to order tracking...
+              : 'Your payment was initiated and order has entered the print queue.'}{' '}
+            Redirecting to order tracking...
           </p>
         </div>
       )}

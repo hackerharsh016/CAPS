@@ -106,7 +106,7 @@ describe('CAPS Customer Module End-to-End Journey (P04-M07-F01)', () => {
     });
 
     expect(shopDiscovery.shops.length).toBeGreaterThan(0);
-    const selectedShop = shopDiscovery.shops.find((s) => s.id === 'shop-8888-campus-xerox')!;
+    const selectedShop = shopDiscovery.shops.find(s => s.id === 'shop-8888-campus-xerox')!;
     expect(selectedShop).toBeDefined();
     expect(selectedShop.name).toBe('Campus Central Xerox & Stationery');
     expect(selectedShop.is_open).toBe(true);
@@ -178,12 +178,15 @@ describe('CAPS Customer Module End-to-End Journey (P04-M07-F01)', () => {
     expect(settingsValidation.calculation?.effectivePageCount).toBe(15);
 
     // Verify capability compatibility with selected shop
-    const capabilities = await defaultCapabilitiesService.getShopPrinterCapabilities(selectedShop.id);
+    const capabilities = await defaultCapabilitiesService.getShopPrinterCapabilities(
+      selectedShop.id
+    );
     const compatibility = checkSettingsCompatibility(validSettings, capabilities);
     expect(compatibility.isCompatible).toBe(true);
 
     // Verify rejection of unsupported settings against mono-only fleet
-    const monoFleetCapabilities = await defaultCapabilitiesService.getShopPrinterCapabilities('shop-offline-fleet');
+    const monoFleetCapabilities =
+      await defaultCapabilitiesService.getShopPrinterCapabilities('shop-offline-fleet');
     const monoCheck = checkSettingsCompatibility(
       { ...validSettings, color_mode: 'color' },
       monoFleetCapabilities
@@ -293,10 +296,13 @@ describe('CAPS Customer Module End-to-End Journey (P04-M07-F01)', () => {
       limit: 10,
       filter: 'all'
     });
-    expect(customerOrders.orders.some((o) => o.id === orderResult1.order_id)).toBe(true);
+    expect(customerOrders.orders.some(o => o.id === orderResult1.order_id)).toBe(true);
 
     // 8b. Strict Tenant Isolation Invariant: Customer Beta CANNOT inspect Customer Alpha's order
-    const crossTenantOrder = await ordersService.getOrderById(orderResult1.order_id, otherCustomerId);
+    const crossTenantOrder = await ordersService.getOrderById(
+      orderResult1.order_id,
+      otherCustomerId
+    );
     expect(crossTenantOrder).toBeNull();
 
     await expect(
@@ -306,7 +312,7 @@ describe('CAPS Customer Module End-to-End Journey (P04-M07-F01)', () => {
 
   describe('Edge Cases & Failure Recovery', () => {
     it('rejects order admission if shop is closed', async () => {
-      const closedShop = MOCK_SHOPS.find((s) => s.id === 'shop-7777-tech-xerox')!;
+      const closedShop = MOCK_SHOPS.find(s => s.id === 'shop-7777-tech-xerox')!;
       expect(closedShop).toBeDefined();
       expect(closedShop.is_open).toBe(false);
 
@@ -396,7 +402,7 @@ describe('CAPS Customer Module End-to-End Journey (P04-M07-F01)', () => {
     });
 
     it('rejects pay-at-counter for cashless transit locations', async () => {
-      const metroTransitShop = MOCK_SHOPS.find((s) => s.id === 'shop-9999-metro-prints')!;
+      const metroTransitShop = MOCK_SHOPS.find(s => s.id === 'shop-9999-metro-prints')!;
       expect(metroTransitShop).toBeDefined();
 
       const quote = generateAuthoritativeQuote({

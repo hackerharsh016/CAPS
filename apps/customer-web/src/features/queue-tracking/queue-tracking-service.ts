@@ -23,7 +23,11 @@ export class QueueTrackingCustomError extends Error {
   public code: TrackingErrorCode;
   public details?: Record<string, unknown> | undefined;
 
-  constructor(code: TrackingErrorCode, message: string, details?: Record<string, unknown> | undefined) {
+  constructor(
+    code: TrackingErrorCode,
+    message: string,
+    details?: Record<string, unknown> | undefined
+  ) {
     super(message);
     this.name = 'QueueTrackingCustomError';
     this.code = code;
@@ -72,7 +76,7 @@ export class QueueTrackingService {
       filter: 'all'
     });
 
-    const targetOrder = allCustomerOrders.orders.find((o) => o.id === jobId);
+    const targetOrder = allCustomerOrders.orders.find(o => o.id === jobId);
 
     if (!targetOrder) {
       // Check if order exists under another customer (Tenant isolation violation check)
@@ -167,7 +171,7 @@ export class QueueTrackingService {
         limit: 100,
         filter: 'all'
       });
-      if (res.orders.some((o) => o.id === jobId)) {
+      if (res.orders.some(o => o.id === jobId)) {
         return true;
       }
     }
@@ -177,7 +181,10 @@ export class QueueTrackingService {
   /**
    * Resolves raw backend order status into client display status.
    */
-  private resolveDisplayStatus(jobId: string, rawStatus: CustomerOrder['status']): DisplayJobStatus {
+  private resolveDisplayStatus(
+    jobId: string,
+    rawStatus: CustomerOrder['status']
+  ): DisplayJobStatus {
     if (this.statusOverrides.has(jobId)) {
       return this.statusOverrides.get(jobId)!;
     }
@@ -303,24 +310,28 @@ export class QueueTrackingService {
         return {
           label: 'In Print Queue',
           explanation: `Your document is safely queued in the shop's active print queue (${tier === 'urgent' ? '⚡ Express Priority' : 'Standard Economy Tier'}).`,
-          nextStep: 'You can stay on this page or check back shortly. We will notify you when printing begins.'
+          nextStep:
+            'You can stay on this page or check back shortly. We will notify you when printing begins.'
         };
       case 'approved':
         return {
           label: 'Approved by Shop',
-          explanation: 'The shop operator has approved your print job specifications and routed it to the printer spooler.',
+          explanation:
+            'The shop operator has approved your print job specifications and routed it to the printer spooler.',
           nextStep: 'Preparing printer hardware...'
         };
       case 'claimed':
         return {
           label: 'Claimed by Agent',
-          explanation: 'The local Windows printer agent has claimed the job and verified file integrity.',
+          explanation:
+            'The local Windows printer agent has claimed the job and verified file integrity.',
           nextStep: 'Rendering print pages...'
         };
       case 'printing':
         return {
           label: 'Printing in Progress',
-          explanation: 'The printer is actively printing your document. Please do not leave the pickup vicinity.',
+          explanation:
+            'The printer is actively printing your document. Please do not leave the pickup vicinity.',
           nextStep: 'Prints will be ready momentarily at the counter.'
         };
       case 'ready':
@@ -339,7 +350,8 @@ export class QueueTrackingService {
       case 'failed':
         return {
           label: 'Print Failed',
-          explanation: 'A printer paper jam or hardware error interrupted printing. Your files have been preserved.',
+          explanation:
+            'A printer paper jam or hardware error interrupted printing. Your files have been preserved.',
           nextStep: 'Please consult the shop counter. Any payments will be credited or refunded.'
         };
       case 'cancelled':

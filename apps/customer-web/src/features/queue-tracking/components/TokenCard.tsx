@@ -63,14 +63,29 @@ export const TokenCard: React.FC<TokenCardProps> = ({ tracking }) => {
           >
             {copied ? (
               <>
-                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-4 h-4 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 <span className="text-emerald-700 font-medium">Copied!</span>
               </>
             ) : (
               <>
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  className="w-4 h-4 text-slate-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -83,7 +98,9 @@ export const TokenCard: React.FC<TokenCardProps> = ({ tracking }) => {
             )}
           </button>
 
-          <span className="text-[11px] text-slate-400 font-mono">Job #{tracking.job_id.slice(-8)}</span>
+          <span className="text-[11px] text-slate-400 font-mono">
+            Job #{tracking.job_id.slice(-8)}
+          </span>
         </div>
       </div>
     </div>

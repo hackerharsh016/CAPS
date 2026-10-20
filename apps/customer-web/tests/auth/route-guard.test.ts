@@ -9,7 +9,10 @@ import {
 import type { AuthSession, UserRole } from '../../src/features/auth/types';
 
 describe('Route Guard and Access Control Resolution', () => {
-  const createMockSession = (expiresInSecondsFromNow = 3600, role: UserRole = 'customer'): AuthSession => {
+  const createMockSession = (
+    expiresInSecondsFromNow = 3600,
+    role: UserRole = 'customer'
+  ): AuthSession => {
     const now = Math.floor(Date.now() / 1000);
     return {
       access_token: 'mock-jwt-token',

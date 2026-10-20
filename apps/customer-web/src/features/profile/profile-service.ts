@@ -30,10 +30,7 @@ export class ProfileService {
   /**
    * Computes customer stats from order history.
    */
-  public async getCustomerStats(
-    customerId: string,
-    createdAt: string
-  ): Promise<ProfileStats> {
+  public async getCustomerStats(customerId: string, createdAt: string): Promise<ProfileStats> {
     const ordersRes = await defaultOrdersService.getCustomerOrders({
       customerId,
       page: 1,
@@ -42,7 +39,7 @@ export class ProfileService {
     });
 
     const orders: CustomerOrder[] = ordersRes.orders;
-    const completed = orders.filter((o) => o.status === 'completed');
+    const completed = orders.filter(o => o.status === 'completed');
     const totalSpent = completed.reduce((sum, o) => sum + o.amount_paise, 0);
 
     return {

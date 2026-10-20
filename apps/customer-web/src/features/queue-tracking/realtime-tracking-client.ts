@@ -40,7 +40,9 @@ export class RealtimeTrackingClient {
 
   constructor(options: RealtimeSubscriptionOptions) {
     if (!options.customerId) {
-      throw new Error('Tenant security invariant: customerId is required for Realtime subscription.');
+      throw new Error(
+        'Tenant security invariant: customerId is required for Realtime subscription.'
+      );
     }
     if (!options.jobId) {
       throw new Error('jobId is required for Realtime subscription.');

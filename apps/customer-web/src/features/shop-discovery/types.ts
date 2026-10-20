@@ -65,12 +65,7 @@ export interface ShopDiscoveryResponse {
 }
 
 export type GeolocationStatus =
-  | 'idle'
-  | 'prompt'
-  | 'loading'
-  | 'granted'
-  | 'denied'
-  | 'unavailable';
+  'idle' | 'prompt' | 'loading' | 'granted' | 'denied' | 'unavailable';
 
 export interface GeolocationState {
   status: GeolocationStatus;
@@ -90,4 +85,3 @@ export interface ServiceCatalogItem {
   isAvailable: boolean;
   unavailabilityReason?: string | undefined;
 }
-

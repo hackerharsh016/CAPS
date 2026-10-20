@@ -8,11 +8,7 @@
  * - Atomic pending print job registration conforming to frozen contracts.
  */
 
-import type {
-  CheckoutOrderInput,
-  CheckoutResult,
-  CheckoutErrorCode
-} from './types';
+import type { CheckoutOrderInput, CheckoutResult, CheckoutErrorCode } from './types';
 import type { Shop } from '../shop-discovery/types';
 import type { CustomerOrder } from '../orders/types';
 import { defaultShopsService } from '../shop-discovery/shops-service';
@@ -38,7 +34,10 @@ export class CheckoutService {
   private inFlightLocks = new Set<string>();
 
   // Custom pay-at-counter override policies for shops
-  private payAtCounterOverrides = new Map<string, { allowed: boolean; reason?: string | undefined }>();
+  private payAtCounterOverrides = new Map<
+    string,
+    { allowed: boolean; reason?: string | undefined }
+  >();
 
   // Counter for generating human-readable sequential tokens (e.g. T-045)
   private tokenCounter = 42;
@@ -58,7 +57,8 @@ export class CheckoutService {
     if (shop.id === 'shop-9999-metro-prints') {
       return {
         allowed: false,
-        reason: 'This commercial transit shop operates cashless. Please choose an online payment method.'
+        reason:
+          'This commercial transit shop operates cashless. Please choose an online payment method.'
       };
     }
 
@@ -182,7 +182,9 @@ export class CheckoutService {
         payment_status: isCounter ? 'pay_at_counter' : 'pending',
         payment_method: input.payment_method,
         amount_paise: input.quote.price_breakdown.total_paise,
-        payment_redirect_url: isCounter ? undefined : `/print/payment?orderId=${encodeURIComponent(orderId)}`,
+        payment_redirect_url: isCounter
+          ? undefined
+          : `/print/payment?orderId=${encodeURIComponent(orderId)}`,
         idempotency_key,
         created_at: nowIso,
         document_expires_at: docExpiresIso

@@ -23,7 +23,8 @@ export const JobDetailsCard: React.FC<JobDetailsCardProps> = ({ tracking }) => {
           <span className="text-xs text-slate-500">Document Name</span>
           <p className="text-sm font-semibold text-slate-900 mt-0.5">{tracking.document_name}</p>
           <p className="text-xs text-slate-500 mt-0.5">
-            {(tracking.file_size_bytes / (1024 * 1024)).toFixed(2)} MB • {settings.total_pages} total pages
+            {(tracking.file_size_bytes / (1024 * 1024)).toFixed(2)} MB • {settings.total_pages}{' '}
+            total pages
           </p>
         </div>
 
@@ -37,11 +38,13 @@ export const JobDetailsCard: React.FC<JobDetailsCardProps> = ({ tracking }) => {
               tracking.payment_status === 'paid'
                 ? 'bg-emerald-100 text-emerald-800'
                 : tracking.payment_status === 'pay_at_counter'
-                ? 'bg-amber-100 text-amber-800'
-                : 'bg-slate-100 text-slate-700'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-slate-100 text-slate-700'
             }`}
           >
-            {tracking.payment_status === 'pay_at_counter' ? 'Pay at Counter' : tracking.payment_status}
+            {tracking.payment_status === 'pay_at_counter'
+              ? 'Pay at Counter'
+              : tracking.payment_status}
           </span>
         </div>
       </div>
@@ -87,7 +90,10 @@ export const JobDetailsCard: React.FC<JobDetailsCardProps> = ({ tracking }) => {
           </div>
           {tracking.shop_phone && (
             <div className="text-slate-500">
-              📞 <a href={`tel:${tracking.shop_phone}`} className="hover:underline text-blue-600">{tracking.shop_phone}</a>
+              📞{' '}
+              <a href={`tel:${tracking.shop_phone}`} className="hover:underline text-blue-600">
+                {tracking.shop_phone}
+              </a>
             </div>
           )}
         </div>

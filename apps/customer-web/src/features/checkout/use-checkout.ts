@@ -7,12 +7,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import type {
-  PaymentMethod,
-  CheckoutOrderInput,
-  CheckoutResult,
-  CheckoutError
-} from './types';
+import type { PaymentMethod, CheckoutOrderInput, CheckoutResult, CheckoutError } from './types';
 import { CheckoutCustomError, CheckoutService, defaultCheckoutService } from './checkout-service';
 
 export interface UseCheckoutOptions {
@@ -55,7 +50,9 @@ export function useCheckout({
 
   // Stable idempotency key per checkout session
   const idempotencyKeyRef = useRef<string>(
-    crypto.randomUUID ? crypto.randomUUID() : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    crypto.randomUUID
+      ? crypto.randomUUID()
+      : `idem-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   );
 
   const clearError = useCallback(() => {

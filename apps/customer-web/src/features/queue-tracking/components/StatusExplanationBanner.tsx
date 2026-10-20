@@ -19,7 +19,12 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
         aria-live="polite"
       >
         <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="w-6 h-6 text-amber-600 shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -28,9 +33,7 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
             />
           </svg>
           <div>
-            <h5 className="text-sm font-bold text-amber-900">
-              Station Communication Offline
-            </h5>
+            <h5 className="text-sm font-bold text-amber-900">Station Communication Offline</h5>
             <p className="text-sm text-amber-800 mt-1">{status_explanation}</p>
             <div className="mt-3 bg-amber-100/70 border border-amber-200 rounded-md p-2.5 text-xs text-amber-900 font-medium">
               👉 <span className="font-semibold">Next Step:</span> {next_step_instruction}
@@ -49,7 +52,12 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
         aria-live="polite"
       >
         <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-slate-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="w-6 h-6 text-slate-600 shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -77,7 +85,12 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
         aria-live="polite"
       >
         <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <div>
@@ -100,7 +113,12 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
         aria-live="polite"
       >
         <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-purple-600 shrink-0 mt-0.5 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="w-6 h-6 text-purple-600 shrink-0 mt-0.5 animate-spin"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -128,8 +146,18 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
         aria-live="assertive"
       >
         <div className="flex items-start gap-3">
-          <svg className="w-6 h-6 text-red-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <svg
+            className="w-6 h-6 text-red-600 shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
           </svg>
           <div>
             <h5 className="text-sm font-bold text-red-900">{status_label}</h5>
@@ -151,7 +179,12 @@ export const StatusExplanationBanner: React.FC<StatusExplanationBannerProps> = (
       aria-live="polite"
     >
       <div className="flex items-start gap-3">
-        <svg className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg
+          className="w-6 h-6 text-blue-600 shrink-0 mt-0.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

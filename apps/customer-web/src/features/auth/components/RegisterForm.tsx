@@ -48,10 +48,7 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
     if (authErr?.status === 429 || authErr?.code === 'RATE_LIMIT_EXCEEDED') {
       return 'Too many registration attempts. Please wait a few moments before trying again.';
     }
-    if (
-      authErr?.status === 400 &&
-      authErr?.message?.toLowerCase().includes('already registered')
-    ) {
+    if (authErr?.status === 400 && authErr?.message?.toLowerCase().includes('already registered')) {
       return 'An account with this email already exists. Please sign in instead.';
     }
     if (
@@ -127,12 +124,11 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 font-bold text-xl">
           ✓
         </div>
-        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
-          Account Created!
-        </h2>
+        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">Account Created!</h2>
         <p className="mt-2 text-sm text-slate-600">
-          We have sent a confirmation link to <span className="font-semibold text-slate-800">{email}</span>.
-          Please click the link in your email to verify your account and start printing.
+          We have sent a confirmation link to{' '}
+          <span className="font-semibold text-slate-800">{email}</span>. Please click the link in
+          your email to verify your account and start printing.
         </p>
         <div className="mt-6">
           <a
@@ -150,9 +146,7 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
     <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Create an account</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Get started with seamless zero-queue printing
-        </p>
+        <p className="mt-2 text-sm text-slate-600">Get started with seamless zero-queue printing</p>
       </div>
 
       {formError && (
@@ -184,9 +178,9 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
             aria-invalid={!!fieldErrors.name}
             aria-describedby={fieldErrors.name ? 'register-name-error' : undefined}
             value={name}
-            onChange={(e) => {
+            onChange={e => {
               setName(e.target.value);
-              if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
+              if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: undefined }));
             }}
             className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
               fieldErrors.name
@@ -217,9 +211,9 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
             aria-invalid={!!fieldErrors.email}
             aria-describedby={fieldErrors.email ? 'register-email-error' : undefined}
             value={email}
-            onChange={(e) => {
+            onChange={e => {
               setEmail(e.target.value);
-              if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+              if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
             }}
             className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
               fieldErrors.email
@@ -254,9 +248,9 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
               aria-invalid={!!fieldErrors.phone}
               aria-describedby={fieldErrors.phone ? 'register-phone-error' : undefined}
               value={phone}
-              onChange={(e) => {
+              onChange={e => {
                 setPhone(e.target.value);
-                if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: undefined }));
               }}
               className={`block w-full rounded-lg border py-2.5 pl-12 pr-3.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.phone
@@ -289,9 +283,10 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
               aria-invalid={!!fieldErrors.password}
               aria-describedby={fieldErrors.password ? 'register-password-error' : 'password-hint'}
               value={password}
-              onChange={(e) => {
+              onChange={e => {
                 setPassword(e.target.value);
-                if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                if (fieldErrors.password)
+                  setFieldErrors(prev => ({ ...prev, password: undefined }));
               }}
               className={`block w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.password
@@ -302,7 +297,7 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
             />
             <button
               type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
+              onClick={() => setShowPassword(prev => !prev)}
               className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-slate-500 hover:text-slate-700"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
@@ -337,10 +332,10 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
             aria-invalid={!!fieldErrors.confirmPassword}
             aria-describedby={fieldErrors.confirmPassword ? 'register-confirm-error' : undefined}
             value={confirmPassword}
-            onChange={(e) => {
+            onChange={e => {
               setConfirmPassword(e.target.value);
               if (fieldErrors.confirmPassword) {
-                setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                setFieldErrors(prev => ({ ...prev, confirmPassword: undefined }));
               }
             }}
             className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
@@ -369,9 +364,9 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
               aria-invalid={!!fieldErrors.terms}
               aria-describedby={fieldErrors.terms ? 'register-terms-error' : undefined}
               checked={agreeTerms}
-              onChange={(e) => {
+              onChange={e => {
                 setAgreeTerms(e.target.checked);
-                if (fieldErrors.terms) setFieldErrors((prev) => ({ ...prev, terms: undefined }));
+                if (fieldErrors.terms) setFieldErrors(prev => ({ ...prev, terms: undefined }));
               }}
               className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
@@ -381,7 +376,10 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
                 Terms of Service
               </a>{' '}
               and{' '}
-              <a href="/privacy" className="font-medium text-blue-600 hover:text-blue-700 underline">
+              <a
+                href="/privacy"
+                className="font-medium text-blue-600 hover:text-blue-700 underline"
+              >
                 Privacy Policy
               </a>
               . I understand my documents are encrypted and purged after printing.

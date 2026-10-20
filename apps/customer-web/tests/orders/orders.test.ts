@@ -123,7 +123,7 @@ describe('Customer Orders Service & Tenant Isolation', () => {
     });
 
     expect(alphaResponse.totalCount).toBe(3);
-    const hasBetaOrders = alphaResponse.orders.some((o) => o.customer_id === customerBeta);
+    const hasBetaOrders = alphaResponse.orders.some(o => o.customer_id === customerBeta);
     expect(hasBetaOrders).toBe(false);
   });
 

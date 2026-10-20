@@ -89,8 +89,8 @@ export function NotificationCenter() {
                 {isSubscribed
                   ? 'Subscribed to live device alerts'
                   : permission === 'denied'
-                  ? 'Permission blocked by browser'
-                  : 'Receive background pickup alerts'}
+                    ? 'Permission blocked by browser'
+                    : 'Receive background pickup alerts'}
               </p>
             </div>
 
@@ -116,7 +116,7 @@ export function NotificationCenter() {
                 No notifications yet. You will see live order updates here.
               </div>
             ) : (
-              notifications.map((n) => (
+              notifications.map(n => (
                 <div
                   key={n.id}
                   onClick={() => markAsRead(n.id)}

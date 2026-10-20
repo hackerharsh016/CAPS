@@ -10,12 +10,7 @@ import { useAuth } from './auth-context';
 import { resolveRouteAccess } from './route-guard-utils';
 import type { RouteGuardProps } from './types';
 
-export function RouteGuard({
-  children,
-  requiredRole,
-  redirectTo,
-  fallback
-}: RouteGuardProps) {
+export function RouteGuard({ children, requiredRole, redirectTo, fallback }: RouteGuardProps) {
   const { session, isLoading } = useAuth();
 
   const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';

@@ -29,7 +29,7 @@ function PrintOrderContent() {
 
   useEffect(() => {
     if (shopId) {
-      defaultShopsService.getShopById(shopId).then((found) => {
+      defaultShopsService.getShopById(shopId).then(found => {
         setShop(found);
       });
     }
@@ -52,7 +52,6 @@ function PrintOrderContent() {
     setUploadedDoc(null);
     setPreview(null);
   };
-
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -102,12 +101,10 @@ function PrintOrderContent() {
       ) : (
         <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4 text-xs text-blue-800 flex items-center justify-between">
           <span>
-            💡 <strong>Tip:</strong> You haven&apos;t selected a specific shop yet. You can upload now and pick a shop during checkout.
+            💡 <strong>Tip:</strong> You haven&apos;t selected a specific shop yet. You can upload
+            now and pick a shop during checkout.
           </span>
-          <a
-            href="/shops"
-            className="font-bold underline hover:no-underline ml-4 shrink-0"
-          >
+          <a href="/shops" className="font-bold underline hover:no-underline ml-4 shrink-0">
             Browse Shops
           </a>
         </div>

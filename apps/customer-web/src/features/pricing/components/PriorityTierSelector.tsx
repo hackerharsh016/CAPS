@@ -73,13 +73,15 @@ export function PriorityTierSelector({
             </div>
 
             <p className="text-xs text-slate-500 mb-3">
-              Standard First-In-First-Out (FIFO) queue processing. Best for routine coursework and non-rush documents.
+              Standard First-In-First-Out (FIFO) queue processing. Best for routine coursework and
+              non-rush documents.
             </p>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
             <span className="text-slate-400 font-medium">
-              Est. Ready: <strong className="text-slate-800">~{estimatedWaitMinutesFlexible} min</strong>
+              Est. Ready:{' '}
+              <strong className="text-slate-800">~{estimatedWaitMinutesFlexible} min</strong>
             </span>
             <span className="font-bold text-emerald-600">No Surcharge</span>
           </div>
@@ -117,13 +119,17 @@ export function PriorityTierSelector({
             </div>
 
             <p className="text-xs text-slate-500 mb-3">
-              Jumps ahead of all flexible jobs directly to the front of the print queue for immediate printing.
+              Jumps ahead of all flexible jobs directly to the front of the print queue for
+              immediate printing.
             </p>
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
             <span className="text-slate-400 font-medium">
-              Est. Ready: <strong className="text-amber-800 font-bold">~{estimatedWaitMinutesUrgent} min ⚡</strong>
+              Est. Ready:{' '}
+              <strong className="text-amber-800 font-bold">
+                ~{estimatedWaitMinutesUrgent} min ⚡
+              </strong>
             </span>
             <span className="font-bold text-amber-700">
               +{formatPaiseToRupees(urgentSurchargePaise)}
