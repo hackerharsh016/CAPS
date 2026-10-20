@@ -4,6 +4,7 @@ export interface IPrintJobsRepository {
   findById(id: string): Promise<PrintJob | null>;
   findByCustomer(customerId: string): Promise<PrintJob[]>;
   findQueueByShop(shopId: string): Promise<PrintJob[]>;
+  findAllByShop?(shopId: string): Promise<PrintJob[]>;
   create(dto: CreatePrintJobDto): Promise<PrintJob>;
   update(id: string, dto: UpdatePrintJobDto): Promise<PrintJob | null>;
   delete(id: string): Promise<boolean>;
@@ -20,6 +21,12 @@ export class MockPrintJobsRepository implements IPrintJobsRepository {
   async findByCustomer(customerId: string): Promise<PrintJob[]> {
     return Array.from(this.jobs.values())
       .filter(j => j.customer_id === customerId)
+      .map(j => ({ ...j }));
+  }
+
+  async findAllByShop(shopId: string): Promise<PrintJob[]> {
+    return Array.from(this.jobs.values())
+      .filter(j => j.shop_id === shopId)
       .map(j => ({ ...j }));
   }
 
