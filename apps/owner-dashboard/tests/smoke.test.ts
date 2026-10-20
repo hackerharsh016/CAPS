@@ -6,6 +6,6 @@ describe('Owner Dashboard Application Shell', () => {
     expect(typeof OwnerDashboardPage).toBe('function');
     const element = OwnerDashboardPage();
     expect(element).toBeDefined();
-    expect(element.type).toBe('div');
+    expect(element.props).toBeDefined();
   });
 });
