@@ -1,5 +1,11 @@
 """CAPS Desktop Print Agent package."""
 
+from caps_agent.api import (
+    DiagnosticsLogBuffer,
+    DiagnosticsRequestHandler,
+    DiagnosticsSecurityError,
+    DiagnosticsServer,
+)
 from caps_agent.auth import (
     AgentCredentials,
     CredentialStore,
@@ -52,6 +58,14 @@ from caps_agent.storage import (
     JobAttemptRecord,
     LocalStateJournal,
     TempFileManager,
+)
+from caps_agent.tray import (
+    BaseTrayAdapter,
+    DesktopTrayAdapter,
+    HeadlessTrayAdapter,
+    TrayController,
+    TrayStateSnapshot,
+    TrayStatus,
 )
 from caps_agent.utils.logging import redact_sensitive_data, setup_logging
 
@@ -106,4 +120,14 @@ __all__ = [
     "CleanupReport",
     "setup_logging",
     "redact_sensitive_data",
+    "DiagnosticsServer",
+    "DiagnosticsRequestHandler",
+    "DiagnosticsLogBuffer",
+    "DiagnosticsSecurityError",
+    "TrayStatus",
+    "TrayStateSnapshot",
+    "BaseTrayAdapter",
+    "HeadlessTrayAdapter",
+    "DesktopTrayAdapter",
+    "TrayController",
 ]

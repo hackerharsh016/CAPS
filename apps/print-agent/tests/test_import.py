@@ -54,6 +54,16 @@ class TestPackageImport(unittest.TestCase):
         self.assertTrue(hasattr(caps_agent, "StatusSyncItem"))
         self.assertTrue(hasattr(caps_agent, "StatusSyncError"))
         self.assertTrue(hasattr(caps_agent, "bind_status_sync_to_dispatcher"))
+        self.assertTrue(hasattr(caps_agent, "DiagnosticsServer"))
+        self.assertTrue(hasattr(caps_agent, "DiagnosticsRequestHandler"))
+        self.assertTrue(hasattr(caps_agent, "DiagnosticsLogBuffer"))
+        self.assertTrue(hasattr(caps_agent, "DiagnosticsSecurityError"))
+        self.assertTrue(hasattr(caps_agent, "TrayStatus"))
+        self.assertTrue(hasattr(caps_agent, "TrayStateSnapshot"))
+        self.assertTrue(hasattr(caps_agent, "BaseTrayAdapter"))
+        self.assertTrue(hasattr(caps_agent, "HeadlessTrayAdapter"))
+        self.assertTrue(hasattr(caps_agent, "DesktopTrayAdapter"))
+        self.assertTrue(hasattr(caps_agent, "TrayController"))
 
 
 if __name__ == "__main__":

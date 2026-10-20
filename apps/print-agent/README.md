@@ -186,6 +186,32 @@ Lifecycle states strictly follow the CAPS architecture baseline:
   - **Idempotent Deduplication:** Redundant status updates for the same attempt are suppressed locally, preventing duplicate webhook signals and network waste.
   - **Non-Negotiable Policy #5:** Spooler acceptance does not prove physical printing; missing or unconfirmed outcomes transition to `requires_review`.
 
+### Local Loopback Diagnostics & System Tray UI Subsystem (`caps_agent.api`, `caps_agent.tray`)
+
+- **Strict Loopback-Only Diagnostics Server (`DiagnosticsServer`):**
+  - **Loopback Enforcement:** Binds exclusively to `127.0.0.1`, `localhost`, or `::1`. Any non-loopback bind address (e.g., `0.0.0.0` or LAN IPs) is rejected with `DiagnosticsSecurityError`.
+  - **LAN Isolation:** Socket handler checks client IP; non-loopback connections receive an immediate HTTP 403 Forbidden.
+  - **DNS Rebinding Defense:** Validates incoming `Host` header against loopback origins. Forged or external domain names receive HTTP 400 Bad Request.
+  - **CSRF & Cross-Origin Defense:** Validates `Origin` header to prevent browser drive-by attacks; external web origins are rejected with HTTP 403 Forbidden.
+  - **Diagnostics Token Protection:** Optionally enforces `X-CAPS-Diagnostics-Token` header for protected operator control.
+  - **Zero Content / Zero Token Disclosure:** Redacts all sensitive auth tokens and document content from HTTP responses and log buffers.
+  - **REST Endpoints:**
+    - `GET /health` and `GET /api/v1/health`: Uptime, agent pairing state, active queue depth, active job counts, and worker status.
+    - `GET /api/v1/printers`: Enumerated local Windows printers and statuses.
+    - `GET /api/v1/queue`: Current per-printer queue depth and active jobs.
+    - `GET /api/v1/logs`: Safe redacted in-memory log entries from `DiagnosticsLogBuffer`.
+    - `POST /api/v1/stop`: Operator-controlled graceful agent shutdown.
+  - **Safe Restart Guarantee:** Socket configured with `allow_reuse_address = True` and explicit socket teardown; `DiagnosticsServer.restart()` restarts cleanly without socket leaks or `WSAEADDRINUSE` port conflicts.
+
+- **System Tray UI Controller & Adapters (`TrayController`):**
+  - **Operational State Machine:** Tracks visual agent states: `IDLE`, `PRINTING`, `PAUSED`, `OFFLINE`, `STOPPED`, `ERROR`.
+  - **Safe Status Formatting:** Automatically compiles system tray tooltips with shop/device IDs and queue counts while redacting sensitive tokens and customer PII.
+  - **Pluggable Adapter Architecture:**
+    - `HeadlessTrayAdapter`: In-memory state tracking for headless Windows services, CI test runners, and Docker containers.
+    - `DesktopTrayAdapter`: System tray integration utilizing `pystray` and PIL when available, with automatic fallback to headless mode if running without a display.
+  - **Operator Desktop Controls:** Context menu actions for Open Diagnostics (launches browser to local loopback URL), Pause/Resume processing, Safe Restart, and Graceful Stop.
+  - **Safe Lifecycle:** Coordinates callbacks with `JobDispatcher` and `DiagnosticsServer` for safe stop, restart, and state synchronizations.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**
