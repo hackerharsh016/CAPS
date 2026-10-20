@@ -112,4 +112,8 @@ export class MockShopsRepository implements IShopsRepository {
   async delete(id: string): Promise<boolean> {
     return this.shops.delete(id);
   }
+
+  clear(): void {
+    this.shops.clear();
+  }
 }
