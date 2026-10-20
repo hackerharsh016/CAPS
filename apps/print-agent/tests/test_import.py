@@ -39,6 +39,12 @@ class TestPackageImport(unittest.TestCase):
         self.assertTrue(hasattr(caps_agent, "AuthenticationError"))
         self.assertTrue(hasattr(caps_agent, "TenantMismatchError"))
         self.assertTrue(hasattr(caps_agent, "JobClaimResponse"))
+        self.assertTrue(hasattr(caps_agent, "RealtimeClient"))
+        self.assertTrue(hasattr(caps_agent, "RealtimeClaimCoordinator"))
+        self.assertTrue(hasattr(caps_agent, "RealtimeWakeEvent"))
+        self.assertTrue(hasattr(caps_agent, "RealtimeTransport"))
+        self.assertTrue(hasattr(caps_agent, "MockRealtimeTransport"))
+        self.assertTrue(hasattr(caps_agent, "RealtimeError"))
 
 
 if __name__ == "__main__":

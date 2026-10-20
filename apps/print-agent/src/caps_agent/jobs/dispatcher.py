@@ -142,7 +142,7 @@ class JobDispatcher:
         self.cleaner = cleaner
 
         # Concurrency and queue structures
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._printer_queues: dict[str, queue.Queue[JobItem | None]] = {}
         self._printer_workers: dict[str, threading.Thread] = {}
         self._active_jobs: dict[str, JobItem] = {}  # printer_name -> currently executing JobItem
@@ -151,18 +151,36 @@ class JobDispatcher:
         self._cancelled_jobs: set[str] = set()
         self._results: dict[str, PrintResult] = {}  # job_id -> result
         self._stopped = False
+        self._status_listeners: list[Callable[[JobStateMachine, JobState], None]] = []
+        if status_callback is not None:
+            self._status_listeners.append(status_callback)
+
+    def add_status_listener(self, listener: Callable[[JobStateMachine, JobState], None]) -> None:
+        """Register a status transition listener callback."""
+        with self._lock:
+            if listener not in self._status_listeners:
+                self._status_listeners.append(listener)
+
+    def remove_status_listener(self, listener: Callable[[JobStateMachine, JobState], None]) -> None:
+        """Unregister a status transition listener callback."""
+        with self._lock:
+            if listener in self._status_listeners:
+                self._status_listeners.remove(listener)
 
     @property
     def is_stopped(self) -> bool:
         return self._stopped
 
     def _notify_status(self, sm: JobStateMachine) -> None:
-        """Deliver status update to listener hook if configured."""
-        if self.status_callback is not None:
+        """Deliver status update to listener hooks if configured."""
+        with self._lock:
+            listeners = list(self._status_listeners)
+
+        for listener in listeners:
             try:
-                self.status_callback(sm, sm.current_state)
+                listener(sm, sm.current_state)
             except Exception as err:
-                logger.error("Error in status_callback for job '%s': %s", sm.job_id, err)
+                logger.error("Error in status_listener for job '%s': %s", sm.job_id, err)
 
     def _update_journal(
         self,

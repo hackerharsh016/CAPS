@@ -156,6 +156,23 @@ Lifecycle states strictly follow the CAPS architecture baseline:
   - `download_document(download_url, dest_path, expected_sha256)`: Streams PDF file and computes SHA-256 hash. If hash mismatches expected value, `ChecksumMismatchError` is raised and the file is immediately deleted from disk.
   - `heartbeat()`, `sync_printers()`: Synchronizes device telemetry and discovered printer capability profiles.
 
+### Realtime Listener & Atomic Claim Coordinator (`RealtimeClient`, `RealtimeClaimCoordinator`)
+
+- **Non-Negotiable Policy #5:** Realtime messages are wake-up signals, **never** ownership claims. The agent initiates an atomic claim handshake with active lease tracking via HTTP `POST /api/v1/agent/jobs/claim` before downloading or printing.
+- **Signal -> Fetch -> Claim -> Dispatch Pipeline:**
+  1. Receives low-latency wake-up notification over WSS/Realtime channel.
+  2. Executes `api_client.claim_job()`. If already claimed by another agent or queue empty, cleanly returns `None`.
+  3. Reports `"downloading"` status and streams PDF with SHA-256 verification.
+  4. Translates cloud settings to internal `PrintSettings` via `map_claim_settings_to_print_settings`.
+  5. Enqueues `JobItem` into `JobDispatcher` for strictly serialized per-printer execution.
+  6. Automatically syncs lifecycle status transitions back to the Cloud (`printing`, `completed`, `failed`, `requires_review`).
+- **Long-Disconnect Reconciliation:**
+  - Upon network reconnection or periodic background sweep (`reconciliation_interval`), runs `reconcile_backlog()` to drain all jobs approved during offline periods ("a missed event must not mean missed work").
+- **Tenant Isolation:**
+  - Wake-up events received for foreign shop IDs are dropped immediately before triggering any cloud claim or spooler action.
+- **Duplicate Event Suppression:**
+  - In-memory event deduplication cache filters rapid duplicate event bursts, while the atomic claim API guarantees single-attempt execution.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**

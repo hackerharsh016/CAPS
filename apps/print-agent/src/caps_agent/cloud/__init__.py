@@ -13,6 +13,17 @@ from caps_agent.cloud.api_client import (
     TenantMismatchError,
     UrllibHttpTransport,
 )
+from caps_agent.cloud.realtime_client import (
+    MockRealtimeTransport,
+    RealtimeAuthError,
+    RealtimeClaimCoordinator,
+    RealtimeClient,
+    RealtimeConnectionError,
+    RealtimeError,
+    RealtimeTransport,
+    RealtimeWakeEvent,
+    map_claim_settings_to_print_settings,
+)
 
 __all__ = [
     "CloudApiClient",
@@ -26,4 +37,13 @@ __all__ = [
     "UrllibHttpTransport",
     "HttpResponse",
     "JobClaimResponse",
+    "RealtimeClient",
+    "RealtimeClaimCoordinator",
+    "RealtimeWakeEvent",
+    "RealtimeTransport",
+    "MockRealtimeTransport",
+    "RealtimeError",
+    "RealtimeConnectionError",
+    "RealtimeAuthError",
+    "map_claim_settings_to_print_settings",
 ]
