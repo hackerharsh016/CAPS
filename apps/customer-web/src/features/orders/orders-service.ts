@@ -79,6 +79,17 @@ export class OrdersService {
     }
     return order;
   }
+
+  /**
+   * Appends a newly created order to the store.
+   */
+  public addOrder(order: CustomerOrder): void {
+    // Prevent duplicate entries by ID
+    const exists = this.ordersStore.some((o) => o.id === order.id);
+    if (!exists) {
+      this.ordersStore.unshift(order);
+    }
+  }
 }
 
 export const defaultOrdersService = new OrdersService();
