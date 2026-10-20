@@ -25,6 +25,10 @@ import { quotesRoutes } from './modules/pricing/quotes.routes.js';
 import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-jobs/print-jobs.repository.js';
 import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
+import { telemetryRoutes } from './common/telemetry/telemetry.routes.js';
+import { InMemoryTracer } from './common/telemetry/tracer.js';
+import { MetricsCollector } from './common/telemetry/metrics.js';
+import { AlertManager } from './common/telemetry/alerts.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -50,6 +54,9 @@ export interface AppOptions {
   documentsService?: DocumentsService | undefined;
   quotesService?: QuotesService | undefined;
   printJobsService?: PrintJobsService | undefined;
+  tracer?: InMemoryTracer | undefined;
+  metrics?: MetricsCollector | undefined;
+  alertManager?: AlertManager | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -60,7 +67,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
 
   // 1. Register structured logger and request-id tracing
-  registerLogger(app);
+  registerLogger(app, {
+    tracer: options.tracer,
+    metrics: options.metrics,
+    alertManager: options.alertManager
+  });
 
   // 2. Register global error handler enforcing CAPS §5.4 error response envelope
   registerErrorHandlers(app);
@@ -133,6 +144,13 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(printJobsRoutes, {
     prefix: '/api/v1/print-jobs',
     printJobsService
+  });
+
+  app.register(telemetryRoutes, {
+    prefix: '/api/v1',
+    tracer: options.tracer,
+    metrics: options.metrics,
+    alertManager: options.alertManager
   });
 
   // 8. Auth verification & role testing routes
