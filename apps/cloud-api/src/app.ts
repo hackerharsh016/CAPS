@@ -27,6 +27,10 @@ import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 import { QueueService } from './modules/queue/queue.service.js';
 import { queueRoutes } from './modules/queue/queue.routes.js';
+import { MockAgentsRepository, IAgentsRepository } from './modules/agents/agents.repository.js';
+import { MockJobAttemptsRepository, IJobAttemptsRepository } from './modules/agents/attempts.repository.js';
+import { AgentClaimService } from './modules/agents/agent-claim.service.js';
+import { agentsRoutes } from './modules/agents/agents.routes.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -53,6 +57,9 @@ export interface AppOptions {
   quotesService?: QuotesService | undefined;
   printJobsService?: PrintJobsService | undefined;
   queueService?: QueueService | undefined;
+  agentsRepo?: IAgentsRepository | undefined;
+  attemptsRepo?: IJobAttemptsRepository | undefined;
+  agentClaimService?: AgentClaimService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -98,6 +105,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const storageService = options.storageService ?? new MockStorageService();
   const quotesRepo = options.quotesRepo ?? new MockQuotesRepository();
   const jobsRepo = options.jobsRepo ?? new MockPrintJobsRepository();
+  const agentsRepo = options.agentsRepo ?? new MockAgentsRepository();
+  const attemptsRepo = options.attemptsRepo ?? new MockJobAttemptsRepository();
 
   const shopsService =
     options.shopsService ?? new ShopsService(shopsRepo);
@@ -113,6 +122,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const queueService =
     options.queueService ??
     new QueueService(jobsRepo, shopsRepo, printersRepo);
+  const agentClaimService =
+    options.agentClaimService ??
+    new AgentClaimService(jobsRepo, shopsRepo, printersRepo, agentsRepo, attemptsRepo, documentsRepo);
 
   // 7. Register domain routes under API v1 namespace
   app.register(shopsRoutes, {
@@ -128,6 +140,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(queueRoutes, {
     prefix: '/api/v1/shops',
     queueService
+  });
+
+  app.register(agentsRoutes, {
+    prefix: '/api/v1',
+    agentClaimService
   });
 
   app.register(documentsRoutes, {
@@ -200,7 +217,17 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const defaultReadinessChecks: ReadinessCheck[] = [
     () => ({
       name: 'database',
-      ok: Boolean(shopsRepo && printersRepo && documentsRepo && quotesRepo && jobsRepo && queueService),
+      ok: Boolean(
+        shopsRepo &&
+          printersRepo &&
+          documentsRepo &&
+          quotesRepo &&
+          jobsRepo &&
+          queueService &&
+          agentsRepo &&
+          attemptsRepo &&
+          agentClaimService
+      ),
       message: 'Repositories operational'
     }),
     () => ({
