@@ -24,6 +24,20 @@ import {
 } from './modules/notifications/notifications.repository.js';
 import { NotificationsService } from './modules/notifications/notifications.service.js';
 import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
+import {
+  MockDocumentsRepository,
+  type IDocumentsRepository
+} from './modules/documents/documents.repository.js';
+import {
+  MockStorageService,
+  type IStorageService
+} from './modules/documents/storage.service.js';
+import {
+  TrustedDocumentConverter,
+  type IDocumentConverter
+} from './modules/documents/document-converter.js';
+import { DocumentsService } from './modules/documents/documents.service.js';
+import { documentsRoutes } from './modules/documents/documents.routes.js';
 
 export interface AppOptions {
   env?: Env | undefined;
@@ -36,11 +50,15 @@ export interface AppOptions {
   firebaseClient?: IFirebaseClient | undefined;
   userFcmTokensRepo?: IUserFcmTokensRepository | undefined;
   notificationOutboxRepo?: INotificationOutboxRepository | undefined;
+  documentsRepo?: IDocumentsRepository | undefined;
+  storageService?: IStorageService | undefined;
+  documentConverter?: IDocumentConverter | undefined;
   paymentsService?: PaymentsService | undefined;
   webhookService?: WebhookService | undefined;
   payAtCounterService?: PayAtCounterService | undefined;
   queueService?: QueueService | undefined;
   notificationsService?: NotificationsService | undefined;
+  documentsService?: DocumentsService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -126,6 +144,13 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       shopsRepo
     );
 
+  const documentsRepo = options.documentsRepo ?? new MockDocumentsRepository();
+  const storageService = options.storageService ?? new MockStorageService();
+  const documentConverter = options.documentConverter ?? new TrustedDocumentConverter();
+  const documentsService =
+    options.documentsService ??
+    new DocumentsService(documentsRepo, storageService, documentConverter);
+
   // Register feature routes under API v1 namespace
   app.register(paymentsRoutes, {
     prefix: '/api/v1/payments',
@@ -150,6 +175,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(notificationsRoutes, {
     prefix: '/api/v1',
     notificationsService
+  });
+
+  app.register(documentsRoutes, {
+    prefix: '/api/v1/documents',
+    documentsService
   });
 
   // Health check endpoint
