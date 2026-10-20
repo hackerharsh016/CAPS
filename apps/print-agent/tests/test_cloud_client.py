@@ -345,14 +345,14 @@ class TestCloudApiClient(unittest.TestCase):
         self.transport.queue_response(200, pdf_bytes, headers={"content-type": "application/pdf"})
 
         with tempfile.TemporaryDirectory() as tmp_dir:
-            dest_file = Path(tmp_dir) / "downloaded.pdf"
+            dest_file = (Path(tmp_dir) / "downloaded.pdf").resolve()
             result_path = self.client.download_document(
                 download_url="https://cloud.caps.example.com/files/test.pdf",
                 destination_path=dest_file,
                 expected_sha256=expected_hash,
             )
 
-            self.assertEqual(result_path, dest_file)
+            self.assertEqual(result_path.resolve(), dest_file.resolve())
             self.assertTrue(dest_file.exists())
             self.assertEqual(dest_file.read_bytes(), pdf_bytes)
 
