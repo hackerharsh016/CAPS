@@ -123,6 +123,7 @@ Lifecycle states strictly follow the CAPS architecture baseline:
     ```
   - When no printer is designated, physical tests are cleanly marked `SKIPPED` / `BLOCKED`, faithfully preventing fake pass assertions in automated test environments.
 - **Printing Compatibility Guide & Operator Runbook:** See [docs/printing-compatibility.md](docs/printing-compatibility.md) for full driver compatibility matrix, error recovery procedures, spooler traces, and the official Go/No-Go decision record.
+- **Real-Device Compatibility Matrix & High-Volume Stress Suite:** See [docs/real-device-compatibility-matrix.md](docs/real-device-compatibility-matrix.md) and [`tests/hardware/test_compatibility_matrix.py`](tests/hardware/test_compatibility_matrix.py) for the complete parameter permutation matrix (A4, A3, Legal, B&W, Color, Duplex, copies) and multi-job serialized queue stress tests.
 
 ## Development Setup
 
