@@ -84,6 +84,8 @@ AS $$
 $$;
 
 -- 3. Stored Procedure: Sweep for standalone expired documents
+DROP FUNCTION IF EXISTS public.get_expired_documents_for_cleanup(INTEGER);
+
 CREATE OR REPLACE FUNCTION public.get_expired_documents_for_cleanup(
     p_limit INTEGER DEFAULT 100
 )
