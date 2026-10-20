@@ -15,6 +15,15 @@ import { createRazorpayClient, IRazorpayClient } from './modules/payments/razorp
 import { MockJobEventsRepository, IJobEventsRepository } from './modules/events/events.repository.js';
 import { QueueService } from './modules/queue/queue.service.js';
 import { queueRoutes } from './modules/queue/queue.routes.js';
+import { MockFirebaseClient, type IFirebaseClient } from './integrations/firebase/firebase.client.js';
+import {
+  MockUserFcmTokensRepository,
+  type IUserFcmTokensRepository,
+  MockNotificationOutboxRepository,
+  type INotificationOutboxRepository
+} from './modules/notifications/notifications.repository.js';
+import { NotificationsService } from './modules/notifications/notifications.service.js';
+import { notificationsRoutes } from './modules/notifications/notifications.routes.js';
 
 export interface AppOptions {
   env?: Env | undefined;
@@ -24,10 +33,14 @@ export interface AppOptions {
   paymentsRepo?: IPaymentsRepository | undefined;
   razorpayClient?: IRazorpayClient | undefined;
   jobEventsRepo?: IJobEventsRepository | undefined;
+  firebaseClient?: IFirebaseClient | undefined;
+  userFcmTokensRepo?: IUserFcmTokensRepository | undefined;
+  notificationOutboxRepo?: INotificationOutboxRepository | undefined;
   paymentsService?: PaymentsService | undefined;
   webhookService?: WebhookService | undefined;
   payAtCounterService?: PayAtCounterService | undefined;
   queueService?: QueueService | undefined;
+  notificationsService?: NotificationsService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -99,6 +112,20 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     options.queueService ??
     new QueueService(printJobsRepo, shopsRepo, printersRepo);
 
+  const firebaseClient = options.firebaseClient ?? new MockFirebaseClient();
+  const userFcmTokensRepo = options.userFcmTokensRepo ?? new MockUserFcmTokensRepository();
+  const notificationOutboxRepo =
+    options.notificationOutboxRepo ?? new MockNotificationOutboxRepository();
+  const notificationsService =
+    options.notificationsService ??
+    new NotificationsService(
+      firebaseClient,
+      userFcmTokensRepo,
+      notificationOutboxRepo,
+      printJobsRepo,
+      shopsRepo
+    );
+
   // Register feature routes under API v1 namespace
   app.register(paymentsRoutes, {
     prefix: '/api/v1/payments',
@@ -118,6 +145,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(queueRoutes, {
     prefix: '/api/v1',
     queueService
+  });
+
+  app.register(notificationsRoutes, {
+    prefix: '/api/v1',
+    notificationsService
   });
 
   // Health check endpoint
