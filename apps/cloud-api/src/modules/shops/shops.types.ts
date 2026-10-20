@@ -24,6 +24,9 @@ export interface UrgentSurchargeConfig {
   type: 'flat' | 'percentage';
   amount: number;
   max_urgent_jobs_per_hour?: number | undefined;
+  max_urgent_jobs_in_queue?: number | undefined;
+  fairness_guard_enabled?: boolean | undefined;
+  max_flexible_wait_threshold_seconds?: number | undefined;
 }
 
 export interface Shop {

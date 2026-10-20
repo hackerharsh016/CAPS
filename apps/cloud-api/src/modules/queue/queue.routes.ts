@@ -35,6 +35,15 @@ const reassignBodySchema = z.object({
   new_printer_id: z.string().uuid()
 });
 
+const configurePolicySchema = z.object({
+  type: z.enum(['flat', 'percentage']).optional(),
+  amount: z.number().int().nonnegative().optional(),
+  max_urgent_jobs_per_hour: z.number().int().nonnegative().nullable().optional(),
+  max_urgent_jobs_in_queue: z.number().int().nonnegative().nullable().optional(),
+  fairness_guard_enabled: z.boolean().optional(),
+  max_flexible_wait_threshold_seconds: z.number().int().nonnegative().nullable().optional()
+});
+
 export const queueRoutes: FastifyPluginAsync<QueuePluginOptions> = async (
   fastify,
   options
@@ -46,7 +55,8 @@ export const queueRoutes: FastifyPluginAsync<QueuePluginOptions> = async (
       return reply.status(err.statusCode).send({
         error: {
           code: err.code,
-          message: err.message
+          message: err.message,
+          ...(err.details !== undefined ? { details: err.details } : {})
         }
       });
     }
@@ -231,6 +241,111 @@ export const queueRoutes: FastifyPluginAsync<QueuePluginOptions> = async (
 
         return reply.status(200).send({
           data: result
+        });
+      } catch (err: unknown) {
+        return handleError(err, reply);
+      }
+    }
+  );
+
+  // 5. Query urgent cap and fairness status for a shop
+  fastify.get(
+    '/shops/:shopId/urgent/status',
+    async (
+      request: FastifyRequest<{ Params: { shopId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const paramsResult = shopParamSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid shopId parameter. Must be a valid UUID.',
+            details: paramsResult.error.errors
+          }
+        });
+      }
+
+      try {
+        const status = await queueService.getUrgentCapStatus(paramsResult.data.shopId);
+        return reply.status(200).send({
+          data: status
+        });
+      } catch (err: unknown) {
+        return handleError(err, reply);
+      }
+    }
+  );
+
+  // 6. Atomically validate urgent admission before checkout
+  fastify.post(
+    '/shops/:shopId/urgent/validate',
+    async (
+      request: FastifyRequest<{ Params: { shopId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const paramsResult = shopParamSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid shopId parameter. Must be a valid UUID.',
+            details: paramsResult.error.errors
+          }
+        });
+      }
+
+      try {
+        const admission = await queueService.reserveUrgentAdmission(paramsResult.data.shopId);
+        return reply.status(200).send({
+          data: admission
+        });
+      } catch (err: unknown) {
+        return handleError(err, reply);
+      }
+    }
+  );
+
+  // 7. Configure shop urgent surcharge and fairness policy (Owner/Admin)
+  fastify.put(
+    '/shops/:shopId/urgent/policy',
+    async (
+      request: FastifyRequest<{ Params: { shopId: string } }>,
+      reply: FastifyReply
+    ) => {
+      const paramsResult = shopParamSchema.safeParse(request.params);
+      if (!paramsResult.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid shopId parameter. Must be a valid UUID.',
+            details: paramsResult.error.errors
+          }
+        });
+      }
+
+      const bodyResult = configurePolicySchema.safeParse(request.body);
+      if (!bodyResult.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid urgent policy configuration payload.',
+            details: bodyResult.error.errors
+          }
+        });
+      }
+
+      try {
+        const updatedShop = await queueService.configureUrgentPolicy(
+          paramsResult.data.shopId,
+          bodyResult.data
+        );
+
+        return reply.status(200).send({
+          data: {
+            shop_id: updatedShop.id,
+            urgent_surcharge_config: updatedShop.urgent_surcharge_config
+          }
         });
       } catch (err: unknown) {
         return handleError(err, reply);

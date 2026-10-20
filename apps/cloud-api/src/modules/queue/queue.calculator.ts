@@ -4,7 +4,9 @@ import type {
   UrgentSurchargeResult,
   LiveEtaRequest,
   LiveEtaResponse,
-  QueueJobSummary
+  QueueJobSummary,
+  UrgentCapStatus,
+  UrgentCapRejectionDetails
 } from './queue.types.js';
 
 export const THROUGHPUT_CONSTANTS = {
@@ -342,5 +344,143 @@ export function calculateLiveEta(
     ahead_urgent_jobs: aheadUrgent,
     ahead_flexible_jobs: aheadFlexible,
     is_currently_printing_ahead: currentlyPrinting !== null
+  };
+}
+
+/**
+ * Evaluates whether an urgent job can currently be admitted under the shop's
+ * configured hourly cap, per-queue cap, and starvation fairness guard.
+ */
+export function evaluateUrgentCapAndFairness(
+  shopId: string,
+  allShopJobs: PrintJob[],
+  config: UrgentSurchargeConfig,
+  nowMs: number = Date.now()
+): UrgentCapStatus {
+  const ONE_HOUR_MS = 3600 * 1000;
+  const windowStartMs = nowMs - ONE_HOUR_MS;
+
+  // Active / accepted jobs considered for hourly quota
+  const activeStatuses = new Set([
+    'queued',
+    'approved',
+    'claimed',
+    'downloading',
+    'submitted',
+    'printing',
+    'completed'
+  ]);
+
+  const urgentJobsInWindow: { job: PrintJob; timestampMs: number }[] = [];
+  for (const job of allShopJobs) {
+    if (job.priority_tier === 'urgent' && activeStatuses.has(job.status)) {
+      const t = new Date(job.enqueued_at ?? job.created_at).getTime();
+      if (t >= windowStartMs && t <= nowMs) {
+        urgentJobsInWindow.push({ job, timestampMs: t });
+      }
+    }
+  }
+
+  const hourlyUsage = urgentJobsInWindow.length;
+  const hourlyCap =
+    typeof config.max_urgent_jobs_per_hour === 'number' && config.max_urgent_jobs_per_hour > 0
+      ? config.max_urgent_jobs_per_hour
+      : null;
+  const hourlyRemaining =
+    hourlyCap !== null ? Math.max(0, hourlyCap - hourlyUsage) : null;
+
+  // Queued urgent jobs count
+  const currentlyQueuedUrgent = allShopJobs.filter(
+    j => j.priority_tier === 'urgent' && j.status === 'queued'
+  ).length;
+
+  const queueCap =
+    typeof config.max_urgent_jobs_in_queue === 'number' && config.max_urgent_jobs_in_queue > 0
+      ? config.max_urgent_jobs_in_queue
+      : null;
+  const queueRemaining =
+    queueCap !== null ? Math.max(0, queueCap - currentlyQueuedUrgent) : null;
+
+  // Fairness check: oldest flexible job wait
+  const queuedFlexibleJobs = allShopJobs.filter(
+    j => j.priority_tier === 'flexible' && j.status === 'queued'
+  );
+  let oldestFlexibleWaitSeconds: number | null = null;
+  if (queuedFlexibleJobs.length > 0) {
+    let maxWait = 0;
+    for (const j of queuedFlexibleJobs) {
+      const t = new Date(j.enqueued_at ?? j.created_at).getTime();
+      const wait = Math.max(0, Math.floor((nowMs - t) / 1000));
+      if (wait > maxWait) maxWait = wait;
+    }
+    oldestFlexibleWaitSeconds = maxWait;
+  }
+
+  const fairnessThresholdSeconds =
+    typeof config.max_flexible_wait_threshold_seconds === 'number' &&
+    config.max_flexible_wait_threshold_seconds > 0
+      ? config.max_flexible_wait_threshold_seconds
+      : 1800; // 30 mins default
+
+  let rejectionDetails: UrgentCapRejectionDetails | null = null;
+  let windowResetsAt: string | null = null;
+  let retryAfterSeconds: number | null = null;
+
+  // 1. Hourly cap check
+  if (hourlyCap !== null && hourlyUsage >= hourlyCap) {
+    // Find the earliest job in the window that will roll off
+    const timestamps = urgentJobsInWindow.map(u => u.timestampMs);
+    const earliestTimestamp = Math.min(...timestamps);
+    const resetTimeMs = earliestTimestamp + ONE_HOUR_MS;
+    windowResetsAt = new Date(resetTimeMs).toISOString();
+    retryAfterSeconds = Math.max(1, Math.ceil((resetTimeMs - nowMs) / 1000));
+
+    rejectionDetails = {
+      cap_type: 'hourly',
+      limit: hourlyCap,
+      current_usage: hourlyUsage,
+      reset_at: windowResetsAt,
+      retry_after_seconds: retryAfterSeconds,
+      fallback_tier: 'flexible',
+      message: `Shop urgent order cap of ${hourlyCap} jobs/hour has been reached. Urgent tier resumes in ${retryAfterSeconds}s.`
+    };
+  } else if (queueCap !== null && currentlyQueuedUrgent >= queueCap) {
+    // 2. Queue depth cap check
+    rejectionDetails = {
+      cap_type: 'queue_depth',
+      limit: queueCap,
+      current_usage: currentlyQueuedUrgent,
+      fallback_tier: 'flexible',
+      message: `Shop queue limit of ${queueCap} concurrent urgent jobs reached. Please choose standard flexible tier.`
+    };
+  } else if (
+    config.fairness_guard_enabled &&
+    oldestFlexibleWaitSeconds !== null &&
+    oldestFlexibleWaitSeconds >= fairnessThresholdSeconds
+  ) {
+    // 3. Fairness starvation guard
+    rejectionDetails = {
+      cap_type: 'fairness_guard',
+      limit: fairnessThresholdSeconds,
+      current_usage: oldestFlexibleWaitSeconds,
+      fallback_tier: 'flexible',
+      message: `Urgent tier is temporarily paused to ensure pending flexible orders waiting over ${Math.floor(fairnessThresholdSeconds / 60)} minutes are printed fairly. Please proceed with standard flexible tier.`
+    };
+  }
+
+  return {
+    shop_id: shopId,
+    is_urgent_available: rejectionDetails === null,
+    hourly_cap: hourlyCap,
+    hourly_usage: hourlyUsage,
+    hourly_remaining: hourlyRemaining,
+    queue_cap: queueCap,
+    current_urgent_queued: currentlyQueuedUrgent,
+    queue_remaining: queueRemaining,
+    fairness_guard_active: Boolean(config.fairness_guard_enabled),
+    oldest_flexible_wait_seconds: oldestFlexibleWaitSeconds,
+    window_resets_at: windowResetsAt,
+    retry_after_seconds: retryAfterSeconds,
+    rejection_details: rejectionDetails
   };
 }

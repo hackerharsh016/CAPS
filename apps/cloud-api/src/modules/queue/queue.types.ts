@@ -1,5 +1,40 @@
 import type { PriorityTier, JobStatus } from '../print-jobs/print-jobs.types.js';
 
+export interface UrgentCapRejectionDetails {
+  cap_type: 'hourly' | 'queue_depth' | 'fairness_guard';
+  limit?: number | undefined;
+  current_usage?: number | undefined;
+  reset_at?: string | undefined;
+  retry_after_seconds?: number | undefined;
+  fallback_tier: 'flexible';
+  message: string;
+}
+
+export interface UrgentCapStatus {
+  shop_id: string;
+  is_urgent_available: boolean;
+  hourly_cap: number | null;
+  hourly_usage: number;
+  hourly_remaining: number | null;
+  queue_cap: number | null;
+  current_urgent_queued: number;
+  queue_remaining: number | null;
+  fairness_guard_active: boolean;
+  oldest_flexible_wait_seconds: number | null;
+  window_resets_at: string | null;
+  retry_after_seconds: number | null;
+  rejection_details: UrgentCapRejectionDetails | null;
+}
+
+export interface ConfigureUrgentPolicyRequest {
+  type?: 'flat' | 'percentage' | undefined;
+  amount?: number | undefined;
+  max_urgent_jobs_per_hour?: number | null | undefined;
+  max_urgent_jobs_in_queue?: number | null | undefined;
+  fairness_guard_enabled?: boolean | undefined;
+  max_flexible_wait_threshold_seconds?: number | null | undefined;
+}
+
 export interface UrgentSurchargeResult {
   shop_id: string;
   priority_tier: PriorityTier;
@@ -8,6 +43,8 @@ export interface UrgentSurchargeResult {
   total_price_paise: number;
   surcharge_type: 'flat' | 'percentage' | 'none';
   surcharge_rate: number;
+  urgent_available?: boolean | undefined;
+  cap_status?: UrgentCapStatus | undefined;
 }
 
 export interface QueueJobSummary {
@@ -80,6 +117,8 @@ export interface LiveEtaResponse {
   ahead_urgent_jobs: number;
   ahead_flexible_jobs: number;
   is_currently_printing_ahead: boolean;
+  urgent_available?: boolean | undefined;
+  cap_rejection?: UrgentCapRejectionDetails | undefined;
 }
 
 export interface ReassignPrinterRequest {

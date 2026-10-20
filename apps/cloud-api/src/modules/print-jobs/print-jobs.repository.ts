@@ -93,11 +93,11 @@ export class MockPrintJobsRepository implements IPrintJobsRepository {
     if (!existing) return null;
 
     const now = new Date().toISOString();
-    let newEnqueuedAt = existing.enqueued_at;
+    let newEnqueuedAt = dto.enqueued_at !== undefined ? dto.enqueued_at : existing.enqueued_at;
 
     // Transitioning into queued sets enqueued_at automatically if not already set
-    if (dto.status === 'queued' && existing.status !== 'queued' && !existing.enqueued_at) {
-      newEnqueuedAt = dto.enqueued_at ?? now;
+    if (dto.status === 'queued' && existing.status !== 'queued' && !newEnqueuedAt) {
+      newEnqueuedAt = now;
     }
 
     const updated: PrintJob = {
