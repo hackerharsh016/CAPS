@@ -45,6 +45,15 @@ class TestPackageImport(unittest.TestCase):
         self.assertTrue(hasattr(caps_agent, "RealtimeTransport"))
         self.assertTrue(hasattr(caps_agent, "MockRealtimeTransport"))
         self.assertTrue(hasattr(caps_agent, "RealtimeError"))
+        self.assertTrue(hasattr(caps_agent, "JobClient"))
+        self.assertTrue(hasattr(caps_agent, "DownloadError"))
+        self.assertTrue(hasattr(caps_agent, "ExpiredDownloadUrlError"))
+        self.assertTrue(hasattr(caps_agent, "PartialDownloadError"))
+        self.assertTrue(hasattr(caps_agent, "StatusSyncManager"))
+        self.assertTrue(hasattr(caps_agent, "StatusSyncJournal"))
+        self.assertTrue(hasattr(caps_agent, "StatusSyncItem"))
+        self.assertTrue(hasattr(caps_agent, "StatusSyncError"))
+        self.assertTrue(hasattr(caps_agent, "bind_status_sync_to_dispatcher"))
 
 
 if __name__ == "__main__":

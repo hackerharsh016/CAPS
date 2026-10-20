@@ -173,6 +173,19 @@ Lifecycle states strictly follow the CAPS architecture baseline:
 - **Duplicate Event Suppression:**
   - In-memory event deduplication cache filters rapid duplicate event bursts, while the atomic claim API guarantees single-attempt execution.
 
+### Secure Download & Attempt Status Sync Subsystem (`JobClient`, `StatusSyncManager`)
+
+- **Scoped & Protected PDF Download (`JobClient`):**
+  - Isolates files into per-job secure directories managed by `TempFileManager`.
+  - **Expired URL Defense:** Detects expired pre-signed URLs (HTTP 403/410) and pre-expired leases, raising `ExpiredDownloadUrlError`, scrubbing temporary storage, and reporting `failed` status to the Cloud API.
+  - **Partial Download & Stream Truncation Defense:** Validates `Content-Length` headers, verifies `%PDF-` structure, and enforces SHA-256 checksums. On interruption or mismatch, raises `PartialDownloadError` / `ChecksumMismatchError` and deletes partial files immediately.
+  - **Guaranteed Terminal Cleanup:** Automatically cleans up temporary files and job directories upon reaching any terminal state (`COMPLETED`, `FAILED`, `CANCELLED`, `UNKNOWN_REQUIRES_REVIEW`).
+- **Durable Offline Status Sync (`StatusSyncManager`, `StatusSyncJournal`):**
+  - **Offline Retry Resilience:** If a status update fails due to a network outage, server 5xx error, or timeout, the update is enqueued into a local SQLite journal (`pending_status_syncs`).
+  - **Chronological Sequence:** Background retry worker periodically flushes queued status updates in strict FIFO order, ensuring the Cloud audit log reflects exact attempt transitions.
+  - **Idempotent Deduplication:** Redundant status updates for the same attempt are suppressed locally, preventing duplicate webhook signals and network waste.
+  - **Non-Negotiable Policy #5:** Spooler acceptance does not prove physical printing; missing or unconfirmed outcomes transition to `requires_review`.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**

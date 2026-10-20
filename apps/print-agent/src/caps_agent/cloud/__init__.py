@@ -13,6 +13,12 @@ from caps_agent.cloud.api_client import (
     TenantMismatchError,
     UrllibHttpTransport,
 )
+from caps_agent.cloud.job_client import (
+    DownloadError,
+    ExpiredDownloadUrlError,
+    JobClient,
+    PartialDownloadError,
+)
 from caps_agent.cloud.realtime_client import (
     MockRealtimeTransport,
     RealtimeAuthError,
@@ -23,6 +29,13 @@ from caps_agent.cloud.realtime_client import (
     RealtimeTransport,
     RealtimeWakeEvent,
     map_claim_settings_to_print_settings,
+)
+from caps_agent.cloud.status_sync import (
+    StatusSyncError,
+    StatusSyncItem,
+    StatusSyncJournal,
+    StatusSyncManager,
+    bind_status_sync_to_dispatcher,
 )
 
 __all__ = [
@@ -46,4 +59,13 @@ __all__ = [
     "RealtimeConnectionError",
     "RealtimeAuthError",
     "map_claim_settings_to_print_settings",
+    "JobClient",
+    "DownloadError",
+    "ExpiredDownloadUrlError",
+    "PartialDownloadError",
+    "StatusSyncManager",
+    "StatusSyncJournal",
+    "StatusSyncItem",
+    "StatusSyncError",
+    "bind_status_sync_to_dispatcher",
 ]
