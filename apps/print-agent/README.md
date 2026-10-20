@@ -8,6 +8,55 @@ The CAPS Desktop Print Agent (`apps/print-agent`) is a background service and sy
 - **Strict Loopback Binding:** Diagnostic interfaces bind exclusively to `127.0.0.1` (`localhost`), strictly prohibiting external network access.
 - **Privacy by Design:** Zero document content or sensitive tokens are written to log files. The structured logging pipeline automatically redacts secrets and PII.
 - **Pluggable PrintEngine Protocol:** Core printing logic is encapsulated behind the `PrintEngine` protocol, enabling in-memory testing (`FakePrintEngine`) on any developer machine without physical printer hardware.
+- **Production WindowsPrintEngine:** Unified execution engine orchestrating PDF inspection, customer settings validation, page rasterization, and dialog-free Windows Spooler submission.
+- **Idempotency & Replay Protection:** Guaranteed de-duplication of print attempts by `attempt_id`.
+- **Policy #5 Enforcement:** `can_auto_reprint` is strictly `False` across all submissions, protecting against duplicate customer billing and ink/paper waste.
+
+## Print Engine Subsystem (`caps_agent.printing`)
+
+### Core Interfaces & Classes
+
+- **`PrintEngine` (Protocol):** Defines the standard interface:
+  ```python
+  def print_document(
+      pdf_path: Path,
+      printer_name: str,
+      settings: PrintSettings,
+      job_title: str | None = None,
+      attempt_id: str | None = None,
+      shop_id: str | None = None,
+  ) -> PrintResult: ...
+  ```
+- **`WindowsPrintEngine` (alias `StandardPrintEngine`):** Production orchestrator connecting:
+  1. Idempotency cache check
+  2. Shop & tenant isolation verification
+  3. PDF validation & total page count (`PdfRenderer.validate_pdf`)
+  4. Printer capability detection & device status (`CapabilityDetector`)
+  5. Native DEVMODE parameter translation (`SettingsMapper.map_settings`)
+  6. Raster page generation (`PdfRenderer.render_pages`)
+  7. Dialog-free spooler transmission (`WindowsSpooler.submit_job`)
+- **`FakePrintEngine` (Test Fake):** High-fidelity in-memory double supporting:
+  - Incrementing spooler job IDs
+  - Configurable hardware failures (no paper, paper jam, offline)
+  - Unknown printer and unsupported settings rejection
+  - Multi-tenant / shop authorization enforcement
+  - Idempotent attempt caching
+  - Spooler RPC disconnect simulation
+
+### Error Taxonomy
+
+All exceptions inherit from `PrintEngineError` and carry a structured `error_code` string and contextual `details`:
+- `DocumentNotFoundError`: File missing from disk (`DOCUMENT_NOT_FOUND`)
+- `DocumentValidationError`: Invalid header, corrupted, or password-protected (`DOCUMENT_INVALID`, `DOCUMENT_CORRUPTED`, `DOCUMENT_PASSWORD_PROTECTED`)
+- `PrinterNotFoundError`: Printer not installed or queryable (`PRINTER_NOT_FOUND`)
+- `PrinterUnavailableError`: Offline, paper-out, or jammed (`PRINTER_OFFLINE`, `PRINTER_PAPER_OUT`, `PRINTER_PAPER_JAM`)
+- `UnsupportedSettingError`: Feature unsupported by driver (`UNSUPPORTED_SETTING`)
+- `InvalidSettingError`: Malformed setting value (`INVALID_SETTING`)
+- `InvalidPageRangeError`: Page range exceeds document bounds (`PAGE_RANGE_OUT_OF_BOUNDS`)
+- `RenderingError`: Page rasterization failure (`RENDERING_FAILED`)
+- `SpoolerError`: Windows Spooler rejected submission (`SPOOLER_SUBMISSION_FAILED`, `PRINTER_ACCESS_DENIED`)
+- `DuplicateJobError`: Attempt ID already in flight or submitted (`DUPLICATE_JOB_ATTEMPT`)
+- `ShopAuthorizationError`: Unauthorized printer or shop mismatch (`FORBIDDEN_SHOP`)
 
 ## Development Setup
 
@@ -25,13 +74,10 @@ The CAPS Desktop Print Agent (`apps/print-agent`) is a background service and sy
 
 3. **Run tests:**
    ```powershell
-   python -m unittest discover -s tests -p "test_*.py"
-   # or with pytest once installed:
    pytest -v
    ```
 
-4. **Lint and format code:**
+4. **Lint code:**
    ```powershell
    ruff check .
-   ruff format .
    ```

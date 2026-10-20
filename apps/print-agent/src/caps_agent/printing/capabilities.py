@@ -114,6 +114,7 @@ class PrinterCapabilities:
     raw_paper_ids: tuple[int, ...] = ()
     unknown_features: tuple[str, ...] = ()
     diagnostic_reasons: tuple[str, ...] = ()
+    status: int = 0
 
     def is_paper_size_supported(self, paper_size: str) -> bool:
         """Check if a specified paper size (e.g. 'a4', 'a3') is supported."""
@@ -251,6 +252,7 @@ class CapabilityDetector:
     """Discovers and evaluates device capabilities for installed Windows printers."""
 
     def __init__(self, adapter: Win32PrintAdapter | None = None) -> None:
+        self._known_printers: dict[str, PrinterCapabilities] = {}
         if adapter is not None:
             self._adapter = adapter
         else:
@@ -265,6 +267,12 @@ class CapabilityDetector:
     def adapter(self) -> Win32PrintAdapter:
         return self._adapter
 
+    def register_known_printer(
+        self, printer_name: str, capabilities: PrinterCapabilities
+    ) -> None:
+        """Register pre-computed capabilities for a printer device."""
+        self._known_printers[printer_name] = capabilities
+
     def detect_capabilities(
         self,
         printer_name: str,
@@ -272,6 +280,17 @@ class CapabilityDetector:
     ) -> PrinterCapabilities:
         """Query documented driver capabilities for the named printer device."""
         printer_id = normalize_printer_id(printer_name)
+        if printer_name in self._known_printers:
+            return self._known_printers[printer_name]
+        # Capture hardware status if available
+        printer_status = 0
+        try:
+            printer_info = self._adapter.get_printer(printer_name)
+            if isinstance(printer_info, dict):
+                printer_status = printer_info.get("status", 0)
+        except Exception as err:
+            logger.debug("Failed to query get_printer for %s: %s", printer_name, err)
+
         reasons: list[str] = []
         unknown_features: list[str] = []
 
@@ -369,6 +388,7 @@ class CapabilityDetector:
             raw_paper_ids=raw_paper_ids,
             unknown_features=tuple(unknown_features),
             diagnostic_reasons=tuple(reasons),
+            status=printer_status,
         )
 
 

@@ -63,4 +63,4 @@ ignore = [
 minversion = "8.0"
 addopts = "-ra -q"
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]

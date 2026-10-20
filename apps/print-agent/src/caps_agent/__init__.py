@@ -1,7 +1,14 @@
 """CAPS Desktop Print Agent package."""
 
 from caps_agent.config import AgentConfig, ConfigurationError, load_config
-from caps_agent.printing.engine import PrintEngine, PrintResult, PrintSettings
+from caps_agent.printing.engine import (
+    PrintEngine,
+    PrintEngineError,
+    PrintResult,
+    PrintSettings,
+    StandardPrintEngine,
+    WindowsPrintEngine,
+)
 from caps_agent.printing.fake_engine import FakePrintEngine
 from caps_agent.utils.logging import redact_sensitive_data, setup_logging
 
@@ -15,6 +22,9 @@ __all__ = [
     "PrintEngine",
     "PrintResult",
     "PrintSettings",
+    "WindowsPrintEngine",
+    "StandardPrintEngine",
+    "PrintEngineError",
     "FakePrintEngine",
     "setup_logging",
     "redact_sensitive_data",
