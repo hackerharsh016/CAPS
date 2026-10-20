@@ -9,11 +9,11 @@ Tests:
 from __future__ import annotations
 
 import os
+import tempfile
 import threading
 import time
+import unittest
 from pathlib import Path
-
-import pytest
 
 from caps_agent.jobs.state_machine import JobState
 from caps_agent.storage.cleanup import ArtifactCleaner
@@ -21,18 +21,25 @@ from caps_agent.storage.local_state import LocalStateJournal
 from caps_agent.storage.temp_files import PathTraversalSecurityError, TempFileManager
 
 
-class TestLocalStateJournal:
+class TestLocalStateJournal(unittest.TestCase):
     """Tests for SQLite-backed durable attempt journal."""
+
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
+
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
 
     def test_in_memory_journal_init(self) -> None:
         journal = LocalStateJournal(":memory:")
-        assert journal.get_active_attempts() == []
+        self.assertEqual(journal.get_active_attempts(), [])
         journal.close()
 
-    def test_on_disk_journal_init(self, tmp_path: Path) -> None:
-        db_file = tmp_path / "subdir" / "agent_state.db"
+    def test_on_disk_journal_init(self) -> None:
+        db_file = self.tmp_path / "subdir" / "agent_state.db"
         journal = LocalStateJournal(db_file)
-        assert db_file.exists()
+        self.assertTrue(db_file.exists())
 
         attempt = journal.record_claim(
             job_id="job-101",
@@ -41,18 +48,19 @@ class TestLocalStateJournal:
             lease_token="lease-token-abc",
             shop_id="shop-1",
         )
-        assert attempt.attempt_id == "att-101"
-        assert attempt.job_id == "job-101"
-        assert attempt.status == JobState.CLAIMED.value
-        assert attempt.can_auto_reprint is False
+        self.assertEqual(attempt.attempt_id, "att-101")
+        self.assertEqual(attempt.job_id, "job-101")
+        self.assertEqual(attempt.status, JobState.CLAIMED.value)
+        self.assertFalse(attempt.can_auto_reprint)
 
         journal.close()
 
         # Reopen on-disk database and verify persistence
         reopened = LocalStateJournal(db_file)
         retrieved = reopened.get_attempt("att-101")
+        self.assertIsNotNone(retrieved)
         assert retrieved is not None
-        assert retrieved.job_id == "job-101"
+        self.assertEqual(retrieved.job_id, "job-101")
         reopened.close()
 
     def test_record_claim_idempotency(self) -> None:
@@ -69,7 +77,7 @@ class TestLocalStateJournal:
             printer_name="Receipt_Printer",
             lease_token="token-1",
         )
-        assert att1.attempt_id == att2.attempt_id
+        self.assertEqual(att1.attempt_id, att2.attempt_id)
         journal.close()
 
     def test_status_transitions_and_history(self) -> None:
@@ -88,12 +96,12 @@ class TestLocalStateJournal:
         journal.update_status("att-2", JobState.PRINTING, reason="Submitted to spooler")
 
         history = journal.get_attempt_history("att-2")
-        assert len(history) >= 5
+        self.assertGreaterEqual(len(history), 5)
 
         statuses = [evt.to_status for evt in history]
-        assert JobState.QUEUED.value in statuses
-        assert JobState.DOWNLOADING.value in statuses
-        assert JobState.PRINTING.value in statuses
+        self.assertIn(JobState.QUEUED.value, statuses)
+        self.assertIn(JobState.DOWNLOADING.value, statuses)
+        self.assertIn(JobState.PRINTING.value, statuses)
 
         journal.close()
 
@@ -114,19 +122,21 @@ class TestLocalStateJournal:
         )
 
         record = journal.get_attempt("att-3")
+        self.assertIsNotNone(record)
         assert record is not None
-        assert record.spooler_job_id == 452
-        assert record.pages_submitted == 5
-        assert record.total_bytes_written == 1048576
+        self.assertEqual(record.spooler_job_id, 452)
+        self.assertEqual(record.pages_submitted, 5)
+        self.assertEqual(record.total_bytes_written, 1048576)
 
         journal.record_completion("att-3", details={"pages": 5})
         finished = journal.get_attempt("att-3")
+        self.assertIsNotNone(finished)
         assert finished is not None
-        assert finished.status == JobState.COMPLETED.value
-        assert finished.can_auto_reprint is False
+        self.assertEqual(finished.status, JobState.COMPLETED.value)
+        self.assertFalse(finished.can_auto_reprint)
 
         # Should not be in active attempts
-        assert journal.get_active_attempts() == []
+        self.assertEqual(journal.get_active_attempts(), [])
 
         journal.close()
 
@@ -147,12 +157,13 @@ class TestLocalStateJournal:
         )
 
         failed = journal.get_attempt("att-4")
+        self.assertIsNotNone(failed)
         assert failed is not None
-        assert failed.status == JobState.FAILED.value
-        assert failed.error_code == "PAPER_JAM"
-        assert "paper jam" in failed.error_message
-        assert failed.can_auto_reprint is False
-        assert journal.get_active_attempts() == []
+        self.assertEqual(failed.status, JobState.FAILED.value)
+        self.assertEqual(failed.error_code, "PAPER_JAM")
+        self.assertIn("paper jam", failed.error_message)
+        self.assertFalse(failed.can_auto_reprint)
+        self.assertEqual(journal.get_active_attempts(), [])
 
         journal.close()
 
@@ -174,10 +185,11 @@ class TestLocalStateJournal:
         )
 
         rec = journal.get_attempt("att-5")
+        self.assertIsNotNone(rec)
         assert rec is not None
-        assert rec.status == JobState.UNKNOWN_REQUIRES_REVIEW.value
-        assert rec.can_auto_reprint is False
-        assert journal.get_active_attempts() == []
+        self.assertEqual(rec.status, JobState.UNKNOWN_REQUIRES_REVIEW.value)
+        self.assertFalse(rec.can_auto_reprint)
+        self.assertEqual(journal.get_active_attempts(), [])
 
         journal.close()
 
@@ -188,9 +200,9 @@ class TestLocalStateJournal:
         journal.record_claim("job-multi", "att-m2", "Printer_A", "tok-2")
 
         attempts = journal.get_attempts_for_job("job-multi")
-        assert len(attempts) == 2
-        assert attempts[0].attempt_id == "att-m1"
-        assert attempts[1].attempt_id == "att-m2"
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(attempts[0].attempt_id, "att-m1")
+        self.assertEqual(attempts[1].attempt_id, "att-m2")
 
         journal.close()
 
@@ -216,26 +228,32 @@ class TestLocalStateJournal:
         for t in threads:
             t.join()
 
-        assert errors == []
-        assert len(journal.get_active_attempts()) == 0
+        self.assertEqual(errors, [])
+        self.assertEqual(len(journal.get_active_attempts()), 0)
         journal.close()
 
 
-class TestTempFileManager:
+class TestTempFileManager(unittest.TestCase):
     """Tests for secure temp file management and path traversal defenses."""
 
-    def test_directory_creation_and_containment(self, tmp_path: Path) -> None:
-        mgr = TempFileManager(tmp_path / "spool_test")
-        job_dir = mgr.get_job_dir("job-uuid-123", attempt_id="att-456")
-        assert job_dir.exists()
-        assert job_dir.is_dir()
-        assert "job-uuid-123" in str(job_dir)
-        assert "att-456" in str(job_dir)
-        assert str(job_dir).startswith(str(mgr.base_dir))
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
 
-    @pytest.mark.parametrize(
-        "bad_id",
-        [
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
+
+    def test_directory_creation_and_containment(self) -> None:
+        mgr = TempFileManager(self.tmp_path / "spool_test")
+        job_dir = mgr.get_job_dir("job-uuid-123", attempt_id="att-456")
+        self.assertTrue(job_dir.exists())
+        self.assertTrue(job_dir.is_dir())
+        self.assertIn("job-uuid-123", str(job_dir))
+        self.assertIn("att-456", str(job_dir))
+        self.assertTrue(str(job_dir).startswith(str(mgr.base_dir)))
+
+    def test_path_traversal_rejection(self) -> None:
+        bad_ids = [
             "../secret",
             "..\\secret",
             "job/traversal",
@@ -245,29 +263,28 @@ class TestTempFileManager:
             "job|cmd",
             "../../",
             "",
-        ],
-    )
-    def test_path_traversal_rejection(self, tmp_path: Path, bad_id: str) -> None:
-        mgr = TempFileManager(tmp_path / "spool_test")
-        with pytest.raises(PathTraversalSecurityError):
-            mgr.get_job_dir(bad_id)
+        ]
+        mgr = TempFileManager(self.tmp_path / "spool_test")
+        for bad_id in bad_ids:
+            with self.subTest(bad_id=bad_id), self.assertRaises(PathTraversalSecurityError):
+                mgr.get_job_dir(bad_id)
 
-    def test_create_temp_file_and_registration(self, tmp_path: Path) -> None:
-        mgr = TempFileManager(tmp_path / "spool_test")
+    def test_create_temp_file_and_registration(self) -> None:
+        mgr = TempFileManager(self.tmp_path / "spool_test")
         temp_file = mgr.create_temp_file("job-abc", suffix=".pdf", prefix="input_")
-        assert temp_file.exists()
-        assert temp_file.name.startswith("input_")
-        assert temp_file.name.endswith(".pdf")
+        self.assertTrue(temp_file.exists())
+        self.assertTrue(temp_file.name.startswith("input_"))
+        self.assertTrue(temp_file.name.endswith(".pdf"))
 
         tracked = mgr.list_job_files("job-abc")
-        assert temp_file in tracked
+        self.assertIn(temp_file, tracked)
 
         deleted = mgr.cleanup_job_files("job-abc")
-        assert deleted >= 1
-        assert not temp_file.exists()
+        self.assertGreaterEqual(deleted, 1)
+        self.assertFalse(temp_file.exists())
 
-    def test_register_and_cleanup_job_files(self, tmp_path: Path) -> None:
-        mgr = TempFileManager(tmp_path / "spool_test")
+    def test_register_and_cleanup_job_files(self) -> None:
+        mgr = TempFileManager(self.tmp_path / "spool_test")
         job_dir = mgr.get_job_dir("job-clean")
 
         f1 = job_dir / "page_1.bmp"
@@ -278,29 +295,36 @@ class TestTempFileManager:
         mgr.register_file(f1, job_id="job-clean")
         mgr.register_file(f2, job_id="job-clean")
 
-        assert len(mgr.list_job_files("job-clean")) == 2
+        self.assertEqual(len(mgr.list_job_files("job-clean")), 2)
 
         count = mgr.cleanup_job_files("job-clean")
-        assert count == 2
-        assert not f1.exists()
-        assert not f2.exists()
-        assert not job_dir.exists()
+        self.assertEqual(count, 2)
+        self.assertFalse(f1.exists())
+        self.assertFalse(f2.exists())
+        self.assertFalse(job_dir.exists())
 
 
-class TestArtifactCleaner:
+class TestArtifactCleaner(unittest.TestCase):
     """Tests for file wiping, immediate cleanup, and orphan scrubbing."""
 
-    def test_wipe_and_unlink(self, tmp_path: Path) -> None:
-        cleaner = ArtifactCleaner(base_dir=tmp_path, secure_wipe=True)
-        secret_file = tmp_path / "confidential.pdf"
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
+
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
+
+    def test_wipe_and_unlink(self) -> None:
+        cleaner = ArtifactCleaner(base_dir=self.tmp_path, secure_wipe=True)
+        secret_file = self.tmp_path / "confidential.pdf"
         secret_file.write_bytes(b"Top secret customer document data")
 
         freed = cleaner.wipe_and_unlink(secret_file)
-        assert freed > 0
-        assert not secret_file.exists()
+        self.assertGreater(freed, 0)
+        self.assertFalse(secret_file.exists())
 
-    def test_cleanup_job(self, tmp_path: Path) -> None:
-        mgr = TempFileManager(tmp_path / "spool")
+    def test_cleanup_job(self) -> None:
+        mgr = TempFileManager(self.tmp_path / "spool")
         cleaner = ArtifactCleaner(temp_manager=mgr)
 
         job_dir = mgr.get_job_dir("job-wipe")
@@ -309,12 +333,12 @@ class TestArtifactCleaner:
         mgr.register_file(sample_file, job_id="job-wipe")
 
         report = cleaner.cleanup_job("job-wipe")
-        assert report.files_deleted >= 1
-        assert not sample_file.exists()
-        assert not job_dir.exists()
+        self.assertGreaterEqual(report.files_deleted, 1)
+        self.assertFalse(sample_file.exists())
+        self.assertFalse(job_dir.exists())
 
-    def test_cleanup_orphans_with_age_filter(self, tmp_path: Path) -> None:
-        spool_dir = tmp_path / "spool"
+    def test_cleanup_orphans_with_age_filter(self) -> None:
+        spool_dir = self.tmp_path / "spool"
         spool_dir.mkdir()
         cleaner = ArtifactCleaner(base_dir=spool_dir)
 
@@ -336,14 +360,14 @@ class TestArtifactCleaner:
         os.utime(old_dir, (past_time, past_time))
 
         report = cleaner.cleanup_orphans(max_age_seconds=60.0)
-        assert report.files_deleted >= 1
-        assert report.dirs_deleted >= 1
-        assert not old_dir.exists()
-        assert new_dir.exists()
-        assert new_file.exists()
+        self.assertGreaterEqual(report.files_deleted, 1)
+        self.assertGreaterEqual(report.dirs_deleted, 1)
+        self.assertFalse(old_dir.exists())
+        self.assertTrue(new_dir.exists())
+        self.assertTrue(new_file.exists())
 
-    def test_cleanup_orphans_excludes_active_jobs(self, tmp_path: Path) -> None:
-        spool_dir = tmp_path / "spool"
+    def test_cleanup_orphans_excludes_active_jobs(self) -> None:
+        spool_dir = self.tmp_path / "spool"
         spool_dir.mkdir()
         cleaner = ArtifactCleaner(base_dir=spool_dir)
 
@@ -359,6 +383,10 @@ class TestArtifactCleaner:
 
         # Pass active999 in exclusion set
         report = cleaner.cleanup_orphans(max_age_seconds=60.0, exclude_active_job_ids={"active999"})
-        assert report.dirs_deleted == 0
-        assert active_dir.exists()
-        assert active_file.exists()
+        self.assertEqual(report.dirs_deleted, 0)
+        self.assertTrue(active_dir.exists())
+        self.assertTrue(active_file.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

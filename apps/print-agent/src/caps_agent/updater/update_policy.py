@@ -14,7 +14,45 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from packaging.version import InvalidVersion, Version
+try:
+    from packaging.version import InvalidVersion, Version
+except ImportError:
+
+    class InvalidVersion(ValueError):  # type: ignore[no-redef]
+        pass
+
+    class Version:  # type: ignore[no-redef]
+        def __init__(self, v: str) -> None:
+            self._raw = v
+            parts = []
+            for part in v.split("."):
+                digits = "".join(c for c in part if c.isdigit())
+                if not digits:
+                    raise InvalidVersion(f"Invalid version: {v}")
+                parts.append(int(digits))
+            if not parts:
+                raise InvalidVersion(f"Invalid version: {v}")
+            self.release = tuple(parts)
+
+        def __str__(self) -> str:
+            return self._raw
+
+        def __lt__(self, other: Version) -> bool:
+            return self.release < other.release
+
+        def __le__(self, other: Version) -> bool:
+            return self.release <= other.release
+
+        def __gt__(self, other: Version) -> bool:
+            return self.release > other.release
+
+        def __ge__(self, other: Version) -> bool:
+            return self.release >= other.release
+
+        def __eq__(self, other: object) -> bool:
+            if not isinstance(other, Version):
+                return False
+            return self.release == other.release
 
 from caps_agent import __version__
 from caps_agent.utils.signing import SignatureVerificationResult, verify_authenticode_signature

@@ -14,10 +14,10 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
+import unittest
 from dataclasses import dataclass
 from pathlib import Path
-
-import pytest
 
 from caps_agent.jobs.dispatcher import JobDispatcher, JobItem
 from caps_agent.jobs.state_machine import JobState
@@ -32,7 +32,14 @@ from caps_agent.printing.spooler_monitor import SpoolerMonitor
 from caps_agent.storage.cleanup import ArtifactCleaner
 from caps_agent.storage.local_state import LocalStateJournal
 from caps_agent.storage.temp_files import TempFileManager
-from tests.hardware.sample_docs import write_sample_pdf
+
+try:
+    from tests.hardware.sample_docs import write_sample_pdf
+except ImportError:
+    try:
+        from hardware.sample_docs import write_sample_pdf
+    except ImportError:
+        from .sample_docs import write_sample_pdf
 
 TEST_PRINTER_NAME = os.environ.get("CAPS_TEST_PRINTER_NAME")
 IS_WINDOWS = sys.platform == "win32"
@@ -150,36 +157,36 @@ def evaluate_matrix_vector(
 # ==============================================================================
 
 
-class TestDriverCompatibilityMatrix:
+class TestDriverCompatibilityMatrix(unittest.TestCase):
     """Tests the full permutation matrix against simulated device capability profiles."""
 
     def test_basic_mono_matrix_permutations(self) -> None:
         """Basic mono printer accepts A4/Letter BW simplex; rejects color, duplex, A3, Legal."""
         # Accepted permutations
-        assert evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "simplex").status == "ACCEPTED"
-        assert evaluate_matrix_vector(PROFILE_BASIC_MONO, "letter", "bw", "simplex").status == "ACCEPTED"
+        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "simplex").status, "ACCEPTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "letter", "bw", "simplex").status, "ACCEPTED")
 
         # Rejected permutations
-        assert evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "color", "simplex").status == "REJECTED_UNSUPPORTED"
-        assert evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "duplex_long").status == "REJECTED_UNSUPPORTED"
-        assert evaluate_matrix_vector(PROFILE_BASIC_MONO, "a3", "bw", "simplex").status == "REJECTED_UNSUPPORTED"
-        assert evaluate_matrix_vector(PROFILE_BASIC_MONO, "legal", "bw", "simplex").status == "REJECTED_UNSUPPORTED"
+        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "color", "simplex").status, "REJECTED_UNSUPPORTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "duplex_long").status, "REJECTED_UNSUPPORTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a3", "bw", "simplex").status, "REJECTED_UNSUPPORTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "legal", "bw", "simplex").status, "REJECTED_UNSUPPORTED")
 
     def test_office_duplex_mono_matrix_permutations(self) -> None:
         """Office duplex mono printer accepts A4/Legal duplex; rejects color and A3."""
-        assert evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "simplex").status == "ACCEPTED"
-        assert evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_long").status == "ACCEPTED"
-        assert evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_short").status == "ACCEPTED"
-        assert evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "legal", "bw", "duplex_long").status == "ACCEPTED"
+        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "simplex").status, "ACCEPTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_long").status, "ACCEPTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_short").status, "ACCEPTED")
+        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "legal", "bw", "duplex_long").status, "ACCEPTED")
 
         # Color and A3 rejected
-        assert (
-            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "color", "simplex").status
-            == "REJECTED_UNSUPPORTED"
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "color", "simplex").status,
+            "REJECTED_UNSUPPORTED",
         )
-        assert (
-            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a3", "bw", "simplex").status
-            == "REJECTED_UNSUPPORTED"
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a3", "bw", "simplex").status,
+            "REJECTED_UNSUPPORTED",
         )
 
     def test_enterprise_color_mfp_matrix_permutations(self) -> None:
@@ -196,16 +203,23 @@ class TestDriverCompatibilityMatrix:
         ]
         for p_size, c_mode, dup in test_cases:
             res = evaluate_matrix_vector(PROFILE_ENTERPRISE_COLOR_MFP, p_size, c_mode, dup)
-            assert res.status == "ACCEPTED", f"Failed for {p_size}/{c_mode}/{dup}: {res.error_reason}"
+            self.assertEqual(res.status, "ACCEPTED", f"Failed for {p_size}/{c_mode}/{dup}: {res.error_reason}")
 
 
-class TestHighVolumeStressGate:
+class TestHighVolumeStressGate(unittest.TestCase):
     """Stress testing: queueing multiple print jobs sequentially, high sheet counts, resource cleanup."""
 
-    def test_high_volume_sequential_queue_drain(self, tmp_path: Path) -> None:
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
+
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
+
+    def test_high_volume_sequential_queue_drain(self) -> None:
         """Enqueues 10 sequential print jobs to verify queue serialization, memory, and zero leak."""
         journal = LocalStateJournal(":memory:")
-        mgr = TempFileManager(tmp_path / "spool")
+        mgr = TempFileManager(self.tmp_path / "spool")
         cleaner = ArtifactCleaner(temp_manager=mgr, secure_wipe=True)
 
         engine = FakePrintEngine(simulated_spooler_job_id=5000)
@@ -250,36 +264,43 @@ class TestHighVolumeStressGate:
         # Assert every single job reached COMPLETED in both dispatcher and SQLite journal
         for i, jid in enumerate(job_ids):
             state = dispatcher.get_job_state(jid)
-            assert state == JobState.COMPLETED, f"Job {jid} did not complete; state={state}"
+            self.assertEqual(state, JobState.COMPLETED, f"Job {jid} did not complete; state={state}")
 
             rec = journal.get_attempt(f"stress-att-{i}")
+            self.assertIsNotNone(rec)
             assert rec is not None
-            assert rec.status == JobState.COMPLETED.value
-            assert rec.can_auto_reprint is False
+            self.assertEqual(rec.status, JobState.COMPLETED.value)
+            self.assertFalse(rec.can_auto_reprint)
 
         # Privacy & Leak verification: all temporary job folders must be completely wiped
-        assert len(mgr.list_tracked_files()) == 0
+        self.assertEqual(len(mgr.list_tracked_files()), 0)
         for entry in mgr.base_dir.iterdir():
-            assert not entry.name.startswith("job_stress-job")
+            self.assertFalse(entry.name.startswith("job_stress-job"))
 
         dispatcher.shutdown()
         journal.close()
 
 
-class TestRealDeviceHardwareVerification:
+class TestRealDeviceHardwareVerification(unittest.TestCase):
     """Hardware test harness executing real print jobs against a designated physical printer."""
 
-    @pytest.mark.skipif(
-        not REAL_PRINTER_AVAILABLE,
-        reason=(
-            "Physical printer hardware verification BLOCKED: "
-            "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable."
-        ),
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
+
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
+
+    @unittest.skipUnless(
+        REAL_PRINTER_AVAILABLE,
+        "Physical printer hardware verification BLOCKED: "
+        "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable.",
     )
-    def test_real_printer_matrix_a4_bw_simplex(self, tmp_path: Path) -> None:
+    def test_real_printer_matrix_a4_bw_simplex(self) -> None:
         """Physical hardware verification: A4, B&W, Simplex."""
+        self.assertIsNotNone(TEST_PRINTER_NAME)
         assert TEST_PRINTER_NAME is not None
-        pdf_path = write_sample_pdf(tmp_path / "matrix_a4_bw.pdf", pages=1, title="A4 BW Simplex")
+        pdf_path = write_sample_pdf(self.tmp_path / "matrix_a4_bw.pdf", pages=1, title="A4 BW Simplex")
 
         settings = PrintSettings(
             paper_size="a4",
@@ -298,8 +319,8 @@ class TestRealDeviceHardwareVerification:
             job_title="CAPS Matrix A4 BW Simplex",
             attempt_id="real-matrix-att-1",
         )
-        assert result.accepted is True
-        assert result.spooler_job_id is not None
+        self.assertTrue(result.accepted)
+        self.assertIsNotNone(result.spooler_job_id)
 
         monitor = SpoolerMonitor()
         outcome = monitor.monitor_until_terminal(
@@ -307,26 +328,25 @@ class TestRealDeviceHardwareVerification:
             job_id=result.spooler_job_id,
             timeout_seconds=30.0,
         )
-        assert outcome.is_terminal is True
-        assert outcome.can_auto_reprint is False
+        self.assertTrue(outcome.is_terminal)
+        self.assertFalse(outcome.can_auto_reprint)
 
-    @pytest.mark.skipif(
-        not REAL_PRINTER_AVAILABLE,
-        reason=(
-            "Physical printer hardware verification BLOCKED: "
-            "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable."
-        ),
+    @unittest.skipUnless(
+        REAL_PRINTER_AVAILABLE,
+        "Physical printer hardware verification BLOCKED: "
+        "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable.",
     )
-    def test_real_printer_matrix_multi_page_duplex_if_supported(self, tmp_path: Path) -> None:
+    def test_real_printer_matrix_multi_page_duplex_if_supported(self) -> None:
         """Physical hardware verification: Multi-page Duplex (skips if duplex unsupported by device)."""
+        self.assertIsNotNone(TEST_PRINTER_NAME)
         assert TEST_PRINTER_NAME is not None
         detector = CapabilityDetector()
         caps = detector.get_capabilities(TEST_PRINTER_NAME)
 
         if not (caps and caps.supports_duplex):
-            pytest.skip(f"Designated printer '{TEST_PRINTER_NAME}' does not support hardware duplex.")
+            raise unittest.SkipTest(f"Designated printer '{TEST_PRINTER_NAME}' does not support hardware duplex.")
 
-        pdf_path = write_sample_pdf(tmp_path / "matrix_duplex.pdf", pages=2, title="A4 Duplex Test")
+        pdf_path = write_sample_pdf(self.tmp_path / "matrix_duplex.pdf", pages=2, title="A4 Duplex Test")
 
         settings = PrintSettings(
             paper_size="a4",
@@ -345,5 +365,9 @@ class TestRealDeviceHardwareVerification:
             job_title="CAPS Matrix Duplex Test",
             attempt_id="real-matrix-att-2",
         )
-        assert result.accepted is True
-        assert result.spooler_job_id is not None
+        self.assertTrue(result.accepted)
+        self.assertIsNotNone(result.spooler_job_id)
+
+
+if __name__ == "__main__":
+    unittest.main()

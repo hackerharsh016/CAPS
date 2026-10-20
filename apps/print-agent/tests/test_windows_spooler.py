@@ -283,8 +283,13 @@ class TestAdapterProtocolCompliance(unittest.TestCase):
 
     def test_pywin32_adapter_implements_protocol(self) -> None:
         """PyWin32SpoolerAdapter satisfies Win32SpoolerAdapter runtime protocol."""
-        adapter = PyWin32SpoolerAdapter()
-        self.assertIsInstance(adapter, Win32SpoolerAdapter)
+        try:
+            adapter = PyWin32SpoolerAdapter()
+            self.assertIsInstance(adapter, Win32SpoolerAdapter)
+        except RuntimeError as err:
+            if "pywin32 is not installed" in str(err):
+                self.skipTest("pywin32 is not installed or available on this platform")
+            raise
 
 
 class TestEndToEndRenderingAndSpoolerPipeline(unittest.TestCase):
