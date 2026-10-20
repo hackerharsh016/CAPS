@@ -27,6 +27,11 @@ import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 import { QueueService } from './modules/queue/queue.service.js';
 import { queueRoutes } from './modules/queue/queue.routes.js';
+import {
+  RealtimeSignalsService,
+  IRealtimeBroadcaster,
+  InMemoryRealtimeBroadcaster
+} from './modules/queue/realtime-signals.service.js';
 import { MockAgentsRepository, IAgentsRepository } from './modules/agents/agents.repository.js';
 import { MockJobAttemptsRepository, IJobAttemptsRepository } from './modules/agents/attempts.repository.js';
 import { AgentClaimService } from './modules/agents/agent-claim.service.js';
@@ -62,6 +67,8 @@ export interface AppOptions {
   attemptsRepo?: IJobAttemptsRepository | undefined;
   agentClaimService?: AgentClaimService | undefined;
   pairingService?: PairingService | undefined;
+  realtimeBroadcaster?: IRealtimeBroadcaster | undefined;
+  realtimeSignalsService?: RealtimeSignalsService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -124,9 +131,29 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const queueService =
     options.queueService ??
     new QueueService(jobsRepo, shopsRepo, printersRepo);
+  const realtimeBroadcaster =
+    options.realtimeBroadcaster ?? new InMemoryRealtimeBroadcaster();
+  const realtimeSignalsService =
+    options.realtimeSignalsService ??
+    new RealtimeSignalsService(
+      realtimeBroadcaster,
+      jobsRepo,
+      shopsRepo,
+      agentsRepo,
+      attemptsRepo,
+      printersRepo
+    );
   const agentClaimService =
     options.agentClaimService ??
-    new AgentClaimService(jobsRepo, shopsRepo, printersRepo, agentsRepo, attemptsRepo, documentsRepo);
+    new AgentClaimService(
+      jobsRepo,
+      shopsRepo,
+      printersRepo,
+      agentsRepo,
+      attemptsRepo,
+      documentsRepo,
+      realtimeSignalsService
+    );
   const pairingService =
     options.pairingService ??
     new PairingService(agentsRepo, shopsRepo, agentClaimService);
@@ -144,13 +171,15 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
 
   app.register(queueRoutes, {
     prefix: '/api/v1/shops',
-    queueService
+    queueService,
+    realtimeSignalsService
   });
 
   app.register(agentsRoutes, {
     prefix: '/api/v1',
     agentClaimService,
-    pairingService
+    pairingService,
+    realtimeSignalsService
   });
 
   app.register(documentsRoutes, {
@@ -233,7 +262,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           agentsRepo &&
           attemptsRepo &&
           agentClaimService &&
-          pairingService
+          pairingService &&
+          realtimeSignalsService
       ),
       message: 'Repositories operational'
     }),

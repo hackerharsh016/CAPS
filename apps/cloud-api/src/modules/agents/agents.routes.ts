@@ -18,10 +18,12 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import type { AgentClaimService } from './agent-claim.service.js';
 import type { PairingService } from './pairing.service.js';
+import type { RealtimeSignalsService } from '../queue/realtime-signals.service.js';
 
 export interface AgentsRoutesOptions {
   agentClaimService: AgentClaimService;
   pairingService: PairingService;
+  realtimeSignalsService?: RealtimeSignalsService | undefined;
 }
 
 const claimRequestSchema = z.object({
@@ -89,11 +91,19 @@ const jobStatusUpdateSchema = z.object({
   timestamp: z.string().default(() => new Date().toISOString())
 });
 
+const reconcileRequestSchema = z.object({
+  device_id: z.string().min(1, 'device_id is required'),
+  last_event_id: z.number().int().nonnegative().optional(),
+  since_timestamp: z.string().optional(),
+  in_flight_attempt_id: z.string().optional(),
+  in_flight_lease_token: z.string().optional()
+});
+
 export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify,
   options
 ) => {
-  const { agentClaimService, pairingService } = options;
+  const { agentClaimService, pairingService, realtimeSignalsService } = options;
 
   /**
    * POST /api/v1/shops/:shopId/agents/pairing-code
@@ -431,6 +441,60 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
 
       const result = await agentClaimService.reconcileExpiredLeases(shopId);
 
+      return reply.status(200).send({
+        data: result
+      });
+    }
+  );
+
+  /**
+   * POST /api/v1/agents/reconcile
+   * Missed-event reconciliation & active lease recovery for reconnecting agent.
+   */
+  fastify.post(
+    '/agents/reconcile',
+    {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize(['agent', 'admin'])
+      ]
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = reconcileRequestSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'INVALID_PAYLOAD',
+            message: 'Invalid agent reconciliation payload.',
+            request_id: request.requestId || 'unknown-request',
+            details: parsed.error.errors
+          }
+        });
+      }
+
+      if (!realtimeSignalsService) {
+        return reply.status(503).send({
+          error: {
+            code: 'REALTIME_SERVICE_UNAVAILABLE',
+            message: 'Realtime reconciliation service not configured.',
+            request_id: request.requestId || 'unknown-request'
+          }
+        });
+      }
+
+      const body = parsed.data;
+      const device = await pairingService.getDevice(body.device_id);
+      if (!device) {
+        return reply.status(404).send({
+          error: {
+            code: 'DEVICE_NOT_FOUND',
+            message: `Agent device '${body.device_id}' not found.`,
+            request_id: request.requestId || 'unknown-request'
+          }
+        });
+      }
+
+      const result = await realtimeSignalsService.reconcileAgent(device.shop_id, body);
       return reply.status(200).send({
         data: result
       });

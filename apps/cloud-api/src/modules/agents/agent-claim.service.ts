@@ -19,6 +19,7 @@ import type { IAgentsRepository } from './agents.repository.js';
 import type { IJobAttemptsRepository } from './attempts.repository.js';
 import type { PrintJobRecord } from '../print-jobs/print-jobs.types.js';
 import type { Printer } from '../printers/printers.types.js';
+import type { RealtimeSignalsService } from '../queue/realtime-signals.service.js';
 import type {
   JobClaimRequestDto,
   JobClaimResponseDto,
@@ -49,7 +50,8 @@ export class AgentClaimService {
     private readonly printersRepo: IPrintersRepository,
     private readonly agentsRepo: IAgentsRepository,
     private readonly attemptsRepo: IJobAttemptsRepository,
-    private readonly documentsRepo?: IDocumentsRepository
+    private readonly documentsRepo?: IDocumentsRepository,
+    private readonly realtimeSignalsService?: RealtimeSignalsService
   ) {}
 
   /**
@@ -156,6 +158,11 @@ export class AgentClaimService {
       to_status: 'approved',
       reason: 'Owner confirmation granted for print dispatch'
     });
+
+    if (this.realtimeSignalsService) {
+      await this.realtimeSignalsService.emitAgentWake(job.shop_id, updated);
+      await this.realtimeSignalsService.emitJobStatusChanged(job.shop_id, updated, job.status);
+    }
 
     return updated;
   }
@@ -373,6 +380,14 @@ export class AgentClaimService {
         }
       });
 
+      if (this.realtimeSignalsService) {
+        await this.realtimeSignalsService.emitJobStatusChanged(
+          request.shop_id,
+          updatedJob,
+          selectedJob.status
+        );
+      }
+
       return this.buildClaimResponse(updatedJob, attempt, matchedPrinter);
     });
   }
@@ -471,6 +486,14 @@ export class AgentClaimService {
         });
 
         recoveredJobIds.push(job.id);
+
+        if (this.realtimeSignalsService) {
+          const recovered = await this.printJobsRepo.findById(job.id);
+          if (recovered) {
+            await this.realtimeSignalsService.emitAgentWake(job.shop_id, recovered);
+            await this.realtimeSignalsService.emitJobStatusChanged(job.shop_id, recovered, job.status);
+          }
+        }
       } else {
         // Max retry threshold reached: route to 'requires_review'
         await this.printJobsRepo.update(job.id, {
@@ -729,6 +752,13 @@ export class AgentClaimService {
       await this.attemptsRepo.update(attempt.id, { status: 'downloading' });
     } else if (input.status === 'RENDERING') {
       await this.attemptsRepo.update(attempt.id, { status: 'rendering' });
+    }
+
+    if (this.realtimeSignalsService) {
+      const currentJob = await this.printJobsRepo.findById(job.id);
+      if (currentJob) {
+        await this.realtimeSignalsService.emitJobStatusChanged(job.shop_id, currentJob, job.status);
+      }
     }
 
     return {

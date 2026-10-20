@@ -10,6 +10,7 @@ export interface IJobAttemptsRepository {
   create(dto: CreateJobAttemptDto): Promise<JobAttempt>;
   update(id: string, dto: UpdateJobAttemptDto): Promise<JobAttempt | null>;
   findExpiredLeases(nowMs?: number): Promise<JobAttempt[]>;
+  findActiveByDeviceId(deviceId: string): Promise<JobAttempt[]>;
   delete(id: string): Promise<boolean>;
   clear(): void;
 }
@@ -54,6 +55,13 @@ export class MockJobAttemptsRepository implements IJobAttemptsRepository {
     const activeStatuses = ['leased', 'downloading'];
     return Array.from(this.attempts.values())
       .filter(a => activeStatuses.includes(a.status) && new Date(a.lease_expires_at).getTime() < nowMs)
+      .map(a => ({ ...a }));
+  }
+
+  async findActiveByDeviceId(deviceId: string): Promise<JobAttempt[]> {
+    const activeStatuses = ['leased', 'downloading', 'rendering', 'submitted', 'printing'];
+    return Array.from(this.attempts.values())
+      .filter(a => a.agent_device_id === deviceId && activeStatuses.includes(a.status))
       .map(a => ({ ...a }));
   }
 

@@ -223,4 +223,11 @@ export class PairingService {
 
     return this.agentsRepo.listDevicesByShop(shopId);
   }
+
+  /**
+   * Retrieves a device by its ID.
+   */
+  async getDevice(deviceId: string): Promise<AgentDevice | null> {
+    return this.agentsRepo.findDeviceById(deviceId);
+  }
 }
