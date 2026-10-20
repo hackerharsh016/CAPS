@@ -117,9 +117,9 @@ function CheckoutPageContent() {
       }
     }
 
-    // Proceed to order history / tracking screen
+    // Proceed to live token & job queue tracking screen
     setTimeout(() => {
-      router.push(`/orders?newOrder=${encodeURIComponent(result.order_id)}`);
+      router.push(`/jobs/${encodeURIComponent(result.order_id)}`);
     }, 1200);
   };
 
