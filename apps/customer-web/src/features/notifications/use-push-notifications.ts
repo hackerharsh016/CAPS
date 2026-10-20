@@ -7,11 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type {
-  PushPermissionStatus,
-  InAppNotification,
-  PushSubscriptionMetadata
-} from './types';
+import type { PushPermissionStatus, InAppNotification, PushSubscriptionMetadata } from './types';
 import { defaultPushService } from './push-service';
 import { useAuth } from '../auth/auth-context';
 
@@ -120,7 +116,7 @@ export function usePushNotifications() {
   }, []);
 
   const unreadCount = useMemo(() => {
-    return notifications.filter((n) => !n.read).length;
+    return notifications.filter(n => !n.read).length;
   }, [notifications]);
 
   return {

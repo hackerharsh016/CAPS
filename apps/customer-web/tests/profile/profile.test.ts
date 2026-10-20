@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  ProfileService,
-  defaultProfileService
-} from '../../src/features/profile/profile-service';
+import { ProfileService, defaultProfileService } from '../../src/features/profile/profile-service';
 import type { ProfileUpdateInput } from '../../src/features/profile/types';
 
 describe('Customer Profile Service', () => {
@@ -47,10 +44,7 @@ describe('Customer Profile Service', () => {
   it('calculates customer activity stats from order history', async () => {
     const service = new ProfileService();
     // Test with sample customer ID
-    const stats = await service.getCustomerStats(
-      'usr-customer-alpha',
-      '2026-01-15T00:00:00Z'
-    );
+    const stats = await service.getCustomerStats('usr-customer-alpha', '2026-01-15T00:00:00Z');
 
     expect(stats.totalOrders).toBeGreaterThan(0);
     expect(stats.completedOrders).toBeGreaterThanOrEqual(0);

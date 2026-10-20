@@ -25,9 +25,15 @@ export default function RootLayout({
               <span className="text-lg font-semibold text-slate-900">Customer Portal</span>
             </div>
             <nav className="flex items-center space-x-4 text-sm font-medium text-slate-600">
-              <a href="/shops" className="text-blue-600 hover:text-blue-700">Find Shops</a>
-              <a href="/orders" className="hover:text-slate-900">My Orders</a>
-              <a href="/help" className="hover:text-slate-900">Help</a>
+              <a href="/shops" className="text-blue-600 hover:text-blue-700">
+                Find Shops
+              </a>
+              <a href="/orders" className="hover:text-slate-900">
+                My Orders
+              </a>
+              <a href="/help" className="hover:text-slate-900">
+                Help
+              </a>
             </nav>
           </div>
         </header>

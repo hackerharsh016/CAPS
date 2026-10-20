@@ -43,11 +43,7 @@ export function DocumentPreview({
   }
 
   // Error States: Password-protected, Corrupted, or Conversion Failed
-  if (
-    preview.conversionStatus === 'failed' ||
-    preview.isPasswordProtected ||
-    preview.isCorrupted
-  ) {
+  if (preview.conversionStatus === 'failed' || preview.isPasswordProtected || preview.isCorrupted) {
     return (
       <div
         role="alert"
@@ -55,16 +51,14 @@ export function DocumentPreview({
         className="w-full rounded-2xl border border-red-200 bg-red-50 p-6 space-y-4 text-red-950"
       >
         <div className="flex items-start space-x-3">
-          <span className="text-2xl">
-            {preview.isPasswordProtected ? '🔐' : '⚠️'}
-          </span>
+          <span className="text-2xl">{preview.isPasswordProtected ? '🔐' : '⚠️'}</span>
           <div className="space-y-1">
             <h3 className="text-base font-bold">
               {preview.isPasswordProtected
                 ? 'Password-Protected Document'
                 : preview.isCorrupted
-                ? 'Corrupted Document File'
-                : 'Document Conversion Failed'}
+                  ? 'Corrupted Document File'
+                  : 'Document Conversion Failed'}
             </h3>
             <p className="text-xs sm:text-sm text-red-800 leading-relaxed">
               {preview.conversionError ||
@@ -100,10 +94,7 @@ export function DocumentPreview({
   }
 
   // Asynchronous Conversion In-Progress State
-  if (
-    preview.conversionStatus === 'pending' ||
-    preview.conversionStatus === 'processing'
-  ) {
+  if (preview.conversionStatus === 'pending' || preview.conversionStatus === 'processing') {
     return (
       <div
         role="status"
@@ -114,10 +105,12 @@ export function DocumentPreview({
           ⏳
         </div>
         <div>
-          <h3 className="text-base font-bold text-amber-950">Converting Document to Print-Ready PDF</h3>
+          <h3 className="text-base font-bold text-amber-950">
+            Converting Document to Print-Ready PDF
+          </h3>
           <p className="mt-1 text-xs text-amber-800 max-w-md mx-auto">
-            Your Office document ({preview.fileName}) is being converted securely by the cloud conversion worker.
-            Page count and preview will appear momentarily.
+            Your Office document ({preview.fileName}) is being converted securely by the cloud
+            conversion worker. Page count and preview will appear momentarily.
           </p>
         </div>
       </div>
@@ -125,7 +118,7 @@ export function DocumentPreview({
   }
 
   // Active Document Preview: Success State
-  const activePageObj = preview.pages.find((p) => p.pageNumber === currentPage) || preview.pages[0];
+  const activePageObj = preview.pages.find(p => p.pageNumber === currentPage) || preview.pages[0];
 
   return (
     <div
@@ -188,7 +181,7 @@ export function DocumentPreview({
           <button
             type="button"
             disabled={currentPage <= 1}
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             aria-label="View previous document page"
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white"
           >
@@ -202,7 +195,7 @@ export function DocumentPreview({
           <button
             type="button"
             disabled={currentPage >= preview.pageCount}
-            onClick={() => setCurrentPage((p) => Math.min(preview.pageCount, p + 1))}
+            onClick={() => setCurrentPage(p => Math.min(preview.pageCount, p + 1))}
             aria-label="View next document page"
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-white"
           >
@@ -218,7 +211,7 @@ export function DocumentPreview({
           aria-label="Document pages"
           className="flex items-center space-x-2 overflow-x-auto pb-2 pt-1 scrollbar-thin"
         >
-          {preview.pages.map((p) => (
+          {preview.pages.map(p => (
             <button
               key={p.pageNumber}
               type="button"

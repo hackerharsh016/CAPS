@@ -77,7 +77,8 @@ describe('Quote Service & Race Handling (P04-M05-F01)', () => {
     it('handles out-of-order responses discarding stale prior requests', async () => {
       // Simulate slow Request A (200ms) and fast Request B (30ms)
       let activeSeq = 0;
-      let finalResolvedQuote: import('../../src/features/pricing/types').QuoteResponse | null = null;
+      let finalResolvedQuote: import('../../src/features/pricing/types').QuoteResponse | null =
+        null;
 
       const runSimulatedRequest = async (tier: 'flexible' | 'urgent', latency: number) => {
         const seq = ++activeSeq;
@@ -100,7 +101,7 @@ describe('Quote Service & Race Handling (P04-M05-F01)', () => {
       // Launch slow Request A (Flexible)
       const p1 = runSimulatedRequest('flexible', 120);
       // Shortly after, user toggles to Urgent (Request B, faster)
-      await new Promise((r) => setTimeout(r, 20));
+      await new Promise(r => setTimeout(r, 20));
       const p2 = runSimulatedRequest('urgent', 30);
 
       await Promise.all([p1, p2]);

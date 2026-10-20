@@ -51,11 +51,7 @@ export interface JobTrackingInfo {
 }
 
 export type TrackingErrorCode =
-  | 'UNAUTHORIZED'
-  | 'NOT_FOUND'
-  | 'AGENT_OFFLINE'
-  | 'UNKNOWN_STATE'
-  | 'NETWORK_ERROR';
+  'UNAUTHORIZED' | 'NOT_FOUND' | 'AGENT_OFFLINE' | 'UNKNOWN_STATE' | 'NETWORK_ERROR';
 
 export interface TrackingError {
   code: TrackingErrorCode;

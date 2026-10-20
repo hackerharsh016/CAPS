@@ -3,10 +3,7 @@ import { NextRequest } from 'next/server';
 import { middleware } from '../../src/middleware';
 
 describe('Next.js Edge Middleware Route Guards', () => {
-  const createMockRequest = (
-    path: string,
-    cookies: Record<string, string> = {}
-  ): NextRequest => {
+  const createMockRequest = (path: string, cookies: Record<string, string> = {}): NextRequest => {
     const url = `https://caps.example.com${path}`;
     const req = new NextRequest(url);
 

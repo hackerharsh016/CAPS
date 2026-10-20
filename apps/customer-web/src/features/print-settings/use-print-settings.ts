@@ -17,14 +17,8 @@ import type {
   PrintSettingsValidationErrors,
   PrintSettingsCalculation
 } from './types';
-import type {
-  ShopPrinterCapabilities,
-  CapabilityCheckResult
-} from './capabilities-types';
-import {
-  DEFAULT_PRINT_SETTINGS,
-  validatePrintSettings
-} from './validation';
+import type { ShopPrinterCapabilities, CapabilityCheckResult } from './capabilities-types';
+import { DEFAULT_PRINT_SETTINGS, validatePrintSettings } from './validation';
 import { checkSettingsCompatibility } from './capabilities-service';
 
 export interface UsePrintSettingsOptions {
@@ -115,7 +109,10 @@ export function usePrintSettings({
     const hasAnyErrors = Object.keys(errors).length > 0;
     return {
       combinedErrors: errors,
-      isFullyValid: baseValidation.isValid && (!capabilityCheck || capabilityCheck.isCompatible) && !hasAnyErrors
+      isFullyValid:
+        baseValidation.isValid &&
+        (!capabilityCheck || capabilityCheck.isCompatible) &&
+        !hasAnyErrors
     };
   }, [baseValidation, capabilities, capabilityCheck]);
 
@@ -133,36 +130,57 @@ export function usePrintSettings({
   // 6. Update handlers
   const updateSettings = useCallback((partial: Partial<PrintSettings>) => {
     setIsDirty(true);
-    setSettings((prev) => ({ ...prev, ...partial }));
+    setSettings(prev => ({ ...prev, ...partial }));
   }, []);
 
-  const updatePaperSize = useCallback((paper_size: PaperSize) => {
-    updateSettings({ paper_size });
-  }, [updateSettings]);
+  const updatePaperSize = useCallback(
+    (paper_size: PaperSize) => {
+      updateSettings({ paper_size });
+    },
+    [updateSettings]
+  );
 
-  const updateColorMode = useCallback((color_mode: ColorMode) => {
-    updateSettings({ color_mode });
-  }, [updateSettings]);
+  const updateColorMode = useCallback(
+    (color_mode: ColorMode) => {
+      updateSettings({ color_mode });
+    },
+    [updateSettings]
+  );
 
-  const updateSides = useCallback((sides: SideMode) => {
-    updateSettings({ sides });
-  }, [updateSettings]);
+  const updateSides = useCallback(
+    (sides: SideMode) => {
+      updateSettings({ sides });
+    },
+    [updateSettings]
+  );
 
-  const updateOrientation = useCallback((orientation: Orientation) => {
-    updateSettings({ orientation });
-  }, [updateSettings]);
+  const updateOrientation = useCallback(
+    (orientation: Orientation) => {
+      updateSettings({ orientation });
+    },
+    [updateSettings]
+  );
 
-  const updateCopies = useCallback((copies: number) => {
-    updateSettings({ copies });
-  }, [updateSettings]);
+  const updateCopies = useCallback(
+    (copies: number) => {
+      updateSettings({ copies });
+    },
+    [updateSettings]
+  );
 
-  const updatePageRange = useCallback((page_range: string) => {
-    updateSettings({ page_range });
-  }, [updateSettings]);
+  const updatePageRange = useCallback(
+    (page_range: string) => {
+      updateSettings({ page_range });
+    },
+    [updateSettings]
+  );
 
-  const updateBinding = useCallback((binding: BindingType) => {
-    updateSettings({ binding });
-  }, [updateSettings]);
+  const updateBinding = useCallback(
+    (binding: BindingType) => {
+      updateSettings({ binding });
+    },
+    [updateSettings]
+  );
 
   /**
    * Applies suggested compatible settings explicitly requested by user.

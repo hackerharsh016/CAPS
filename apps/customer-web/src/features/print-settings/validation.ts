@@ -20,7 +20,12 @@ export const VALID_PAPER_SIZES: readonly PaperSize[] = ['A4', 'A3', 'Legal'] as 
 export const VALID_COLOR_MODES: readonly ColorMode[] = ['bw', 'color'] as const;
 export const VALID_SIDE_MODES: readonly SideMode[] = ['single', 'double'] as const;
 export const VALID_ORIENTATIONS: readonly Orientation[] = ['portrait', 'landscape'] as const;
-export const VALID_BINDINGS: readonly BindingType[] = ['none', 'spiral', 'staple', 'lamination'] as const;
+export const VALID_BINDINGS: readonly BindingType[] = [
+  'none',
+  'spiral',
+  'staple',
+  'lamination'
+] as const;
 
 export const MIN_COPIES = 1;
 export const MAX_COPIES = 100;
@@ -41,7 +46,7 @@ export const DEFAULT_PRINT_SETTINGS: PrintSettings = {
  * - 'all' (case-insensitive)
  * - Single integers: '1', '12'
  * - Comma-delimited pages and ranges: '1-5, 8, 11-14'
- * 
+ *
  * Rejects:
  * - Empty string or whitespace
  * - Inverted ranges ('5-2')
@@ -67,7 +72,7 @@ export function isValidPageRange(val: string): boolean {
     return false;
   }
 
-  const parts = trimmed.split(',').map((p) => p.trim());
+  const parts = trimmed.split(',').map(p => p.trim());
   if (parts.length === 0) {
     return false;
   }
@@ -78,7 +83,7 @@ export function isValidPageRange(val: string): boolean {
     }
 
     if (part.includes('-')) {
-      const rangeParts = part.split('-').map((s) => s.trim());
+      const rangeParts = part.split('-').map(s => s.trim());
       if (rangeParts.length !== 2) {
         return false; // Multiple hyphens e.g. "1-2-3" or "1--5"
       }
@@ -134,10 +139,10 @@ export function parsePageRange(rangeStr: string, totalDocumentPages?: number): n
     return Array.from(pages);
   }
 
-  const parts = trimmed.split(',').map((p) => p.trim());
+  const parts = trimmed.split(',').map(p => p.trim());
   for (const part of parts) {
     if (part.includes('-')) {
-      const [startStr, endStr] = part.split('-').map((s) => s.trim());
+      const [startStr, endStr] = part.split('-').map(s => s.trim());
       const start = Number(startStr);
       const end = Number(endStr);
       for (let i = start; i <= end; i++) {
@@ -151,7 +156,7 @@ export function parsePageRange(rangeStr: string, totalDocumentPages?: number): n
   const sortedPages = Array.from(pages).sort((a, b) => a - b);
 
   if (totalDocumentPages !== undefined && totalDocumentPages > 0) {
-    const invalidPages = sortedPages.filter((p) => p > totalDocumentPages);
+    const invalidPages = sortedPages.filter(p => p > totalDocumentPages);
     if (invalidPages.length > 0) {
       throw new Error(
         `Page range references page ${invalidPages.join(', ')} which exceeds document total of ${totalDocumentPages} ${totalDocumentPages === 1 ? 'page' : 'pages'}`
@@ -243,7 +248,11 @@ export function validatePrintSettings(
   }
 
   // 6. Page range
-  if (!settings.page_range || typeof settings.page_range !== 'string' || !settings.page_range.trim()) {
+  if (
+    !settings.page_range ||
+    typeof settings.page_range !== 'string' ||
+    !settings.page_range.trim()
+  ) {
     errors.page_range = 'Page range is required';
   } else if (!isValidPageRange(settings.page_range)) {
     errors.page_range = 'Invalid page range format. Must be "all" or expressions like "1-5, 8"';

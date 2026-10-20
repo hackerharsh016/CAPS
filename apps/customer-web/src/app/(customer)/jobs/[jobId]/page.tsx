@@ -39,10 +39,14 @@ export default function JobStatusPage() {
       if (err instanceof QueueTrackingCustomError) {
         if (err.code === 'UNAUTHORIZED') {
           setErrorCode('UNAUTHORIZED');
-          setErrorMessage('You do not have permission to view this print job. Print jobs are private to each customer.');
+          setErrorMessage(
+            'You do not have permission to view this print job. Print jobs are private to each customer.'
+          );
         } else if (err.code === 'NOT_FOUND') {
           setErrorCode('NOT_FOUND');
-          setErrorMessage(`Print job '${jobId}' was not found. It may have expired or the ID is invalid.`);
+          setErrorMessage(
+            `Print job '${jobId}' was not found. It may have expired or the ID is invalid.`
+          );
         } else {
           setErrorCode('ERROR');
           setErrorMessage(err.message);

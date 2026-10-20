@@ -6,14 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import type {
-  AuthError,
-  AuthSession,
-  AuthStatus,
-  AuthUser,
-  UserProfile,
-  UserRole
-} from './types';
+import type { AuthError, AuthSession, AuthStatus, AuthUser, UserProfile, UserRole } from './types';
 import {
   SupabaseAuthClient,
   type SignInCredentials,
@@ -34,7 +27,9 @@ export interface AuthContextValue {
   signInWithPassword: (credentials: SignInCredentials) => Promise<void>;
   signInWithOtp: (credentials: OtpCredentials) => Promise<{ message: string }>;
   verifyOtp: (credentials: VerifyOtpCredentials) => Promise<void>;
-  signUp: (credentials: SignUpCredentials) => Promise<{ user: AuthUser; session: AuthSession | null }>;
+  signUp: (
+    credentials: SignUpCredentials
+  ) => Promise<{ user: AuthUser; session: AuthSession | null }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<AuthSession | null>;
 }
@@ -57,8 +52,7 @@ export function AuthProvider({ children, client }: AuthProviderProps) {
   // Derive profile from user metadata and session
   const profile = useMemo<UserProfile | null>(() => {
     if (!user) return null;
-    const role: UserRole =
-      user.user_metadata?.role || user.app_metadata?.role || 'customer';
+    const role: UserRole = user.user_metadata?.role || user.app_metadata?.role || 'customer';
     const profileName =
       (typeof user.user_metadata?.name === 'string' && user.user_metadata.name) ||
       user.email?.split('@')[0] ||
@@ -96,12 +90,12 @@ export function AuthProvider({ children, client }: AuthProviderProps) {
     // Check existing session
     authClient
       .getSession()
-      .then((existingSession) => {
+      .then(existingSession => {
         if (mounted) {
           handleAuthState(existingSession);
         }
       })
-      .catch((err) => {
+      .catch(err => {
         if (mounted) {
           console.error('Error hydrating auth session:', err);
           handleAuthState(null);

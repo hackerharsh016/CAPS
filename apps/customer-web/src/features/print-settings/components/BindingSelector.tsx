@@ -52,9 +52,7 @@ export function BindingSelector({
   return (
     <fieldset className="space-y-2">
       <div className="flex items-center justify-between">
-        <legend className="text-sm font-bold text-slate-800">
-          Binding & Finishing Service
-        </legend>
+        <legend className="text-sm font-bold text-slate-800">Binding & Finishing Service</legend>
         <span className="text-xs text-slate-400">Optional</span>
       </div>
       <p id="binding-hint" className="text-xs text-slate-500">
@@ -68,7 +66,7 @@ export function BindingSelector({
         aria-describedby={error ? 'binding-error' : undefined}
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        {BINDING_OPTIONS.map((option) => {
+        {BINDING_OPTIONS.map(option => {
           const isSelected = value === option.id;
           return (
             <button

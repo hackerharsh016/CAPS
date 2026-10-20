@@ -121,10 +121,7 @@ export class PushService {
     // Save to local storage if available
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        localStorage.setItem(
-          `${STORAGE_KEY_PUSH_SUB}_${customerId}`,
-          JSON.stringify(subscription)
-        );
+        localStorage.setItem(`${STORAGE_KEY_PUSH_SUB}_${customerId}`, JSON.stringify(subscription));
       } catch {
         // quota exceeded or private mode
       }
@@ -220,7 +217,9 @@ export class PushService {
     return [...this.inAppNotificationsQueue];
   }
 
-  public addInAppNotification(notification: Omit<InAppNotification, 'id' | 'timestamp' | 'read'>): InAppNotification {
+  public addInAppNotification(
+    notification: Omit<InAppNotification, 'id' | 'timestamp' | 'read'>
+  ): InAppNotification {
     const item: InAppNotification = {
       ...notification,
       id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -232,7 +231,7 @@ export class PushService {
   }
 
   public markNotificationAsRead(id: string): void {
-    const item = this.inAppNotificationsQueue.find((n) => n.id === id);
+    const item = this.inAppNotificationsQueue.find(n => n.id === id);
     if (item) {
       item.read = true;
     }

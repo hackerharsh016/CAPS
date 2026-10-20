@@ -15,9 +15,14 @@ export function ProfileForm() {
 
   const [name, setName] = useState(profile?.name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
-  const [preferredNotification, setPreferredNotification] = useState<'sms' | 'whatsapp' | 'email'>('sms');
+  const [preferredNotification, setPreferredNotification] = useState<'sms' | 'whatsapp' | 'email'>(
+    'sms'
+  );
 
-  const [fieldErrors, setFieldErrors] = useState<{ name?: string | undefined; phone?: string | undefined }>({});
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string | undefined;
+    phone?: string | undefined;
+  }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -63,7 +68,7 @@ export function ProfileForm() {
     try {
       const normalized = defaultProfileService.normalizeInput(input);
       // Simulate profile update via customer API/Supabase user metadata
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 500));
       setName(normalized.name);
       setPhone(normalized.phone);
       setSaveSuccess(true);
@@ -97,7 +102,9 @@ export function ProfileForm() {
       {stats && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Orders</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+              Total Orders
+            </p>
             <p className="mt-2 text-2xl font-extrabold text-blue-600">{stats.totalOrders}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -105,13 +112,17 @@ export function ProfileForm() {
             <p className="mt-2 text-2xl font-extrabold text-emerald-600">{stats.completedOrders}</p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Printed</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+              Total Printed
+            </p>
             <p className="mt-2 text-2xl font-extrabold text-slate-900">
               {formatPaiseToInr(stats.totalSpentPaise)}
             </p>
           </div>
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Member Since</p>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+              Member Since
+            </p>
             <p className="mt-2 text-xl font-bold text-slate-700">{stats.memberSince}</p>
           </div>
         </div>
@@ -179,9 +190,9 @@ export function ProfileForm() {
               aria-invalid={!!fieldErrors.name}
               aria-describedby={fieldErrors.name ? 'profile-name-error' : undefined}
               value={name}
-              onChange={(e) => {
+              onChange={e => {
                 setName(e.target.value);
-                if (fieldErrors.name) setFieldErrors((prev) => ({ ...prev, name: undefined }));
+                if (fieldErrors.name) setFieldErrors(prev => ({ ...prev, name: undefined }));
               }}
               className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.name
@@ -210,9 +221,9 @@ export function ProfileForm() {
               aria-invalid={!!fieldErrors.phone}
               aria-describedby={fieldErrors.phone ? 'profile-phone-error' : undefined}
               value={phone}
-              onChange={(e) => {
+              onChange={e => {
                 setPhone(e.target.value);
-                if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                if (fieldErrors.phone) setFieldErrors(prev => ({ ...prev, phone: undefined }));
               }}
               className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.phone
@@ -238,7 +249,7 @@ export function ProfileForm() {
                 { id: 'sms', label: '📱 SMS Alert', desc: 'Standard cellular message' },
                 { id: 'whatsapp', label: '💬 WhatsApp', desc: 'Instant chat notification' },
                 { id: 'email', label: '📧 Email Receipt', desc: 'Detailed PDF invoice' }
-              ].map((opt) => (
+              ].map(opt => (
                 <label
                   key={opt.id}
                   className={`flex cursor-pointer flex-col rounded-lg border p-3.5 transition-colors ${
@@ -253,7 +264,9 @@ export function ProfileForm() {
                       name="preferredNotification"
                       value={opt.id}
                       checked={preferredNotification === opt.id}
-                      onChange={() => setPreferredNotification(opt.id as typeof preferredNotification)}
+                      onChange={() =>
+                        setPreferredNotification(opt.id as typeof preferredNotification)
+                      }
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500"
                     />
                     <span className="text-sm font-semibold text-slate-900">{opt.label}</span>

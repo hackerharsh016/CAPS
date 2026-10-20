@@ -61,16 +61,22 @@ export function OrderCard({ order }: OrderCardProps) {
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Document</p>
-          <p className="mt-1 text-sm font-medium text-slate-900 truncate" title={order.document_name}>
+          <p
+            className="mt-1 text-sm font-medium text-slate-900 truncate"
+            title={order.document_name}
+          >
             📄 {order.document_name}
           </p>
           <p className="text-xs text-slate-500">
-            {(order.file_size_bytes / (1024 * 1024)).toFixed(2)} MB • {order.settings.pages_per_copy} pages/copy
+            {(order.file_size_bytes / (1024 * 1024)).toFixed(2)} MB •{' '}
+            {order.settings.pages_per_copy} pages/copy
           </p>
         </div>
 
         <div>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Configuration</p>
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+            Configuration
+          </p>
           <div className="mt-1 flex flex-wrap gap-1.5 text-xs text-slate-700">
             <span className="rounded bg-slate-100 px-2 py-0.5 font-medium">
               {order.settings.paper_size}
@@ -82,7 +88,8 @@ export function OrderCard({ order }: OrderCardProps) {
               {order.settings.duplex ? 'Double Sided' : 'Single Sided'}
             </span>
             <span className="rounded bg-slate-100 px-2 py-0.5 font-medium">
-              {order.settings.copies} {order.settings.copies === 1 ? 'Copy' : 'Copies'} ({order.settings.total_pages} pages)
+              {order.settings.copies} {order.settings.copies === 1 ? 'Copy' : 'Copies'} (
+              {order.settings.total_pages} pages)
             </span>
             {order.settings.spiral_binding && (
               <span className="rounded bg-indigo-50 px-2 py-0.5 font-medium text-indigo-700 border border-indigo-200">
@@ -101,7 +108,10 @@ export function OrderCard({ order }: OrderCardProps) {
           className="mt-4 flex items-center space-x-2 rounded-lg bg-emerald-50/70 p-2.5 text-xs text-emerald-900 border border-emerald-200"
         >
           <span className="font-bold text-emerald-800">🔒 Privacy Protected:</span>
-          <span>Uploaded document was automatically purged from cloud storage after printing per retention policy.</span>
+          <span>
+            Uploaded document was automatically purged from cloud storage after printing per
+            retention policy.
+          </span>
         </div>
       )}
 

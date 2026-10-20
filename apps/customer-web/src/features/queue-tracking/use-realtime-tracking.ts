@@ -46,7 +46,8 @@ export function useRealtimeTracking({
       setLastUpdated(new Date());
       setError(null);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to fetch updated tracking information.';
+      const message =
+        err instanceof Error ? err.message : 'Failed to fetch updated tracking information.';
       setError(message);
     } finally {
       setIsRefreshing(false);
@@ -76,7 +77,7 @@ export function useRealtimeTracking({
     clientRef.current = client;
 
     // 2. State change listener
-    const unsubscribeState = client.onStateChange((state) => {
+    const unsubscribeState = client.onStateChange(state => {
       setConnectionState(state);
     });
 
@@ -86,7 +87,7 @@ export function useRealtimeTracking({
     });
 
     // 4. Error listener
-    const unsubscribeError = client.onError((err) => {
+    const unsubscribeError = client.onError(err => {
       console.warn('[RealtimeTracking] Error received:', err.message);
     });
 

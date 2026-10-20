@@ -72,7 +72,10 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({
 
         <div className="flex items-center gap-3">
           {/* Realtime Connection Status Pill */}
-          <ConnectionStatusBadge state={connectionState} isStationOffline={tracking.is_agent_offline} />
+          <ConnectionStatusBadge
+            state={connectionState}
+            isStationOffline={tracking.is_agent_offline}
+          />
 
           {/* Refresh Button */}
           <button

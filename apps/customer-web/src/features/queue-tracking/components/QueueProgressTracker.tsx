@@ -79,16 +79,10 @@ export const QueueProgressTracker: React.FC<QueueProgressTrackerProps> = ({
         <div className="hidden sm:block absolute top-5 left-6 right-6 h-1 bg-slate-200 -z-0">
           <div
             className={`h-full transition-all duration-500 ${
-              isTerminalFailure
-                ? 'bg-red-500'
-                : isUnknownOrOffline
-                ? 'bg-amber-400'
-                : 'bg-blue-600'
+              isTerminalFailure ? 'bg-red-500' : isUnknownOrOffline ? 'bg-amber-400' : 'bg-blue-600'
             }`}
             style={{
-              width: isTerminalFailure
-                ? '50%'
-                : `${(Math.min(currentStepIndex, 3) / 3) * 100}%`
+              width: isTerminalFailure ? '50%' : `${(Math.min(currentStepIndex, 3) / 3) * 100}%`
             }}
           />
         </div>
@@ -99,24 +93,32 @@ export const QueueProgressTracker: React.FC<QueueProgressTrackerProps> = ({
             const isCurrent = !isTerminalFailure && currentStepIndex === idx;
 
             return (
-              <li key={step.id} className="flex sm:flex-col items-center sm:items-center gap-3 sm:gap-2 text-left sm:text-center">
+              <li
+                key={step.id}
+                className="flex sm:flex-col items-center sm:items-center gap-3 sm:gap-2 text-left sm:text-center"
+              >
                 {/* Step Circle */}
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border-2 transition-colors ${
                     isCompleted
                       ? 'bg-blue-600 border-blue-600 text-white'
                       : isCurrent
-                      ? isUnknownOrOffline
-                        ? 'bg-amber-500 border-amber-600 text-white ring-4 ring-amber-100'
-                        : 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-100 animate-pulse'
-                      : isTerminalFailure && currentStepIndex === idx
-                      ? 'bg-red-600 border-red-600 text-white'
-                      : 'bg-white border-slate-300 text-slate-400'
+                        ? isUnknownOrOffline
+                          ? 'bg-amber-500 border-amber-600 text-white ring-4 ring-amber-100'
+                          : 'bg-white border-blue-600 text-blue-600 ring-4 ring-blue-100 animate-pulse'
+                        : isTerminalFailure && currentStepIndex === idx
+                          ? 'bg-red-600 border-red-600 text-white'
+                          : 'bg-white border-slate-300 text-slate-400'
                   }`}
                 >
                   {isCompleted ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   ) : (
                     <span>{idx + 1}</span>
@@ -132,8 +134,8 @@ export const QueueProgressTracker: React.FC<QueueProgressTrackerProps> = ({
                           ? 'text-amber-800'
                           : 'text-blue-700'
                         : isCompleted
-                        ? 'text-slate-900'
-                        : 'text-slate-500'
+                          ? 'text-slate-900'
+                          : 'text-slate-500'
                     }`}
                   >
                     {step.name}

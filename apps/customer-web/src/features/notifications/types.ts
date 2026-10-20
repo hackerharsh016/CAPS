@@ -18,11 +18,7 @@ export interface PushSubscriptionMetadata {
 }
 
 export type NotificationType =
-  | 'order_confirmed'
-  | 'agent_printing'
-  | 'order_ready_for_pickup'
-  | 'print_failed'
-  | 'system';
+  'order_confirmed' | 'agent_printing' | 'order_ready_for_pickup' | 'print_failed' | 'system';
 
 export interface InAppNotification {
   id: string;

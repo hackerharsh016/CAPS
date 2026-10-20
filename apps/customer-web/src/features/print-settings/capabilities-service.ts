@@ -189,7 +189,7 @@ export function aggregateShopCapabilities(
   printers: DiscoveredPrinter[],
   explicitSyncTime?: string
 ): ShopPrinterCapabilities {
-  const onlinePrinters = printers.filter((p) => p.status === 'online');
+  const onlinePrinters = printers.filter(p => p.status === 'online');
 
   // Find most recent updated_at timestamp among all printers
   let latestUpdate = explicitSyncTime || new Date(0).toISOString();

@@ -4,11 +4,7 @@
  */
 
 export type RealtimeConnectionState =
-  | 'connecting'
-  | 'connected'
-  | 'reconnecting'
-  | 'disconnected'
-  | 'polling';
+  'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'polling';
 
 export interface RealtimeJobEvent {
   job_id: string;

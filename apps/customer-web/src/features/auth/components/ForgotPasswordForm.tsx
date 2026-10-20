@@ -31,7 +31,7 @@ export function ForgotPasswordForm() {
     try {
       // Send reset request via mock/auth client
       // Simulate network request with timeout handling
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise(resolve => setTimeout(resolve, 600));
       setIsSubmitted(true);
     } catch {
       setFormError('Failed to send recovery email. Please check your connection and try again.');
@@ -50,12 +50,10 @@ export function ForgotPasswordForm() {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-xl">
           ✉
         </div>
-        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">
-          Check your email
-        </h2>
+        <h2 className="mt-4 text-2xl font-bold tracking-tight text-slate-900">Check your email</h2>
         <p className="mt-2 text-sm text-slate-600">
-          If an account exists for <span className="font-semibold text-slate-800">{email}</span>,
-          we have sent instructions to reset your password.
+          If an account exists for <span className="font-semibold text-slate-800">{email}</span>, we
+          have sent instructions to reset your password.
         </p>
         <div className="mt-6">
           <a
@@ -103,7 +101,7 @@ export function ForgotPasswordForm() {
             aria-invalid={!!emailError}
             aria-describedby={emailError ? 'forgot-email-error' : undefined}
             value={email}
-            onChange={(e) => {
+            onChange={e => {
               setEmail(e.target.value);
               if (emailError) setEmailError(null);
             }}

@@ -11,22 +11,9 @@ export type SupportedMimeType =
   | 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
   | 'text/plain';
 
-export type SupportedExtension =
-  | '.pdf'
-  | '.jpg'
-  | '.jpeg'
-  | '.png'
-  | '.docx'
-  | '.pptx'
-  | '.txt';
+export type SupportedExtension = '.pdf' | '.jpg' | '.jpeg' | '.png' | '.docx' | '.pptx' | '.txt';
 
-export type UploadStatus =
-  | 'idle'
-  | 'validating'
-  | 'uploading'
-  | 'success'
-  | 'error'
-  | 'aborted';
+export type UploadStatus = 'idle' | 'validating' | 'uploading' | 'success' | 'error' | 'aborted';
 
 export type UploadErrorCode =
   | 'EMPTY_FILE'
@@ -77,7 +64,6 @@ export interface FinalizedDocumentResponse {
   finalizedAt: string;
 }
 
-
 export interface UploadProgressEvent {
   loadedBytes: number;
   totalBytes: number;
@@ -101,7 +87,6 @@ export interface UploadOptions {
   customerId?: string | undefined;
 }
 
-
 export interface UploadState {
   status: UploadStatus;
   file: File | null;
@@ -110,12 +95,7 @@ export interface UploadState {
   error: UploadValidationError | null;
 }
 
-export type ConversionStatus =
-  | 'not_required'
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed';
+export type ConversionStatus = 'not_required' | 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface DocumentPagePreview {
   pageNumber: number;
@@ -134,4 +114,3 @@ export interface DocumentPreviewData {
   isCorrupted: boolean;
   pages: DocumentPagePreview[];
 }
-

@@ -88,7 +88,7 @@ export function OrderHistoryList() {
             { id: 'completed', label: 'Completed' },
             { id: 'cancelled', label: 'Cancelled / Failed' }
           ] as const
-        ).map((tab) => (
+        ).map(tab => (
           <button
             key={tab.id}
             role="tab"
@@ -125,7 +125,7 @@ export function OrderHistoryList() {
       {/* Loading Skeleton */}
       {isLoading ? (
         <div role="status" aria-live="polite" className="space-y-4">
-          {[1, 2, 3].map((i) => (
+          {[1, 2, 3].map(i => (
             <div
               key={i}
               className="h-44 w-full animate-pulse rounded-xl border border-slate-200 bg-slate-50 p-5"
@@ -161,7 +161,7 @@ export function OrderHistoryList() {
       ) : (
         /* Orders List */
         <div className="space-y-4" role="feed" aria-label="Order list">
-          {orders.map((order) => (
+          {orders.map(order => (
             <OrderCard key={order.id} order={order} />
           ))}
         </div>
@@ -176,7 +176,7 @@ export function OrderHistoryList() {
           <button
             type="button"
             disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
           >
             ← Previous
@@ -184,13 +184,14 @@ export function OrderHistoryList() {
 
           <p className="text-xs text-slate-600 font-medium">
             Page <span className="font-bold text-slate-900">{page}</span> of{' '}
-            <span className="font-bold text-slate-900">{totalPages}</span> ({totalCount} total orders)
+            <span className="font-bold text-slate-900">{totalPages}</span> ({totalCount} total
+            orders)
           </p>
 
           <button
             type="button"
             disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
           >
             Next →

@@ -10,27 +10,11 @@
 
 import type { AuthSession, RouteAccessResult, UserRole } from './types';
 
-export const PROTECTED_ROUTE_PREFIXES = [
-  '/orders',
-  '/profile',
-  '/print',
-  '/jobs',
-  '/settings'
-];
+export const PROTECTED_ROUTE_PREFIXES = ['/orders', '/profile', '/print', '/jobs', '/settings'];
 
-export const AUTH_ROUTE_PREFIXES = [
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/auth'
-];
+export const AUTH_ROUTE_PREFIXES = ['/login', '/register', '/forgot-password', '/auth'];
 
-export const PUBLIC_ROUTE_PREFIXES = [
-  '/',
-  '/shops',
-  '/help',
-  '/api/health'
-];
+export const PUBLIC_ROUTE_PREFIXES = ['/', '/shops', '/help', '/api/health'];
 
 /**
  * Checks if a pathname requires authentication.
@@ -38,7 +22,7 @@ export const PUBLIC_ROUTE_PREFIXES = [
 export function isProtectedPath(pathname: string): boolean {
   const normalized = pathname.toLowerCase();
   return PROTECTED_ROUTE_PREFIXES.some(
-    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+    prefix => normalized === prefix || normalized.startsWith(`${prefix}/`)
   );
 }
 
@@ -48,7 +32,7 @@ export function isProtectedPath(pathname: string): boolean {
 export function isAuthPath(pathname: string): boolean {
   const normalized = pathname.toLowerCase();
   return AUTH_ROUTE_PREFIXES.some(
-    (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
+    prefix => normalized === prefix || normalized.startsWith(`${prefix}/`)
   );
 }
 
@@ -61,7 +45,7 @@ export function isPublicPath(pathname: string): boolean {
     return true;
   }
   return PUBLIC_ROUTE_PREFIXES.some(
-    (prefix) => prefix !== '/' && (normalized === prefix || normalized.startsWith(`${prefix}/`))
+    prefix => prefix !== '/' && (normalized === prefix || normalized.startsWith(`${prefix}/`))
   );
 }
 
@@ -128,9 +112,7 @@ export function resolveRouteAccess(
     // Role check if requiredRole is specified
     if (requiredRole) {
       const userRole =
-        session.user.user_metadata?.role ||
-        session.user.app_metadata?.role ||
-        'customer'; // Default role is customer
+        session.user.user_metadata?.role || session.user.app_metadata?.role || 'customer'; // Default role is customer
 
       if (userRole !== requiredRole) {
         return {

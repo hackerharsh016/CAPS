@@ -30,7 +30,10 @@ describe('Queue Tracking & Customer Job Status Service (P04-M06-F01)', () => {
 
   describe('Happy Path: Tracking Retrieval & Status Mapping', () => {
     it('retrieves tracking information for an active printing job with token and specs', async () => {
-      const tracking = await queueTrackingService.getJobTracking(urgentPrintingJobId, customerAlpha);
+      const tracking = await queueTrackingService.getJobTracking(
+        urgentPrintingJobId,
+        customerAlpha
+      );
 
       expect(tracking.job_id).toBe(urgentPrintingJobId);
       expect(tracking.token_number).toBe('T-001');
@@ -46,7 +49,10 @@ describe('Queue Tracking & Customer Job Status Service (P04-M06-F01)', () => {
     });
 
     it('retrieves tracking for a queued job with priority position and calculated ETA', async () => {
-      const tracking = await queueTrackingService.getJobTracking(flexibleQueuedJobId, customerAlpha);
+      const tracking = await queueTrackingService.getJobTracking(
+        flexibleQueuedJobId,
+        customerAlpha
+      );
 
       expect(tracking.job_id).toBe(flexibleQueuedJobId);
       expect(tracking.token_number).toBe('T-004');
@@ -93,9 +99,9 @@ describe('Queue Tracking & Customer Job Status Service (P04-M06-F01)', () => {
     });
 
     it('rejects unauthenticated requests without customerId', async () => {
-      await expect(
-        queueTrackingService.getJobTracking(urgentPrintingJobId, '')
-      ).rejects.toThrow(QueueTrackingCustomError);
+      await expect(queueTrackingService.getJobTracking(urgentPrintingJobId, '')).rejects.toThrow(
+        QueueTrackingCustomError
+      );
     });
 
     it('returns NOT_FOUND for completely nonexistent job IDs', async () => {
@@ -116,7 +122,10 @@ describe('Queue Tracking & Customer Job Status Service (P04-M06-F01)', () => {
     it('handles explicit unknown state with non-reprint warning', async () => {
       queueTrackingService.setJobStatusOverride(flexibleQueuedJobId, 'unknown');
 
-      const tracking = await queueTrackingService.getJobTracking(flexibleQueuedJobId, customerAlpha);
+      const tracking = await queueTrackingService.getJobTracking(
+        flexibleQueuedJobId,
+        customerAlpha
+      );
 
       expect(tracking.status).toBe('unknown');
       expect(tracking.status_label).toBe('Status Unknown');
@@ -130,7 +139,10 @@ describe('Queue Tracking & Customer Job Status Service (P04-M06-F01)', () => {
       // Simulate shop agent disconnected
       queueTrackingService.setShopAgentStatus('shop-8888-campus-xerox', 'offline');
 
-      const tracking = await queueTrackingService.getJobTracking(flexibleQueuedJobId, customerAlpha);
+      const tracking = await queueTrackingService.getJobTracking(
+        flexibleQueuedJobId,
+        customerAlpha
+      );
 
       expect(tracking.agent_status).toBe('offline');
       expect(tracking.is_agent_offline).toBe(true);
@@ -143,7 +155,10 @@ describe('Queue Tracking & Customer Job Status Service (P04-M06-F01)', () => {
 
   describe('Document Privacy 24-Hour Expiration Deadline', () => {
     it('enforces 24-hour auto-delete deadline calculation', async () => {
-      const tracking = await queueTrackingService.getJobTracking(urgentPrintingJobId, customerAlpha);
+      const tracking = await queueTrackingService.getJobTracking(
+        urgentPrintingJobId,
+        customerAlpha
+      );
 
       expect(tracking.document_expires_at).toBeDefined();
       const createdAtMs = new Date(tracking.created_at).getTime();

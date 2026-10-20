@@ -4,11 +4,7 @@
  * chunked storage upload, SHA-256 finalization, and orphan cleanup on cancellation.
  */
 
-import type {
-  UploadedDocumentMetadata,
-  UploadOptions,
-  UploadValidationError
-} from './types';
+import type { UploadedDocumentMetadata, UploadOptions, UploadValidationError } from './types';
 import { validateDocumentPreflight, getFileExtension } from './validation';
 import {
   DirectUploadClient,

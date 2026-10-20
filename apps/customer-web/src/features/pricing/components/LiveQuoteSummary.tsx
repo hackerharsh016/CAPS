@@ -84,9 +84,7 @@ export function LiveQuoteSummary({
           estimatedWaitMinutesFlexible={
             priorityTier === 'flexible' ? quote?.estimated_wait_minutes : 15
           }
-          estimatedWaitMinutesUrgent={
-            priorityTier === 'urgent' ? quote?.estimated_wait_minutes : 4
-          }
+          estimatedWaitMinutesUrgent={priorityTier === 'urgent' ? quote?.estimated_wait_minutes : 4}
           disabled={isLoading}
         />
       </div>
@@ -113,7 +111,8 @@ export function LiveQuoteSummary({
                 Estimated Queue Wait: ~{quote.estimated_wait_minutes} minutes
               </p>
               <p className="text-blue-700 mt-0.5">
-                Target shop: <strong>{shopName}</strong> · Standard queue admission upon payment confirmation
+                Target shop: <strong>{shopName}</strong> · Standard queue admission upon payment
+                confirmation
               </p>
             </div>
           </div>

@@ -40,9 +40,7 @@ export function OrderSummaryReview({
               <h3 className="font-bold text-sm text-slate-900">{shop.name}</h3>
               <span
                 className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  shop.is_open
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-red-100 text-red-800'
+                  shop.is_open ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
                 }`}
               >
                 {shop.is_open ? 'Open Now' : 'Closed'}
@@ -93,7 +91,8 @@ export function OrderSummaryReview({
           <div>
             <dt className="text-slate-400 font-medium">Sides & Layout</dt>
             <dd className="font-bold text-slate-800 mt-0.5">
-              {settings.sides === 'double' ? 'Double-sided' : 'Single-sided'} ({settings.orientation})
+              {settings.sides === 'double' ? 'Double-sided' : 'Single-sided'} (
+              {settings.orientation})
             </dd>
           </div>
 
@@ -115,7 +114,8 @@ export function OrderSummaryReview({
             )
           </div>
           <div>
-            Queue ETA: <strong className="text-slate-900">~{quote.estimated_wait_minutes} min</strong>
+            Queue ETA:{' '}
+            <strong className="text-slate-900">~{quote.estimated_wait_minutes} min</strong>
           </div>
         </div>
       </div>

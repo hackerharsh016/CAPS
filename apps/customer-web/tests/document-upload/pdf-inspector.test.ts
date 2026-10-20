@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  inspectPdfBytes
-} from '../../src/features/document-upload/pdf-inspector';
+import { inspectPdfBytes } from '../../src/features/document-upload/pdf-inspector';
 
 describe('PDF Inspector (P04-M03-F03)', () => {
   const encoder = new TextEncoder();

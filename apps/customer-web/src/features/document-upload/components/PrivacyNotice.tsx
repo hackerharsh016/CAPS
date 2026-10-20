@@ -24,7 +24,8 @@ export function PrivacyNotice() {
         <div className="rounded-xl bg-white/70 p-3 border border-indigo-100">
           <p className="font-semibold text-indigo-950">No Public URLs</p>
           <p className="mt-1">
-            Files are stored in private cloud buckets with short-lived signed tokens (15-min expiry).
+            Files are stored in private cloud buckets with short-lived signed tokens (15-min
+            expiry).
           </p>
         </div>
 
@@ -38,7 +39,8 @@ export function PrivacyNotice() {
         <div className="rounded-xl bg-white/70 p-3 border border-indigo-100">
           <p className="font-semibold text-indigo-950">Auto-Purge</p>
           <p className="mt-1">
-            Documents are automatically destroyed from local agent spoolers immediately after printing.
+            Documents are automatically destroyed from local agent spoolers immediately after
+            printing.
           </p>
         </div>
       </div>

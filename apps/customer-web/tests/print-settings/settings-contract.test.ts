@@ -60,7 +60,8 @@ describe('Print Settings Contract & State Machine (P04-M04-F01)', () => {
 
     it('safely falls back to default settings when draft contains corrupt or partial fields', () => {
       const corrupt = {
-        paper_size: 'UNKNOWN_FORMAT' as unknown as import('../../src/features/print-settings/types').PaperSize,
+        paper_size:
+          'UNKNOWN_FORMAT' as unknown as import('../../src/features/print-settings/types').PaperSize,
         copies: -99
       };
 

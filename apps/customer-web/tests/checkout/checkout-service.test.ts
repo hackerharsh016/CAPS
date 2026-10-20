@@ -162,7 +162,7 @@ describe('Checkout & Order Review Service (P04-M05-F02)', () => {
       });
 
       // Bob MUST NOT see Alice's order
-      const containsAliceOrder = bobHistory.orders.some((o) => o.id === aliceOrder.order_id);
+      const containsAliceOrder = bobHistory.orders.some(o => o.id === aliceOrder.order_id);
       expect(containsAliceOrder).toBe(false);
 
       // Unauthorized access via getOrderById returns null

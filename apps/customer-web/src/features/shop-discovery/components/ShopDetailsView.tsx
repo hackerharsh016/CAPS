@@ -66,11 +66,7 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
 
   if (isLoading) {
     return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="mx-auto max-w-4xl space-y-6 animate-pulse"
-      >
+      <div role="status" aria-live="polite" className="mx-auto max-w-4xl space-y-6 animate-pulse">
         <div className="h-6 w-32 rounded bg-slate-200" />
         <div className="h-44 w-full rounded-2xl bg-slate-200" />
         <div className="h-64 w-full rounded-2xl bg-slate-200" />
@@ -155,7 +151,10 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 id="shop-header-title" className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              <h1
+                id="shop-header-title"
+                className="text-2xl sm:text-3xl font-extrabold text-slate-900"
+              >
                 {shop.name}
               </h1>
               <span
@@ -172,11 +171,16 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-600">
               <span className="flex items-center text-amber-600 font-bold">
                 ★ {shop.rating.toFixed(1)}{' '}
-                <span className="ml-1 text-slate-400 font-normal">({shop.review_count} verified reviews)</span>
+                <span className="ml-1 text-slate-400 font-normal">
+                  ({shop.review_count} verified reviews)
+                </span>
               </span>
               <span>•</span>
               <span>
-                Operating Hours: <strong className="text-slate-800">{shop.opening_time} – {shop.closing_time}</strong>
+                Operating Hours:{' '}
+                <strong className="text-slate-800">
+                  {shop.opening_time} – {shop.closing_time}
+                </strong>
               </span>
               {distanceLabel && (
                 <>
@@ -234,8 +238,11 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
             <div>
               <h2 className="text-base font-bold">This Shop is Currently Closed</h2>
               <p className="mt-1 text-sm text-red-800">
-                Operating hours are <strong>{shop.opening_time} to {shop.closing_time}</strong>.
-                New order configuration and file submissions are disabled until the shop reopens.
+                Operating hours are{' '}
+                <strong>
+                  {shop.opening_time} to {shop.closing_time}
+                </strong>
+                . New order configuration and file submissions are disabled until the shop reopens.
               </p>
             </div>
           </div>
@@ -249,7 +256,8 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
             Service Catalog & Transparent Rates
           </h2>
           <p className="mt-1 text-sm text-slate-600">
-            Current configured printing, paper, binding, and queue capabilities at this shop location.
+            Current configured printing, paper, binding, and queue capabilities at this shop
+            location.
           </p>
         </div>
 
@@ -267,7 +275,7 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
                 </div>
 
                 <div className="mt-4 divide-y divide-slate-100">
-                  {items.map((item) => (
+                  {items.map(item => (
                     <div
                       key={item.id}
                       className={`flex flex-col sm:flex-row sm:items-center justify-between py-4 first:pt-0 last:pb-0 gap-3 ${
@@ -276,9 +284,11 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <h4 className={`text-sm font-semibold ${
-                            item.isAvailable ? 'text-slate-900' : 'text-slate-500 line-through'
-                          }`}>
+                          <h4
+                            className={`text-sm font-semibold ${
+                              item.isAvailable ? 'text-slate-900' : 'text-slate-500 line-through'
+                            }`}
+                          >
                             {item.name}
                           </h4>
                           <span
@@ -300,9 +310,11 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
                       </div>
 
                       <div className="text-right sm:min-w-36">
-                        <span className={`text-sm font-bold ${
-                          item.isAvailable ? 'text-slate-900' : 'text-slate-400'
-                        }`}>
+                        <span
+                          className={`text-sm font-bold ${
+                            item.isAvailable ? 'text-slate-900' : 'text-slate-400'
+                          }`}
+                        >
                           {item.priceFormatted}
                         </span>
                       </div>
@@ -327,14 +339,17 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
               Estimated Completion Time & Dynamic Queue Disclaimer
             </h3>
             <p className="text-xs sm:text-sm text-blue-900 leading-relaxed">
-              <strong>Dynamic Turnaround:</strong> Order completion ETAs are estimated dynamically based on
-              current shop queue backlog, document page counts, and live physical printer spooler throughput.
+              <strong>Dynamic Turnaround:</strong> Order completion ETAs are estimated dynamically
+              based on current shop queue backlog, document page counts, and live physical printer
+              spooler throughput.
             </p>
             <p className="text-xs sm:text-sm text-blue-900 leading-relaxed">
-              <strong>Priority Tiers:</strong> Orders submitted with <em>Urgent Queue</em> jump ahead of Flexible FIFO jobs in the automated agent queue.
+              <strong>Priority Tiers:</strong> Orders submitted with <em>Urgent Queue</em> jump
+              ahead of Flexible FIFO jobs in the automated agent queue.
             </p>
             <p className="text-xs text-blue-800/90 leading-relaxed border-t border-blue-200/60 pt-2">
-              🔒 <strong>Privacy Guarantee:</strong> All document files are transmitted over TLS, encrypted at rest, and purged immediately after print verification.
+              🔒 <strong>Privacy Guarantee:</strong> All document files are transmitted over TLS,
+              encrypted at rest, and purged immediately after print verification.
             </p>
           </div>
         </div>

@@ -15,12 +15,7 @@ export interface ShopFiltersProps {
   hasActiveFilters: boolean;
 }
 
-export function ShopFilters({
-  filters,
-  onChange,
-  onReset,
-  hasActiveFilters
-}: ShopFiltersProps) {
+export function ShopFilters({ filters, onChange, onReset, hasActiveFilters }: ShopFiltersProps) {
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...filters, searchQuery: e.target.value, page: 1 });
   };

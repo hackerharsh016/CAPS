@@ -55,9 +55,7 @@ export function PrintSettingsSummary({
         </h3>
         <span
           className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            isValid
-              ? 'bg-emerald-100 text-emerald-800'
-              : 'bg-amber-100 text-amber-800'
+            isValid ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
           }`}
         >
           {isValid ? 'Ready for Quote' : 'Incomplete'}
@@ -69,7 +67,8 @@ export function PrintSettingsSummary({
         <div>
           <dt className="text-slate-400 font-medium">Paper & Color</dt>
           <dd className="font-bold text-slate-800 mt-0.5">
-            {paperLabels[settings.paper_size] || settings.paper_size} · {colorLabels[settings.color_mode] || settings.color_mode}
+            {paperLabels[settings.paper_size] || settings.paper_size} ·{' '}
+            {colorLabels[settings.color_mode] || settings.color_mode}
           </dd>
         </div>
 
@@ -100,7 +99,9 @@ export function PrintSettingsSummary({
         <div className="rounded-xl bg-white border border-slate-200/80 p-3.5 flex items-center justify-between">
           <div className="space-y-0.5">
             <p className="text-xs text-slate-500">
-              Selected Pages: <strong className="text-slate-800">{calculation.effectivePageCount}</strong> {calculation.effectivePageCount === 1 ? 'page' : 'pages'} per copy
+              Selected Pages:{' '}
+              <strong className="text-slate-800">{calculation.effectivePageCount}</strong>{' '}
+              {calculation.effectivePageCount === 1 ? 'page' : 'pages'} per copy
             </p>
             <p className="text-[11px] text-slate-400">
               {settings.sides === 'double'
@@ -114,7 +115,8 @@ export function PrintSettingsSummary({
               Estimated Paper
             </span>
             <span className="text-lg font-extrabold text-blue-600">
-              {calculation.estimatedSheetCount} {calculation.estimatedSheetCount === 1 ? 'Sheet' : 'Sheets'}
+              {calculation.estimatedSheetCount}{' '}
+              {calculation.estimatedSheetCount === 1 ? 'Sheet' : 'Sheets'}
             </span>
           </div>
         </div>

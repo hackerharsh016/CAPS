@@ -32,7 +32,7 @@ export class ShopsService {
       limit = 5
     } = options;
 
-    let filtered = this.shopsStore.map((shop) => {
+    let filtered = this.shopsStore.map(shop => {
       let distance_meters: number | undefined;
       if (userCoordinates) {
         distance_meters = calculateHaversineDistance(userCoordinates, shop.coordinates);
@@ -47,7 +47,7 @@ export class ShopsService {
     if (searchQuery && searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
-        (shop) =>
+        shop =>
           shop.name.toLowerCase().includes(q) ||
           shop.address.toLowerCase().includes(q) ||
           (shop.landmark && shop.landmark.toLowerCase().includes(q))
@@ -56,24 +56,24 @@ export class ShopsService {
 
     // 2. Open Now filter
     if (openOnly) {
-      filtered = filtered.filter((shop) => shop.is_open);
+      filtered = filtered.filter(shop => shop.is_open);
     }
 
     // 3. Capability filters
     if (supportsColor) {
-      filtered = filtered.filter((shop) => shop.capabilities.color);
+      filtered = filtered.filter(shop => shop.capabilities.color);
     }
     if (supportsDuplex) {
-      filtered = filtered.filter((shop) => shop.capabilities.duplex);
+      filtered = filtered.filter(shop => shop.capabilities.duplex);
     }
     if (supportsA3) {
-      filtered = filtered.filter((shop) => shop.capabilities.paper_sizes.includes('A3'));
+      filtered = filtered.filter(shop => shop.capabilities.paper_sizes.includes('A3'));
     }
     if (supportsSpiral) {
-      filtered = filtered.filter((shop) => shop.capabilities.spiral_binding);
+      filtered = filtered.filter(shop => shop.capabilities.spiral_binding);
     }
     if (supportsUrgent) {
-      filtered = filtered.filter((shop) => shop.capabilities.urgent_queue);
+      filtered = filtered.filter(shop => shop.capabilities.urgent_queue);
     }
 
     // 4. Sorting
@@ -106,7 +106,7 @@ export class ShopsService {
    * Retrieves single shop by ID.
    */
   public async getShopById(shopId: string): Promise<Shop | null> {
-    return this.shopsStore.find((s) => s.id === shopId) ?? null;
+    return this.shopsStore.find(s => s.id === shopId) ?? null;
   }
 }
 

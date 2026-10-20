@@ -8,16 +8,8 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import type {
-  UploadState,
-  UploadedDocumentMetadata,
-  UploadValidationError
-} from '../types';
-import {
-  validateDocumentPreflight,
-  formatFileSizeBytes,
-  MAX_FILE_SIZE_BYTES
-} from '../validation';
+import type { UploadState, UploadedDocumentMetadata, UploadValidationError } from '../types';
+import { validateDocumentPreflight, formatFileSizeBytes, MAX_FILE_SIZE_BYTES } from '../validation';
 import { defaultUploadService } from '../upload-service';
 import { UploadProgress } from './UploadProgress';
 import { PrivacyNotice } from './PrivacyNotice';
@@ -87,8 +79,8 @@ export function UploadDropzone({
           targetShopId,
           customerId,
           signal: abortController.signal,
-          onProgress: (p) => {
-            setState((prev) => ({
+          onProgress: p => {
+            setState(prev => ({
               ...prev,
               progress: p
             }));
@@ -98,7 +90,11 @@ export function UploadDropzone({
         setState({
           status: 'success',
           file: fileToUpload,
-          progress: { loadedBytes: fileToUpload.size, totalBytes: fileToUpload.size, percentage: 100 },
+          progress: {
+            loadedBytes: fileToUpload.size,
+            totalBytes: fileToUpload.size,
+            percentage: 100
+          },
           uploadedDoc: metadata,
           error: null
         });
@@ -217,7 +213,7 @@ export function UploadDropzone({
         ref={fileInputRef}
         type="file"
         accept=".pdf,.jpg,.jpeg,.png,.docx,.pptx,.txt"
-        onChange={(e) => handleFileSelection(e.target.files)}
+        onChange={e => handleFileSelection(e.target.files)}
         className="sr-only"
         id="caps-document-file-input"
         aria-hidden="true"
@@ -274,9 +270,7 @@ export function UploadDropzone({
             <span className="truncate">
               <strong>Storage ID:</strong> {state.uploadedDoc.id}
             </span>
-            <span className="text-emerald-700 font-medium ml-2 shrink-0">
-              🔒 Encrypted at rest
-            </span>
+            <span className="text-emerald-700 font-medium ml-2 shrink-0">🔒 Encrypted at rest</span>
           </div>
         </div>
       )}
@@ -366,11 +360,15 @@ export function UploadDropzone({
           </h3>
 
           <p className="mt-1 text-xs text-slate-500 max-w-sm">
-            Supports PDF, JPG, PNG, DOCX, PPTX, and TXT files up to {formatFileSizeBytes(MAX_FILE_SIZE_BYTES)}.
+            Supports PDF, JPG, PNG, DOCX, PPTX, and TXT files up to{' '}
+            {formatFileSizeBytes(MAX_FILE_SIZE_BYTES)}.
           </p>
 
-          <div className="mt-5 flex flex-wrap justify-center gap-1.5" aria-label="Supported document types">
-            {['PDF', 'JPG', 'PNG', 'DOCX', 'PPTX', 'TXT'].map((type) => (
+          <div
+            className="mt-5 flex flex-wrap justify-center gap-1.5"
+            aria-label="Supported document types"
+          >
+            {['PDF', 'JPG', 'PNG', 'DOCX', 'PPTX', 'TXT'].map(type => (
               <span
                 key={type}
                 className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600"
@@ -395,4 +393,3 @@ export function UploadDropzone({
     </div>
   );
 }
-

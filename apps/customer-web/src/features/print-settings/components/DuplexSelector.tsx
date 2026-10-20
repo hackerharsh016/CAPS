@@ -54,7 +54,7 @@ export function DuplexSelector({
         aria-describedby={error ? 'duplex-error' : undefined}
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        {SIDE_MODE_OPTIONS.map((option) => {
+        {SIDE_MODE_OPTIONS.map(option => {
           const isSelected = value === option.id;
           const isUnsupported = disabledOptions.includes(option.id);
           const isOptionDisabled = disabled || isUnsupported;
@@ -71,7 +71,11 @@ export function DuplexSelector({
               onClick={() => {
                 if (!isOptionDisabled) onChange(option.id);
               }}
-              title={isUnsupported ? reason || `${option.label} is unsupported by the shop's printers` : undefined}
+              title={
+                isUnsupported
+                  ? reason || `${option.label} is unsupported by the shop's printers`
+                  : undefined
+              }
               className={`flex flex-col justify-between text-left p-3.5 rounded-xl border-2 transition-all relative ${
                 isUnsupported
                   ? 'border-slate-200 bg-slate-50/80 opacity-60 cursor-not-allowed'

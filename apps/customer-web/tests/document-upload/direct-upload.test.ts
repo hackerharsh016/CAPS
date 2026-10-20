@@ -25,7 +25,11 @@ describe('Direct Private Upload Integration (P04-M03-F02)', () => {
 
   describe('Happy Path: Complete Private Upload Pipeline', () => {
     it('negotiates upload intent, streams to storage, and finalizes with verified SHA-256 checksum', async () => {
-      const file = createDummyFile('final_thesis.pdf', 'Sample PDF binary content', 'application/pdf');
+      const file = createDummyFile(
+        'final_thesis.pdf',
+        'Sample PDF binary content',
+        'application/pdf'
+      );
 
       // 1. Create upload intent
       const intent = await client.createUploadIntent(
@@ -201,7 +205,11 @@ describe('Direct Private Upload Integration (P04-M03-F02)', () => {
 
   describe('Cross-User & Tenant Isolation Enforcement', () => {
     it('rejects document finalization when caller does not own the upload intent', async () => {
-      const file = createDummyFile('private_records.pdf', 'Customer Alpha sensitive file', 'application/pdf');
+      const file = createDummyFile(
+        'private_records.pdf',
+        'Customer Alpha sensitive file',
+        'application/pdf'
+      );
 
       // Alpha creates intent
       const intent = await client.createUploadIntent(

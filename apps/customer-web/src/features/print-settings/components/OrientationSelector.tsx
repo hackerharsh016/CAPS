@@ -50,7 +50,7 @@ export function OrientationSelector({
         aria-describedby={error ? 'orientation-error' : undefined}
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        {ORIENTATION_OPTIONS.map((option) => {
+        {ORIENTATION_OPTIONS.map(option => {
           const isSelected = value === option.id;
           return (
             <button

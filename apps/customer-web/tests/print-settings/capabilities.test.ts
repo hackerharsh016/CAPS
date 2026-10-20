@@ -53,7 +53,9 @@ describe('Capability-Aware Print Settings (P04-M04-F02)', () => {
       expect(colorInc.field).toBe('color_mode');
       expect(colorInc.settingValue).toBe('color');
       expect(colorInc.suggestedValue).toBe('bw');
-      expect(colorInc.reason).toContain('Color printing is not available at this shop (Monochrome B&W only)');
+      expect(colorInc.reason).toContain(
+        'Color printing is not available at this shop (Monochrome B&W only)'
+      );
     });
 
     it('accepts B&W print settings on BW-only printer', () => {
@@ -92,7 +94,7 @@ describe('Capability-Aware Print Settings (P04-M04-F02)', () => {
       const result = checkSettingsCompatibility(duplexSettings, simplexShopCaps);
       expect(result.isCompatible).toBe(false);
 
-      const duplexInc = result.incompatibilities.find((i) => i.field === 'sides');
+      const duplexInc = result.incompatibilities.find(i => i.field === 'sides');
       expect(duplexInc).toBeDefined();
       expect(duplexInc?.settingValue).toBe('double');
       expect(duplexInc?.suggestedValue).toBe('single');
@@ -218,7 +220,9 @@ describe('Capability-Aware Print Settings (P04-M04-F02)', () => {
       const aggregated = aggregateShopCapabilities('shop-multi', multiPrinters);
 
       expect(aggregated.online_printers_count).toBe(2);
-      expect(aggregated.supported_paper_sizes).toEqual(expect.arrayContaining(['A4', 'Legal', 'A3']));
+      expect(aggregated.supported_paper_sizes).toEqual(
+        expect.arrayContaining(['A4', 'Legal', 'A3'])
+      );
       expect(aggregated.supported_color_modes).toEqual(expect.arrayContaining(['bw', 'color']));
       expect(aggregated.duplex_supported).toBe(true);
       expect(aggregated.max_copies).toBe(100);
@@ -250,7 +254,7 @@ describe('Capability-Aware Print Settings (P04-M04-F02)', () => {
 
       const result = checkSettingsCompatibility(baseSettings, offlineCaps);
       expect(result.isCompatible).toBe(false);
-      expect(result.warnings.some((w) => w.includes('offline'))).toBe(true);
+      expect(result.warnings.some(w => w.includes('offline'))).toBe(true);
     });
   });
 
@@ -281,7 +285,7 @@ describe('Capability-Aware Print Settings (P04-M04-F02)', () => {
 
       const result = checkSettingsCompatibility(excessiveCopiesSettings, limitedCaps);
       expect(result.isCompatible).toBe(false);
-      const copyInc = result.incompatibilities.find((i) => i.field === 'copies');
+      const copyInc = result.incompatibilities.find(i => i.field === 'copies');
       expect(copyInc).toBeDefined();
       expect(copyInc?.reason).toContain('maximum of 25 copies');
       expect(copyInc?.suggestedValue).toBe('25');
@@ -290,12 +294,14 @@ describe('Capability-Aware Print Settings (P04-M04-F02)', () => {
 
   describe('8. Capabilities Service End-to-End', () => {
     it('retrieves mock shop capabilities accurately for known fixtures', async () => {
-      const campusCaps = await defaultCapabilitiesService.getShopPrinterCapabilities('shop-8888-campus-xerox');
+      const campusCaps =
+        await defaultCapabilitiesService.getShopPrinterCapabilities('shop-8888-campus-xerox');
       expect(campusCaps.supported_color_modes).toContain('color');
       expect(campusCaps.supported_paper_sizes).toContain('A3');
       expect(campusCaps.duplex_supported).toBe(true);
 
-      const techCaps = await defaultCapabilitiesService.getShopPrinterCapabilities('shop-7777-tech-xerox');
+      const techCaps =
+        await defaultCapabilitiesService.getShopPrinterCapabilities('shop-7777-tech-xerox');
       expect(techCaps.supported_color_modes).not.toContain('color');
       expect(techCaps.supported_color_modes).toContain('bw');
       expect(techCaps.duplex_supported).toBe(true);

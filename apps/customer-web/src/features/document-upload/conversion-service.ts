@@ -4,11 +4,7 @@
  * fallback errors, and page thumbnail generation.
  */
 
-import type {
-  UploadedDocumentMetadata,
-  DocumentPreviewData,
-  DocumentPagePreview
-} from './types';
+import type { UploadedDocumentMetadata, DocumentPreviewData, DocumentPagePreview } from './types';
 import { inspectPdfFile } from './pdf-inspector';
 
 /**
@@ -173,7 +169,10 @@ export class ConversionService {
     // 4. Office Formats (DOCX, PPTX): Asynchronous conversion pipeline
     if (['.docx', '.pptx'].includes(ext)) {
       // Simulate conversion failure for explicit corrupt/macro files
-      if (doc.name.toLowerCase().includes('corrupted') || doc.name.toLowerCase().includes('macro')) {
+      if (
+        doc.name.toLowerCase().includes('corrupted') ||
+        doc.name.toLowerCase().includes('macro')
+      ) {
         return {
           documentId: doc.id,
           fileName: doc.name,

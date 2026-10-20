@@ -66,10 +66,10 @@ export const QueueMetricsCard: React.FC<QueueMetricsCardProps> = ({ tracking }) 
           {tracking.status === 'printing'
             ? 'Pages are actively being spooled'
             : tracking.status === 'ready'
-            ? 'Waiting for customer collection'
-            : tracking.queue_position === 1
-            ? 'Next job to be claimed by print agent'
-            : 'Updates dynamically as previous jobs complete'}
+              ? 'Waiting for customer collection'
+              : tracking.queue_position === 1
+                ? 'Next job to be claimed by print agent'
+                : 'Updates dynamically as previous jobs complete'}
         </p>
       </div>
 
@@ -100,10 +100,10 @@ export const QueueMetricsCard: React.FC<QueueMetricsCardProps> = ({ tracking }) 
           {tracking.is_agent_offline
             ? 'Workstation offline; queue paused'
             : tracking.status === 'ready'
-            ? 'Available immediately at counter'
-            : formattedEta
-            ? `Estimated by ~${formattedEta}`
-            : 'Calculating ETA based on queue density'}
+              ? 'Available immediately at counter'
+              : formattedEta
+                ? `Estimated by ~${formattedEta}`
+                : 'Calculating ETA based on queue density'}
         </p>
       </div>
     </div>

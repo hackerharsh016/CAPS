@@ -110,8 +110,8 @@ export function ShopList() {
           <div className="flex items-center space-x-2">
             <span>📍</span>
             <span>
-              <strong>Location access was denied:</strong> Showing shops sorted by popularity and rating.
-              Enable location permissions in your browser to see exact walking distances.
+              <strong>Location access was denied:</strong> Showing shops sorted by popularity and
+              rating. Enable location permissions in your browser to see exact walking distances.
             </span>
           </div>
           <button
@@ -168,7 +168,7 @@ export function ShopList() {
       {/* Loading Skeleton */}
       {isLoading ? (
         <div role="status" aria-live="polite" className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
+          {[1, 2, 3, 4].map(i => (
             <div
               key={i}
               className="h-64 w-full animate-pulse rounded-2xl border border-slate-200 bg-slate-50 p-6"
@@ -186,9 +186,12 @@ export function ShopList() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-500">
             🔍
           </div>
-          <h3 className="mt-4 text-lg font-semibold text-slate-900">No photocopy shops match your filters</h3>
+          <h3 className="mt-4 text-lg font-semibold text-slate-900">
+            No photocopy shops match your filters
+          </h3>
           <p className="mt-2 text-sm text-slate-600 max-w-md mx-auto">
-            Try adjusting your search query, turning off capability filters, or removing the &quot;Open Now&quot; restriction.
+            Try adjusting your search query, turning off capability filters, or removing the
+            &quot;Open Now&quot; restriction.
           </p>
           <div className="mt-6">
             <button
@@ -202,8 +205,12 @@ export function ShopList() {
         </div>
       ) : (
         /* Shops Grid */
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2" role="feed" aria-label="Available photocopy shops">
-          {shops.map((shop) => (
+        <div
+          className="grid grid-cols-1 gap-6 md:grid-cols-2"
+          role="feed"
+          aria-label="Available photocopy shops"
+        >
+          {shops.map(shop => (
             <ShopCard key={shop.id} shop={shop} />
           ))}
         </div>
@@ -219,7 +226,7 @@ export function ShopList() {
             type="button"
             disabled={(filters.page || 1) <= 1}
             onClick={() =>
-              setFilters((prev) => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))
+              setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))
             }
             className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
           >
@@ -228,14 +235,15 @@ export function ShopList() {
 
           <p className="text-xs text-slate-600 font-medium">
             Page <span className="font-bold text-slate-900">{filters.page || 1}</span> of{' '}
-            <span className="font-bold text-slate-900">{totalPages}</span> ({totalCount} verified shops)
+            <span className="font-bold text-slate-900">{totalPages}</span> ({totalCount} verified
+            shops)
           </p>
 
           <button
             type="button"
             disabled={(filters.page || 1) >= totalPages}
             onClick={() =>
-              setFilters((prev) => ({
+              setFilters(prev => ({
                 ...prev,
                 page: Math.min(totalPages, (prev.page || 1) + 1)
               }))

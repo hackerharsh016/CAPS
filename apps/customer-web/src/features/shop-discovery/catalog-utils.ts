@@ -15,7 +15,8 @@ export function getShopServiceCatalog(shop: Shop): ServiceCatalogItem[] {
       id: 'bw-standard',
       name: 'Black & White Printing (A4)',
       category: 'print',
-      description: 'Standard laser printing on 75 GSM paper. Ideal for notes, assignments, and study material.',
+      description:
+        'Standard laser printing on 75 GSM paper. Ideal for notes, assignments, and study material.',
       pricePaise: shop.pricing.bw_per_page_paise,
       priceFormatted: `${formatPaiseToInr(shop.pricing.bw_per_page_paise)} / page`,
       isAvailable: true
@@ -24,7 +25,8 @@ export function getShopServiceCatalog(shop: Shop): ServiceCatalogItem[] {
       id: 'color-standard',
       name: 'Color Printing (A4)',
       category: 'print',
-      description: 'Full-color laser printing with vibrant output. Ideal for charts, graphs, and presentation decks.',
+      description:
+        'Full-color laser printing with vibrant output. Ideal for charts, graphs, and presentation decks.',
       pricePaise: shop.pricing.color_per_page_paise,
       priceFormatted: shop.capabilities.color
         ? `${formatPaiseToInr(shop.pricing.color_per_page_paise)} / page`
@@ -54,7 +56,8 @@ export function getShopServiceCatalog(shop: Shop): ServiceCatalogItem[] {
       id: 'a3-large-format',
       name: 'A3 Large Format Sheet',
       category: 'paper',
-      description: 'Large sheet printing (297 x 420 mm) for engineering drawings, architectural blueprints, and posters.',
+      description:
+        'Large sheet printing (297 x 420 mm) for engineering drawings, architectural blueprints, and posters.',
       pricePaise: shop.pricing.bw_per_page_paise * 2,
       priceFormatted: shop.capabilities.paper_sizes.includes('A3')
         ? `${formatPaiseToInr(shop.pricing.bw_per_page_paise * 2)} / page`
@@ -68,7 +71,8 @@ export function getShopServiceCatalog(shop: Shop): ServiceCatalogItem[] {
       id: 'spiral-binding',
       name: 'Spiral Document Binding',
       category: 'binding',
-      description: 'Sturdy PVC coil spiral binding with heavy-gauge transparent front cover and opaque back sheet.',
+      description:
+        'Sturdy PVC coil spiral binding with heavy-gauge transparent front cover and opaque back sheet.',
       pricePaise: shop.pricing.spiral_binding_paise,
       priceFormatted: shop.capabilities.spiral_binding
         ? `${formatPaiseToInr(shop.pricing.spiral_binding_paise)} / doc`
@@ -82,7 +86,8 @@ export function getShopServiceCatalog(shop: Shop): ServiceCatalogItem[] {
       id: 'urgent-priority',
       name: 'Urgent Priority Queue Jump',
       category: 'priority',
-      description: 'Priority spooler dispatch that jumps ahead of flexible FIFO jobs for immediate printing.',
+      description:
+        'Priority spooler dispatch that jumps ahead of flexible FIFO jobs for immediate printing.',
       pricePaise: shop.pricing.urgent_surcharge_paise,
       priceFormatted: shop.capabilities.urgent_queue
         ? `+${formatPaiseToInr(shop.pricing.urgent_surcharge_paise)} surcharge`

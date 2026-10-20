@@ -75,7 +75,7 @@ export function PaymentMethodSelector({
         aria-label="Payment method selection"
         className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        {options.map((opt) => {
+        {options.map(opt => {
           const isSelected = value === opt.id;
           const isOptDisabled = disabled || !!opt.disabled;
 
@@ -123,9 +123,7 @@ export function PaymentMethodSelector({
 
                   <span
                     className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-600'
-                        : 'border-slate-300 bg-white'
+                      isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white'
                     }`}
                     aria-hidden="true"
                   >

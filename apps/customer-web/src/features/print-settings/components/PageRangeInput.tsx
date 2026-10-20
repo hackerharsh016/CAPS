@@ -160,8 +160,10 @@ export function PageRangeInput({
             className="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           />
           <p id="page-range-hint" className="text-[11px] text-slate-500">
-            Examples: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">1-5</code> for pages 1 through 5, or{' '}
-            <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">1, 3, 7-9</code> for mixed selection.
+            Examples: <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">1-5</code>{' '}
+            for pages 1 through 5, or{' '}
+            <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-700">1, 3, 7-9</code> for
+            mixed selection.
           </p>
         </div>
       )}

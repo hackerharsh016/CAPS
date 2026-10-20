@@ -5,11 +5,7 @@
  * Security Invariant: Customer A can NEVER query or receive orders belonging to Customer B.
  */
 
-import type {
-  CustomerOrder,
-  OrderHistoryQuery,
-  OrderHistoryResponse
-} from './types';
+import type { CustomerOrder, OrderHistoryQuery, OrderHistoryResponse } from './types';
 import { MOCK_ORDERS } from './fixtures';
 
 export class OrdersService {
@@ -26,21 +22,23 @@ export class OrdersService {
     const { customerId, page = 1, limit = 5, filter = 'all' } = query;
 
     if (!customerId || typeof customerId !== 'string') {
-      throw new Error('UNAUTHORIZED: A valid authenticated customer ID is required to fetch orders.');
+      throw new Error(
+        'UNAUTHORIZED: A valid authenticated customer ID is required to fetch orders.'
+      );
     }
 
     // Strict Tenant/User Isolation: Filter strictly by customerId
-    let scoped = this.ordersStore.filter((order) => order.customer_id === customerId);
+    let scoped = this.ordersStore.filter(order => order.customer_id === customerId);
 
     // Apply status filter
     if (filter === 'active') {
-      scoped = scoped.filter((order) =>
+      scoped = scoped.filter(order =>
         ['pending_payment', 'queued', 'approved', 'claimed', 'printing'].includes(order.status)
       );
     } else if (filter === 'completed') {
-      scoped = scoped.filter((order) => order.status === 'completed');
+      scoped = scoped.filter(order => order.status === 'completed');
     } else if (filter === 'cancelled') {
-      scoped = scoped.filter((order) => ['cancelled', 'failed'].includes(order.status));
+      scoped = scoped.filter(order => ['cancelled', 'failed'].includes(order.status));
     }
 
     // Sort descending by created_at
@@ -69,7 +67,7 @@ export class OrdersService {
     if (!customerId) {
       throw new Error('UNAUTHORIZED: customerId is required.');
     }
-    const order = this.ordersStore.find((o) => o.id === orderId);
+    const order = this.ordersStore.find(o => o.id === orderId);
     if (!order) {
       return null;
     }
@@ -85,7 +83,7 @@ export class OrdersService {
    */
   public addOrder(order: CustomerOrder): void {
     // Prevent duplicate entries by ID
-    const exists = this.ordersStore.some((o) => o.id === order.id);
+    const exists = this.ordersStore.some(o => o.id === order.id);
     if (!exists) {
       this.ordersStore.unshift(order);
     }

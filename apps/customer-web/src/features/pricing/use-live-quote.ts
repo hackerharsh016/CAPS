@@ -11,11 +11,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type {
-  PriorityTier,
-  QuoteResponse,
-  QuoteStatus
-} from './types';
+import type { PriorityTier, QuoteResponse, QuoteStatus } from './types';
 import type { PrintSettings } from '../print-settings/types';
 import { QuoteService, defaultQuoteService } from './quote-service';
 

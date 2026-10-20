@@ -177,24 +177,34 @@ describe('Print Settings Validation (P04-M04-F01)', () => {
 
     it('flags invalid enums and limits', () => {
       const invalid = {
-        paper_size: 'Tabloid' as unknown as import('../../src/features/print-settings/types').PaperSize,
-        color_mode: 'sepia' as unknown as import('../../src/features/print-settings/types').ColorMode,
+        paper_size:
+          'Tabloid' as unknown as import('../../src/features/print-settings/types').PaperSize,
+        color_mode:
+          'sepia' as unknown as import('../../src/features/print-settings/types').ColorMode,
         sides: 'triple' as unknown as import('../../src/features/print-settings/types').SideMode,
-        orientation: 'diagonal' as unknown as import('../../src/features/print-settings/types').Orientation,
+        orientation:
+          'diagonal' as unknown as import('../../src/features/print-settings/types').Orientation,
         copies: 0,
         page_range: '5-2',
-        binding: 'gold_embossed' as unknown as import('../../src/features/print-settings/types').BindingType
+        binding:
+          'gold_embossed' as unknown as import('../../src/features/print-settings/types').BindingType
       };
 
       const result = validatePrintSettings(invalid, 10);
       expect(result.isValid).toBe(false);
-      expect(result.errors.paper_size).toContain("Paper size must be one of 'A4', 'A3', or 'Legal'");
+      expect(result.errors.paper_size).toContain(
+        "Paper size must be one of 'A4', 'A3', or 'Legal'"
+      );
       expect(result.errors.color_mode).toContain("Color mode must be either 'bw' or 'color'");
       expect(result.errors.sides).toContain("Sides mode must be either 'single' or 'double'");
-      expect(result.errors.orientation).toContain("Orientation must be either 'portrait' or 'landscape'");
+      expect(result.errors.orientation).toContain(
+        "Orientation must be either 'portrait' or 'landscape'"
+      );
       expect(result.errors.copies).toContain('Copies must be at least 1');
       expect(result.errors.page_range).toContain('Invalid page range format');
-      expect(result.errors.binding).toContain("Binding must be 'none', 'spiral', 'staple', or 'lamination'");
+      expect(result.errors.binding).toContain(
+        "Binding must be 'none', 'spiral', 'staple', or 'lamination'"
+      );
     });
 
     it('flags pages that exceed totalDocumentPages', () => {

@@ -66,27 +66,27 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       const catalog = getShopServiceCatalog(fullFeaturedShop);
       expect(catalog.length).toBe(6);
 
-      const bw = catalog.find((i) => i.id === 'bw-standard');
+      const bw = catalog.find(i => i.id === 'bw-standard');
       expect(bw?.isAvailable).toBe(true);
       expect(bw?.priceFormatted).toContain('₹1.50');
 
-      const color = catalog.find((i) => i.id === 'color-standard');
+      const color = catalog.find(i => i.id === 'color-standard');
       expect(color?.isAvailable).toBe(true);
       expect(color?.priceFormatted).toContain('₹8.00');
 
-      const duplex = catalog.find((i) => i.id === 'duplex-print');
+      const duplex = catalog.find(i => i.id === 'duplex-print');
       expect(duplex?.isAvailable).toBe(true);
       expect(duplex?.priceFormatted).toContain('Saves ₹0.25');
 
-      const a3 = catalog.find((i) => i.id === 'a3-large-format');
+      const a3 = catalog.find(i => i.id === 'a3-large-format');
       expect(a3?.isAvailable).toBe(true);
       expect(a3?.priceFormatted).toContain('₹3.00');
 
-      const spiral = catalog.find((i) => i.id === 'spiral-binding');
+      const spiral = catalog.find(i => i.id === 'spiral-binding');
       expect(spiral?.isAvailable).toBe(true);
       expect(spiral?.priceFormatted).toContain('₹30.00');
 
-      const urgent = catalog.find((i) => i.id === 'urgent-priority');
+      const urgent = catalog.find(i => i.id === 'urgent-priority');
       expect(urgent?.isAvailable).toBe(true);
       expect(urgent?.priceFormatted).toContain('₹20.00');
     });
@@ -95,7 +95,7 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       const catalog = getShopServiceCatalog(restrictedClosedShop);
 
       // Color unsupported
-      const color = catalog.find((i) => i.id === 'color-standard');
+      const color = catalog.find(i => i.id === 'color-standard');
       expect(color?.isAvailable).toBe(false);
       expect(color?.priceFormatted).toBe('Not Offered');
       expect(color?.unavailabilityReason).toBe(
@@ -103,7 +103,7 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       );
 
       // Duplex unsupported
-      const duplex = catalog.find((i) => i.id === 'duplex-print');
+      const duplex = catalog.find(i => i.id === 'duplex-print');
       expect(duplex?.isAvailable).toBe(false);
       expect(duplex?.priceFormatted).toBe('Not Available');
       expect(duplex?.unavailabilityReason).toBe(
@@ -111,7 +111,7 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       );
 
       // A3 unsupported
-      const a3 = catalog.find((i) => i.id === 'a3-large-format');
+      const a3 = catalog.find(i => i.id === 'a3-large-format');
       expect(a3?.isAvailable).toBe(false);
       expect(a3?.priceFormatted).toBe('Not Supported');
       expect(a3?.unavailabilityReason).toBe(
@@ -119,7 +119,7 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       );
 
       // Spiral binding unsupported
-      const spiral = catalog.find((i) => i.id === 'spiral-binding');
+      const spiral = catalog.find(i => i.id === 'spiral-binding');
       expect(spiral?.isAvailable).toBe(false);
       expect(spiral?.priceFormatted).toBe('Not Offered');
       expect(spiral?.unavailabilityReason).toBe(
@@ -127,7 +127,7 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       );
 
       // Urgent queue disabled
-      const urgent = catalog.find((i) => i.id === 'urgent-priority');
+      const urgent = catalog.find(i => i.id === 'urgent-priority');
       expect(urgent?.isAvailable).toBe(false);
       expect(urgent?.priceFormatted).toBe('Disabled');
       expect(urgent?.unavailabilityReason).toBe(
@@ -141,7 +141,10 @@ describe('Shop Details & Service Catalog (P04-M02-F02)', () => {
       expect(getCategoryMetadata('print')).toEqual({ label: 'Printing Options', icon: '🖨️' });
       expect(getCategoryMetadata('paper')).toEqual({ label: 'Paper Sizes', icon: '📐' });
       expect(getCategoryMetadata('binding')).toEqual({ label: 'Finishing & Binding', icon: '🌀' });
-      expect(getCategoryMetadata('priority')).toEqual({ label: 'Queue & Priority Tiers', icon: '⚡' });
+      expect(getCategoryMetadata('priority')).toEqual({
+        label: 'Queue & Priority Tiers',
+        icon: '⚡'
+      });
     });
   });
 

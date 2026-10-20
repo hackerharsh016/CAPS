@@ -35,7 +35,7 @@ export async function computeSha256Checksum(file: File | Blob): Promise<string> 
   const buffer = await file.arrayBuffer();
   const digestBuffer = await crypto.subtle.digest('SHA-256', buffer);
   const hashArray = Array.from(new Uint8Array(digestBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export class DirectUploadClient {
@@ -172,7 +172,10 @@ export class DirectUploadClient {
         }
 
         currentStep++;
-        const loadedBytes = Math.min(totalBytes, Math.round((currentStep / totalSteps) * totalBytes));
+        const loadedBytes = Math.min(
+          totalBytes,
+          Math.round((currentStep / totalSteps) * totalBytes)
+        );
         const percentage = Math.min(100, Math.round((currentStep / totalSteps) * 100));
 
         if (onProgress) {
@@ -210,7 +213,8 @@ export class DirectUploadClient {
     if (intent.customerId !== customerId) {
       const err: UploadValidationError = {
         code: 'CROSS_USER_FORBIDDEN',
-        message: 'Access denied: Customer cannot access or finalize documents owned by another user.'
+        message:
+          'Access denied: Customer cannot access or finalize documents owned by another user.'
       };
       throw err;
     }

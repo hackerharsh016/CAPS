@@ -260,9 +260,9 @@ export function LoginForm({ redirectTo = '/orders', onSuccess }: LoginFormProps)
               aria-invalid={!!fieldErrors.email}
               aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
               value={email}
-              onChange={(e) => {
+              onChange={e => {
                 setEmail(e.target.value);
-                if (fieldErrors.email) setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
               }}
               className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                 fieldErrors.email
@@ -301,9 +301,10 @@ export function LoginForm({ redirectTo = '/orders', onSuccess }: LoginFormProps)
                 aria-invalid={!!fieldErrors.password}
                 aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                 value={password}
-                onChange={(e) => {
+                onChange={e => {
                   setPassword(e.target.value);
-                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                  if (fieldErrors.password)
+                    setFieldErrors(prev => ({ ...prev, password: undefined }));
                 }}
                 className={`block w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                   fieldErrors.password
@@ -314,7 +315,7 @@ export function LoginForm({ redirectTo = '/orders', onSuccess }: LoginFormProps)
               />
               <button
                 type="button"
-                onClick={() => setShowPassword((prev) => !prev)}
+                onClick={() => setShowPassword(prev => !prev)}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-slate-500 hover:text-slate-700"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
@@ -362,9 +363,10 @@ export function LoginForm({ redirectTo = '/orders', onSuccess }: LoginFormProps)
                     aria-invalid={!!fieldErrors.phone}
                     aria-describedby={fieldErrors.phone ? 'login-phone-error' : undefined}
                     value={phone}
-                    onChange={(e) => {
+                    onChange={e => {
                       setPhone(e.target.value);
-                      if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                      if (fieldErrors.phone)
+                        setFieldErrors(prev => ({ ...prev, phone: undefined }));
                     }}
                     className={`block w-full rounded-lg border py-2.5 pl-12 pr-3.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                       fieldErrors.phone
@@ -417,9 +419,9 @@ export function LoginForm({ redirectTo = '/orders', onSuccess }: LoginFormProps)
                   aria-invalid={!!fieldErrors.otp}
                   aria-describedby={fieldErrors.otp ? 'login-otp-error' : undefined}
                   value={otp}
-                  onChange={(e) => {
+                  onChange={e => {
                     setOtp(e.target.value);
-                    if (fieldErrors.otp) setFieldErrors((prev) => ({ ...prev, otp: undefined }));
+                    if (fieldErrors.otp) setFieldErrors(prev => ({ ...prev, otp: undefined }));
                   }}
                   className={`mt-1 block w-full rounded-lg border px-3.5 py-2.5 text-center font-mono text-lg tracking-widest shadow-sm transition-colors focus:outline-none focus:ring-2 ${
                     fieldErrors.otp
