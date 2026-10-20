@@ -8,7 +8,7 @@
 -- 1. Index on print_jobs document expiration for efficient privacy cleanup sweeping
 CREATE INDEX IF NOT EXISTS idx_print_jobs_document_expiry
     ON public.print_jobs (document_expires_at)
-    WHERE status NOT IN ('draft'::public.job_status);
+    WHERE document_storage_key <> '[PURGED]';
 
 -- 2. Performance indexes on document deletion logs
 CREATE INDEX IF NOT EXISTS idx_document_deletion_logs_job
@@ -113,8 +113,7 @@ BEGIN
     UPDATE public.print_jobs
     SET
         status = v_new_status,
-        updated_at = v_now,
-        completed_at = CASE WHEN v_new_status = 'completed' THEN v_now ELSE completed_at END
+        updated_at = v_now
     WHERE id = p_job_id;
 
     -- 5. Append immutable event audit log

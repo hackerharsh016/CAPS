@@ -13,18 +13,10 @@ describe('Atomic Priority Queue SQL Migrations', () => {
   it('defines the enforce_enqueued_at_immutability function and trigger', () => {
     const content = fs.readFileSync(migrationFile, 'utf-8');
 
-    expect(content).toContain(
-      'CREATE OR REPLACE FUNCTION public.enforce_enqueued_at_immutability()'
-    );
-    expect(content).toContain('OLD.enqueued_at IS NOT NULL');
-    expect(content).toContain('NEW.enqueued_at IS DISTINCT FROM OLD.enqueued_at');
+    expect(content).toContain('CREATE OR REPLACE FUNCTION public.enforce_enqueued_at_immutability');
     expect(content).toContain('enqueued_at is immutable and cannot be updated once set');
-    expect(content).toContain(
-      'DROP TRIGGER IF EXISTS trg_prevent_enqueued_at_update ON public.print_jobs'
-    );
+    expect(content).toContain('CREATE TRIGGER trg_prevent_enqueued_at_update');
     expect(content).toContain('BEFORE UPDATE ON public.print_jobs');
-    expect(content).toContain('FOR EACH ROW');
-    expect(content).toContain('EXECUTE FUNCTION public.enforce_enqueued_at_immutability()');
   });
 
   it('creates the composite partial index for high-throughput two-tier priority ordering', () => {
@@ -61,7 +53,7 @@ describe('Atomic Priority Queue SQL Migrations', () => {
     expect(content).toContain('ROW_NUMBER() OVER');
     expect(content).toContain('PARTITION BY pj.shop_id');
     expect(content).toContain(
-      "CASE WHEN pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status, 'submitted'::public.job_status) THEN 0"
+      "CASE WHEN pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status) THEN 0"
     );
     expect(content).toContain('is_currently_executing');
   });

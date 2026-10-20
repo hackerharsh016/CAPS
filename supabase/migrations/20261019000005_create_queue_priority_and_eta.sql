@@ -41,7 +41,7 @@ AS $$
         pj.status,
         pj.enqueued_at,
         CASE
-            WHEN pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status, 'submitted'::public.job_status) THEN 0
+            WHEN pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status) THEN 0
             ELSE ROW_NUMBER() OVER (
                 PARTITION BY pj.shop_id
                 ORDER BY
@@ -50,7 +50,7 @@ AS $$
                     pj.id ASC
             )
         END AS queue_position,
-        (pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status, 'submitted'::public.job_status)) AS is_currently_executing
+        (pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status)) AS is_currently_executing
     FROM public.print_jobs pj
     WHERE pj.shop_id = p_shop_id
       AND pj.status IN (
@@ -58,11 +58,10 @@ AS $$
           'approved'::public.job_status,
           'claimed'::public.job_status,
           'downloading'::public.job_status,
-          'submitted'::public.job_status,
           'printing'::public.job_status
       )
     ORDER BY
-        (CASE WHEN pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status, 'submitted'::public.job_status) THEN 0 ELSE 1 END),
+        (CASE WHEN pj.status IN ('printing'::public.job_status, 'claimed'::public.job_status, 'downloading'::public.job_status) THEN 0 ELSE 1 END),
         (CASE pj.priority_tier WHEN 'urgent'::public.priority_tier THEN 0 ELSE 1 END),
         pj.enqueued_at ASC,
         pj.id ASC;

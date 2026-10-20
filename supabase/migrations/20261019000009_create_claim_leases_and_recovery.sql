@@ -7,6 +7,11 @@
 --              reconciliation functions to recover abandoned/expired leases.
 -- ==============================================================================
 
+-- 0. Ensure print_jobs has audit claim tracking columns
+ALTER TABLE public.print_jobs
+    ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS claimed_by_agent_id UUID REFERENCES public.agent_devices(id) ON DELETE SET NULL;
+
 -- 1. Atomic RPC: Claim an approved print job with an exclusive lease
 CREATE OR REPLACE FUNCTION public.claim_job_lease(
     p_job_id UUID,
@@ -168,23 +173,26 @@ BEGIN
     -- 9. Log audit event
     INSERT INTO public.job_events (
         job_id,
+        attempt_id,
         actor_id,
         actor_type,
         from_status,
         to_status,
-        reason,
+        event_name,
         metadata
     ) VALUES (
         p_job_id,
+        v_new_attempt_id,
         p_agent_device_id,
-        'agent'::public.event_actor_type,
+        'agent'::public.actor_type,
         'approved'::public.job_status,
         'claimed'::public.job_status,
-        'Exclusive claim lease granted to agent device',
+        'job_claimed_by_agent',
         jsonb_build_object(
             'attempt_id', v_new_attempt_id,
             'lease_expires_at', v_lease_expires,
-            'printer_id', COALESCE(p_printer_id, v_job.printer_id)
+            'printer_id', COALESCE(p_printer_id, v_job.printer_id),
+            'reason', 'Exclusive claim lease granted to agent device'
         )
     );
 
@@ -265,20 +273,23 @@ BEGIN
         -- Log recovery event
         INSERT INTO public.job_events (
             job_id,
+            attempt_id,
             actor_type,
             from_status,
             to_status,
-            reason,
+            event_name,
             metadata
         ) VALUES (
             v_rec.job_id,
-            'system'::public.event_actor_type,
+            v_rec.attempt_id,
+            'system'::public.actor_type,
             'claimed'::public.job_status,
             v_target_status,
-            'Lease expired; recovered by system reconciliation',
+            'lease_expired_recovered',
             jsonb_build_object(
                 'attempt_id', v_rec.attempt_id,
-                'total_attempts', v_attempts_count
+                'total_attempts', v_attempts_count,
+                'reason', 'Lease expired; recovered by system reconciliation'
             )
         );
 
