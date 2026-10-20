@@ -129,4 +129,8 @@ export class MockPrintersRepository implements IPrintersRepository {
   async delete(id: string): Promise<boolean> {
     return this.printers.delete(id);
   }
+
+  clear(): void {
+    this.printers.clear();
+  }
 }

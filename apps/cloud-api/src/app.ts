@@ -22,6 +22,9 @@ import { documentsRoutes } from './modules/documents/documents.routes.js';
 import { MockQuotesRepository, IQuotesRepository } from './modules/pricing/quotes.repository.js';
 import { QuotesService } from './modules/pricing/quotes.service.js';
 import { quotesRoutes } from './modules/pricing/quotes.routes.js';
+import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-jobs/print-jobs.repository.js';
+import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
+import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -41,10 +44,12 @@ export interface AppOptions {
   documentsRepo?: IDocumentsRepository | undefined;
   storageService?: IStorageService | undefined;
   quotesRepo?: IQuotesRepository | undefined;
+  jobsRepo?: IPrintJobsRepository | undefined;
   shopsService?: ShopsService | undefined;
   printersService?: PrintersService | undefined;
   documentsService?: DocumentsService | undefined;
   quotesService?: QuotesService | undefined;
+  printJobsService?: PrintJobsService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -83,12 +88,13 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     credentials: true
   });
 
-  // 6. Initialize shop, printer, document, and quote domain repositories and services
+  // 6. Initialize shop, printer, document, quote, and print-job domain repositories and services
   const shopsRepo = options.shopsRepo ?? new MockShopsRepository();
   const printersRepo = options.printersRepo ?? new MockPrintersRepository();
   const documentsRepo = options.documentsRepo ?? new MockDocumentsRepository();
   const storageService = options.storageService ?? new MockStorageService();
   const quotesRepo = options.quotesRepo ?? new MockQuotesRepository();
+  const jobsRepo = options.jobsRepo ?? new MockPrintJobsRepository();
 
   const shopsService =
     options.shopsService ?? new ShopsService(shopsRepo);
@@ -98,6 +104,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     options.documentsService ?? new DocumentsService(documentsRepo, storageService);
   const quotesService =
     options.quotesService ?? new QuotesService(quotesRepo, shopsRepo);
+  const printJobsService =
+    options.printJobsService ??
+    new PrintJobsService(jobsRepo, shopsRepo, quotesRepo, documentsRepo);
 
   // 7. Register domain routes under API v1 namespace
   app.register(shopsRoutes, {
@@ -119,6 +128,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(quotesRoutes, {
     prefix: '/api/v1/quotes',
     quotesService
+  });
+
+  app.register(printJobsRoutes, {
+    prefix: '/api/v1/print-jobs',
+    printJobsService
   });
 
   // 8. Auth verification & role testing routes
@@ -175,7 +189,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const defaultReadinessChecks: ReadinessCheck[] = [
     () => ({
       name: 'database',
-      ok: Boolean(shopsRepo && printersRepo && documentsRepo && quotesRepo),
+      ok: Boolean(shopsRepo && printersRepo && documentsRepo && quotesRepo && jobsRepo),
       message: 'Repositories operational'
     }),
     () => ({
