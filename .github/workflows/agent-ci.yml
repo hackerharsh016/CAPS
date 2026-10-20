@@ -43,7 +43,7 @@ jobs:
         run: |
           cd apps/print-agent
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          python -m pip install -e ".[dev,windows,packaging]"
           python -m pip install jsonschema ruff pytest
 
       - name: Ruff Code Formatting & Lint Check
@@ -54,11 +54,11 @@ jobs:
       - name: Execute Python Unit & Conformance Tests
         run: |
           cd apps/print-agent
-          $env:PYTHONPATH = "src"
+          $env:PYTHONPATH = "src;."
           python -m unittest discover -s tests -p "test_*.py" -v
 
       - name: Security & Loopback Binding Verification
         run: |
           cd apps/print-agent
-          $env:PYTHONPATH = "src"
+          $env:PYTHONPATH = "src;."
           python -m unittest tests/test_config.py -v

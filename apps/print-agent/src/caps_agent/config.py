@@ -9,7 +9,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    from caps_agent.auth.credentials import AgentCredentials
 
 
 class ConfigurationError(ValueError):
@@ -27,6 +31,12 @@ class AgentConfig:
     local_diagnostics_host: str = "127.0.0.1"
     local_diagnostics_port: int = 9099
     temp_dir: Path = field(default_factory=lambda: Path(os.environ.get("TEMP", "/tmp")) / "caps_spool")
+    db_path: Path = field(
+        default_factory=lambda: Path(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", "/tmp")))
+        / "caps_agent"
+        / "state.db"
+    )
+    temp_cleanup_max_age_seconds: int = 3600
     log_level: str = "INFO"
 
     def __post_init__(self) -> None:
@@ -66,6 +76,18 @@ class AgentConfig:
                 f"Invalid log_level: '{self.log_level}'. Must be one of {allowed_levels}."
             )
 
+    def to_credentials(self) -> AgentCredentials | None:
+        """Convert config fields to AgentCredentials if all required tokens are present."""
+        if self.shop_id and self.device_id and self.device_token:
+            from caps_agent.auth.credentials import AgentCredentials
+
+            return AgentCredentials(
+                shop_id=self.shop_id,
+                device_id=self.device_id,
+                device_token=self.device_token,
+            )
+        return None
+
 
 def load_config(env: dict[str, str] | None = None) -> AgentConfig:
     """Load and validate configuration from environment dictionary or process env."""
@@ -84,10 +106,27 @@ def load_config(env: dict[str, str] | None = None) -> AgentConfig:
     try:
         port = int(port_raw)
     except ValueError:
-        raise ConfigurationError(f"CAPS_AGENT_LOCAL_PORT must be an integer, got '{port_raw}'")
+        raise ConfigurationError(
+            f"CAPS_AGENT_LOCAL_PORT must be an integer, got '{port_raw}'"
+        ) from None
 
     temp_raw = e.get("CAPS_AGENT_TEMP_DIR")
     temp_dir = Path(temp_raw) if temp_raw else Path(e.get("TEMP", "/tmp")) / "caps_spool"
+
+    db_raw = e.get("CAPS_AGENT_DB_PATH")
+    db_path = (
+        Path(db_raw)
+        if db_raw
+        else Path(e.get("LOCALAPPDATA", e.get("TEMP", "/tmp"))) / "caps_agent" / "state.db"
+    )
+
+    max_age_raw = e.get("CAPS_AGENT_CLEANUP_MAX_AGE_SEC", "3600")
+    try:
+        max_age_sec = int(max_age_raw)
+    except ValueError:
+        raise ConfigurationError(
+            f"CAPS_AGENT_CLEANUP_MAX_AGE_SEC must be an integer, got '{max_age_raw}'"
+        ) from None
 
     return AgentConfig(
         cloud_api_url=api_url,
@@ -98,5 +137,7 @@ def load_config(env: dict[str, str] | None = None) -> AgentConfig:
         local_diagnostics_host=host,
         local_diagnostics_port=port,
         temp_dir=temp_dir,
+        db_path=db_path,
+        temp_cleanup_max_age_seconds=max_age_sec,
         log_level=e.get("CAPS_LOG_LEVEL", "INFO"),
     )

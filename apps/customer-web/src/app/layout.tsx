@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { AuthProvider } from '../features/auth/auth-context';
 
 export const metadata: Metadata = {
   title: 'CAPS — Cloud Automated Printing Solution',
@@ -24,13 +25,15 @@ export default function RootLayout({
               <span className="text-lg font-semibold text-slate-900">Customer Portal</span>
             </div>
             <nav className="flex items-center space-x-4 text-sm font-medium text-slate-600">
-              <span className="text-blue-600">Find Shops</span>
-              <span>My Orders</span>
-              <span>Help</span>
+              <a href="/shops" className="text-blue-600 hover:text-blue-700">Find Shops</a>
+              <a href="/orders" className="hover:text-slate-900">My Orders</a>
+              <a href="/help" className="hover:text-slate-900">Help</a>
             </nav>
           </div>
         </header>
-        <main>{children}</main>
+        <AuthProvider>
+          <main>{children}</main>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -5,8 +5,8 @@ using the Python jsonschema validator.
 """
 
 import json
-from pathlib import Path
 import unittest
+from pathlib import Path
 
 import jsonschema
 from referencing import Registry, Resource
@@ -20,7 +20,7 @@ EXAMPLES_DIR = CONTRACTS_DIR / "examples"
 
 
 def load_json(path: Path) -> dict:
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
