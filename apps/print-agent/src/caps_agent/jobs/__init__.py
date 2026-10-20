@@ -1,4 +1,4 @@
-"""CAPS Print Agent job dispatching and state machine package."""
+"""CAPS Print Agent job dispatching, state machine, and recovery package."""
 
 from caps_agent.jobs.dispatcher import (
     DispatcherError,
@@ -7,6 +7,11 @@ from caps_agent.jobs.dispatcher import (
     JobDispatcher,
     JobItem,
     QueueBackpressureError,
+)
+from caps_agent.jobs.recovery import (
+    ReconciledJob,
+    RecoveryReport,
+    StartupRecoveryCoordinator,
 )
 from caps_agent.jobs.state_machine import (
     ALLOWED_TRANSITIONS,
@@ -34,4 +39,7 @@ __all__ = [
     "DuplicateJobError",
     "JobItem",
     "JobDispatcher",
+    "StartupRecoveryCoordinator",
+    "RecoveryReport",
+    "ReconciledJob",
 ]

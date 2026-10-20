@@ -27,6 +27,12 @@ class AgentConfig:
     local_diagnostics_host: str = "127.0.0.1"
     local_diagnostics_port: int = 9099
     temp_dir: Path = field(default_factory=lambda: Path(os.environ.get("TEMP", "/tmp")) / "caps_spool")
+    db_path: Path = field(
+        default_factory=lambda: Path(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", "/tmp")))
+        / "caps_agent"
+        / "state.db"
+    )
+    temp_cleanup_max_age_seconds: int = 3600
     log_level: str = "INFO"
 
     def __post_init__(self) -> None:
@@ -91,6 +97,21 @@ def load_config(env: dict[str, str] | None = None) -> AgentConfig:
     temp_raw = e.get("CAPS_AGENT_TEMP_DIR")
     temp_dir = Path(temp_raw) if temp_raw else Path(e.get("TEMP", "/tmp")) / "caps_spool"
 
+    db_raw = e.get("CAPS_AGENT_DB_PATH")
+    db_path = (
+        Path(db_raw)
+        if db_raw
+        else Path(e.get("LOCALAPPDATA", e.get("TEMP", "/tmp"))) / "caps_agent" / "state.db"
+    )
+
+    max_age_raw = e.get("CAPS_AGENT_CLEANUP_MAX_AGE_SEC", "3600")
+    try:
+        max_age_sec = int(max_age_raw)
+    except ValueError:
+        raise ConfigurationError(
+            f"CAPS_AGENT_CLEANUP_MAX_AGE_SEC must be an integer, got '{max_age_raw}'"
+        ) from None
+
     return AgentConfig(
         cloud_api_url=api_url,
         realtime_url=rt_url,
@@ -100,5 +121,7 @@ def load_config(env: dict[str, str] | None = None) -> AgentConfig:
         local_diagnostics_host=host,
         local_diagnostics_port=port,
         temp_dir=temp_dir,
+        db_path=db_path,
+        temp_cleanup_max_age_seconds=max_age_sec,
         log_level=e.get("CAPS_LOG_LEVEL", "INFO"),
     )

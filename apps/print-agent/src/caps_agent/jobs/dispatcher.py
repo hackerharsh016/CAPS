@@ -1,7 +1,8 @@
 """Per-printer execution dispatcher for CAPS Print Agent.
 
 Serializes job execution strictly on a per-printer basis, provides queue backpressure,
-job cancellation, state machine lifecycle tracking, and enforces Non-Negotiable Policy #5
+job cancellation, state machine lifecycle tracking, durable SQLite journaling,
+transient artifact cleanup, and enforces Non-Negotiable Policy #5
 (no auto-reprint on ambiguous/unknown outcomes).
 """
 
@@ -15,6 +16,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from caps_agent.jobs.state_machine import (
     JobState,
@@ -26,6 +28,10 @@ from caps_agent.printing.engine import (
     PrintSettings,
     ShopAuthorizationError,
 )
+
+if TYPE_CHECKING:
+    from caps_agent.storage.cleanup import ArtifactCleaner
+    from caps_agent.storage.local_state import LocalStateJournal
 
 logger = logging.getLogger("caps_agent.jobs.dispatcher")
 
@@ -116,6 +122,7 @@ class JobDispatcher:
     - Queue backpressure with configurable bounds
     - Safe cancellation of queued and in-progress jobs
     - Full audit state machine tracking
+    - Optional SQLite journal persistence and artifact cleanup
     """
 
     def __init__(
@@ -124,11 +131,15 @@ class JobDispatcher:
         max_queue_per_printer: int = 10,
         status_callback: Callable[[JobStateMachine, JobState], None] | None = None,
         shop_id: str | None = None,
+        journal: LocalStateJournal | None = None,
+        cleaner: ArtifactCleaner | None = None,
     ) -> None:
         self.engine = engine
         self.max_queue_per_printer = max_queue_per_printer
         self.status_callback = status_callback
         self.shop_id = shop_id
+        self.journal = journal
+        self.cleaner = cleaner
 
         # Concurrency and queue structures
         self._lock = threading.Lock()
@@ -152,6 +163,20 @@ class JobDispatcher:
                 self.status_callback(sm, sm.current_state)
             except Exception as err:
                 logger.error("Error in status_callback for job '%s': %s", sm.job_id, err)
+
+    def _update_journal(
+        self,
+        attempt_id: str,
+        status: JobState,
+        reason: str | None = None,
+        error_code: str | None = None,
+    ) -> None:
+        """Update status in durable SQLite journal if configured."""
+        if self.journal is not None:
+            try:
+                self.journal.update_status(attempt_id, status, reason=reason, error_code=error_code)
+            except Exception as err:
+                logger.warning("Failed to record status update in local journal for attempt '%s': %s", attempt_id, err)
 
     def _ensure_printer_queue(self, printer_name: str) -> queue.Queue[JobItem | None]:
         """Ensure a dedicated queue and background worker exist for the printer."""
@@ -215,13 +240,35 @@ class JobDispatcher:
             self._state_machines[job.job_id] = sm
             self._jobs_by_attempt[job.attempt_id] = job.job_id
 
-        # 4. Check Queue Backpressure & Put in Queue
+        # 4. Record into persistent journal if configured
+        if self.journal is not None:
+            try:
+                self.journal.record_claim(
+                    job_id=job.job_id,
+                    attempt_id=job.attempt_id,
+                    printer_name=job.printer_name,
+                    lease_token=job.lease_token,
+                    shop_id=job.shop_id,
+                    pdf_path=job.pdf_path,
+                    job_title=job.job_title,
+                    initial_status=JobState.QUEUED,
+                )
+            except Exception as err:
+                logger.warning("Failed to record claim in local journal for job '%s': %s", job.job_id, err)
+
+        # 5. Check Queue Backpressure & Put in Queue
         q = self._ensure_printer_queue(job.printer_name)
         try:
             q.put_nowait(job)
         except queue.Full:
             with self._lock:
                 sm.transition_to(JobState.FAILED, reason="Queue backpressure full", error_code="QUEUE_BACKPRESSURE_FULL")
+                self._update_journal(
+                    job.attempt_id,
+                    JobState.FAILED,
+                    reason="Queue backpressure full",
+                    error_code="QUEUE_BACKPRESSURE_FULL",
+                )
                 self._notify_status(sm)
             raise QueueBackpressureError(job.printer_name, self.max_queue_per_printer) from None
 
@@ -253,6 +300,7 @@ class JobDispatcher:
             # If still queued, transition immediately
             if sm.current_state in (JobState.QUEUED, JobState.CLAIMED):
                 sm.transition_to(JobState.CANCELLED, reason=reason)
+                self._update_journal(sm.attempt_id, JobState.CANCELLED, reason=reason)
                 self._notify_status(sm)
                 return True
 
@@ -347,6 +395,7 @@ class JobDispatcher:
                     sm = self._state_machines.get(job.job_id)
                     if sm and not sm.is_terminal:
                         sm.transition_to(JobState.CANCELLED, reason="Cancelled in queue before execution")
+                        self._update_journal(job.attempt_id, JobState.CANCELLED, reason="Cancelled in queue")
                         self._notify_status(sm)
                     q.task_done()
                     continue
@@ -368,32 +417,39 @@ class JobDispatcher:
         try:
             # Transition: QUEUED -> CLAIMED
             sm.transition_to(JobState.CLAIMED)
+            self._update_journal(job.attempt_id, JobState.CLAIMED)
             self._notify_status(sm)
 
             if job.job_id in self._cancelled_jobs:
                 sm.transition_to(JobState.CANCELLED, reason="Cancelled after claim")
+                self._update_journal(job.attempt_id, JobState.CANCELLED, reason="Cancelled after claim")
                 self._notify_status(sm)
                 return
 
             # Transition: CLAIMED -> DOWNLOADING
             sm.transition_to(JobState.DOWNLOADING)
+            self._update_journal(job.attempt_id, JobState.DOWNLOADING)
             self._notify_status(sm)
 
             # Transition: DOWNLOADING -> VALIDATING
             sm.transition_to(JobState.VALIDATING)
+            self._update_journal(job.attempt_id, JobState.VALIDATING)
             self._notify_status(sm)
 
             if job.job_id in self._cancelled_jobs:
                 sm.transition_to(JobState.CANCELLED, reason="Cancelled during validation")
+                self._update_journal(job.attempt_id, JobState.CANCELLED, reason="Cancelled during validation")
                 self._notify_status(sm)
                 return
 
             # Transition: VALIDATING -> RENDERING
             sm.transition_to(JobState.RENDERING)
+            self._update_journal(job.attempt_id, JobState.RENDERING)
             self._notify_status(sm)
 
             # Transition: RENDERING -> PRINTING
             sm.transition_to(JobState.PRINTING)
+            self._update_journal(job.attempt_id, JobState.PRINTING)
             self._notify_status(sm)
 
             # Execute print work via engine
@@ -410,6 +466,17 @@ class JobDispatcher:
             with self._lock:
                 self._results[job.job_id] = result
 
+            if result.spooler_job_id and self.journal is not None:
+                try:
+                    self.journal.record_spooler_submission(
+                        attempt_id=job.attempt_id,
+                        spooler_job_id=result.spooler_job_id,
+                        pages_submitted=result.pages_submitted,
+                        total_bytes_written=result.total_bytes_written,
+                    )
+                except Exception as err:
+                    logger.warning("Failed to record spooler submission in journal: %s", err)
+
             if result.accepted:
                 sm.transition_to(
                     JobState.COMPLETED,
@@ -420,6 +487,14 @@ class JobDispatcher:
                         "total_bytes_written": result.total_bytes_written,
                     },
                 )
+                if self.journal is not None:
+                    try:
+                        self.journal.record_completion(
+                            job.attempt_id,
+                            details={"spooler_job_id": result.spooler_job_id},
+                        )
+                    except Exception as err:
+                        logger.warning("Failed to record completion in journal: %s", err)
             else:
                 # Disambiguate error vs unknown/ambiguous
                 err_code = result.error_code or "SUBMISSION_FAILED"
@@ -430,12 +505,30 @@ class JobDispatcher:
                         reason=result.error or "Ambiguous spooler outcome; manual inspection required",
                         error_code=err_code,
                     )
+                    if self.journal is not None:
+                        try:
+                            self.journal.record_unknown_requires_review(
+                                job.attempt_id,
+                                error_code=err_code,
+                                reason=result.error or "Ambiguous spooler outcome",
+                            )
+                        except Exception as err:
+                            logger.warning("Failed to record unknown outcome in journal: %s", err)
                 else:
                     sm.transition_to(
                         JobState.FAILED,
                         reason=result.error or "Print submission failed",
                         error_code=err_code,
                     )
+                    if self.journal is not None:
+                        try:
+                            self.journal.record_failure(
+                                job.attempt_id,
+                                error_code=err_code,
+                                error_message=result.error or "Print submission failed",
+                            )
+                        except Exception as err:
+                            logger.warning("Failed to record failure in journal: %s", err)
 
             self._notify_status(sm)
 
@@ -448,7 +541,23 @@ class JobDispatcher:
                     reason=str(err),
                     error_code=err_code,
                 )
+                if self.journal is not None:
+                    try:
+                        self.journal.record_failure(
+                            job.attempt_id,
+                            error_code=err_code,
+                            error_message=str(err),
+                        )
+                    except Exception as j_err:
+                        logger.warning("Failed to record failure in journal: %s", j_err)
                 self._notify_status(sm)
+
+        finally:
+            if self.cleaner is not None:
+                try:
+                    self.cleaner.cleanup_job(job.job_id)
+                except Exception as c_err:
+                    logger.warning("Post-execution artifact cleanup error for job '%s': %s", job.job_id, c_err)
 
     def shutdown(self, wait: bool = True, timeout: float = 5.0) -> None:
         """Stop dispatcher, send poison pill sentinels to workers, and join threads."""

@@ -77,6 +77,41 @@ Lifecycle states strictly follow the CAPS architecture baseline:
 - **Ambiguous Outcomes (Policy #5):** Disappearing spooler jobs or unconfirmed outcomes transition to `UNKNOWN_REQUIRES_REVIEW` with `can_auto_reprint=False`.
 - **Audit History:** Every transition records an immutable `StateTransitionRecord` timestamped in UTC with reasons and structured details.
 
+## Storage Subsystem (`caps_agent.storage`)
+
+### Durable SQLite Attempt Journal (`LocalStateJournal`)
+
+- **Persistent Attempt Store:** Thread-safe SQLite journal storing job claims, attempt IDs, cloud lease tokens, assigned spooler job IDs, and full lifecycle state transitions.
+- **ACID Transactions & Concurrency:** Configured with WAL (`PRAGMA journal_mode=WAL`), normal synchronization, foreign keys enabled, and recursive re-entrant locking (`threading.RLock`).
+- **Policy #5 Integrity:** Enforces `can_auto_reprint = False` across all attempt rows and transition logs.
+- **Active In-Flight Queries:** Identifies incomplete/interrupted jobs upon agent process restart.
+
+### Protected Temporary File Storage (`TempFileManager`)
+
+- **Secure Scoped Directories:** Isolates PDF downloads, rendered raster bitmaps, and spool artifacts in per-job folders (`job_<job_id>`).
+- **Path Traversal Defense:** Validates job and attempt IDs against directory traversal sequences (`..`, `/`, `\`, null bytes).
+- **Access Control:** Restricts folder permissions to the running user and SYSTEM (via `icacls` on Windows, `0700` on POSIX), protecting customer document privacy from other local users.
+- **Registry Tracking:** Actively registers files for lifecycle management and immediate deletion.
+
+### Transient File Cleanup & Orphan Scrubbing (`ArtifactCleaner`)
+
+- **Post-Execution Cleanup:** Scrubbing of temporary PDFs and rendered bitmaps immediately upon job completion (`COMPLETED`), cancellation (`CANCELLED`), or failure (`FAILED`).
+- **Privacy File Wiping:** Overwrites file contents with zeros (`\x00`) before unlinking when secure wipe is enabled.
+- **Orphan Sweeper:** Cleans stale spool artifacts older than `temp_cleanup_max_age_seconds` (default 3600s), while protecting files belonging to currently active jobs.
+- **Lock Resiliency:** Gracefully tolerates temporary Windows file handles held by the spooler or antivirus without crashing the agent.
+
+## Startup Crash Recovery Subsystem (`caps_agent.jobs.recovery`)
+
+### Startup Reconciliation (`StartupRecoveryCoordinator`)
+
+- **Crash Inspection:** On agent startup, queries `LocalStateJournal.get_active_attempts()` to discover in-flight jobs interrupted by process crash, system reboot, or power outage.
+- **Windows Spooler Reconciliation:**
+  - If interrupted during `PRINTING` with a `spooler_job_id`, checks the spooler queue via `Win32JobQueryAdapter`.
+  - If spooler confirms `JOB_STATUS_COMPLETE` / `JOB_STATUS_PRINTED`, transitions attempt to `COMPLETED`.
+  - If spooler job disappeared or status is unconfirmed, transitions to `UNKNOWN_REQUIRES_REVIEW` with `can_auto_reprint=False` (**Non-Negotiable Policy #5** strictly enforced; no automatic reprints).
+  - If interrupted prior to spooler submission (`QUEUED`, `CLAIMED`, `DOWNLOADING`, `VALIDATING`, `RENDERING`), transitions to `FAILED` (`AGENT_CRASH_BEFORE_SPOOLER`).
+- **Startup Cleanup:** Triggers immediate residual artifact removal for crashed attempts and runs background orphan scrubbing.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**

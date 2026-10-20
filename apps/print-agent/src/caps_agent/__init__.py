@@ -1,7 +1,15 @@
 """CAPS Desktop Print Agent package."""
 
 from caps_agent.config import AgentConfig, ConfigurationError, load_config
-from caps_agent.jobs import JobDispatcher, JobItem, JobState, JobStateMachine
+from caps_agent.jobs import (
+    JobDispatcher,
+    JobItem,
+    JobState,
+    JobStateMachine,
+    ReconciledJob,
+    RecoveryReport,
+    StartupRecoveryCoordinator,
+)
 from caps_agent.printing.engine import (
     PrintEngine,
     PrintEngineError,
@@ -11,6 +19,13 @@ from caps_agent.printing.engine import (
     WindowsPrintEngine,
 )
 from caps_agent.printing.fake_engine import FakePrintEngine
+from caps_agent.storage import (
+    ArtifactCleaner,
+    CleanupReport,
+    JobAttemptRecord,
+    LocalStateJournal,
+    TempFileManager,
+)
 from caps_agent.utils.logging import redact_sensitive_data, setup_logging
 
 __version__ = "0.1.0"
@@ -31,6 +46,14 @@ __all__ = [
     "JobItem",
     "JobState",
     "JobStateMachine",
+    "StartupRecoveryCoordinator",
+    "RecoveryReport",
+    "ReconciledJob",
+    "LocalStateJournal",
+    "JobAttemptRecord",
+    "TempFileManager",
+    "ArtifactCleaner",
+    "CleanupReport",
     "setup_logging",
     "redact_sensitive_data",
 ]
