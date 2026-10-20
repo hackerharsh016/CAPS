@@ -10,10 +10,7 @@ import type { JobStatus } from '../print-jobs/print-jobs.types.js';
 import type { PriorityTier } from '../pricing/pricing.types.js';
 
 export type QueueSignalType =
-  | 'AGENT_WAKE'
-  | 'JOB_STATUS_CHANGED'
-  | 'QUEUE_REORDERED'
-  | 'QUEUE_ETA_REFRESH';
+  'AGENT_WAKE' | 'JOB_STATUS_CHANGED' | 'QUEUE_REORDERED' | 'QUEUE_ETA_REFRESH';
 
 export interface AgentWakePayload {
   signal: 'AGENT_WAKE';
@@ -54,10 +51,7 @@ export interface QueueReorderedPayload {
 }
 
 export type QueueSignalPayload =
-  | AgentWakePayload
-  | JobStatusChangedPayload
-  | QueueReorderedPayload
-  | Record<string, unknown>;
+  AgentWakePayload | JobStatusChangedPayload | QueueReorderedPayload | Record<string, unknown>;
 
 export interface QueueSignal {
   id: number;

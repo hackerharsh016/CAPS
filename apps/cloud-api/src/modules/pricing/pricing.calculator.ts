@@ -17,7 +17,10 @@ export function parsePageRange(pageRange: string | undefined, documentPageCount:
   }
 
   const selectedPages = new Set<number>();
-  const tokens = pageRange.split(',').map(t => t.trim()).filter(Boolean);
+  const tokens = pageRange
+    .split(',')
+    .map(t => t.trim())
+    .filter(Boolean);
 
   for (const token of tokens) {
     if (token.includes('-')) {
@@ -118,10 +121,7 @@ export function calculatePriceBreakdown(input: CalculatePriceInput): PriceBreakd
   }
 
   // 6. Subtotal before tax
-  const subtotal_paise = Math.max(
-    0,
-    subtotalBeforeUrgent + urgent_surcharge_paise
-  );
+  const subtotal_paise = Math.max(0, subtotalBeforeUrgent + urgent_surcharge_paise);
 
   // 7. Configurable GST (rounded to nearest integer paise)
   const gstRate = Math.max(0, pricingConfig.gst_percentage ?? 0) / 100;

@@ -164,11 +164,13 @@ export class RazorpayHttpClient implements IRazorpayClient {
   }
 }
 
-export function createRazorpayClient(options: {
-  keyId?: string | undefined;
-  keySecret?: string | undefined;
-  useMock?: boolean | undefined;
-} = {}): IRazorpayClient {
+export function createRazorpayClient(
+  options: {
+    keyId?: string | undefined;
+    keySecret?: string | undefined;
+    useMock?: boolean | undefined;
+  } = {}
+): IRazorpayClient {
   if (options.useMock || !options.keyId || !options.keySecret) {
     return new MockRazorpayClient(options.keyId ?? 'rzp_test_mock_caps_key');
   }

@@ -261,9 +261,7 @@ describe('Cloud API — Telemetry, Distributed Tracing and Incident Runbooks (P0
           shop_id: shopId,
           version: '1.2.0',
           status: 'error',
-          printers: [
-            { printer_id: 'p_faulty', name: 'Epson WorkForce', status: 'paper_jam' }
-          ]
+          printers: [{ printer_id: 'p_faulty', name: 'Epson WorkForce', status: 'paper_jam' }]
         }
       });
 
@@ -342,7 +340,9 @@ describe('Cloud API — Telemetry, Distributed Tracing and Incident Runbooks (P0
 
       expect(listRes.statusCode).toBe(200);
       const activeList = listRes.json().data.active;
-      expect(activeList.some((a: { rule_name: string }) => a.rule_name === 'HIGH_5XX_ERROR_RATE')).toBe(true);
+      expect(
+        activeList.some((a: { rule_name: string }) => a.rule_name === 'HIGH_5XX_ERROR_RATE')
+      ).toBe(true);
     });
   });
 });

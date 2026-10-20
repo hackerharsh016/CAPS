@@ -15,7 +15,11 @@ export interface IAgentsRepository {
   revokeDevice(deviceId: string, reason: string): Promise<AgentDevice | null>;
   recordHeartbeat(dto: HeartbeatDto): Promise<boolean>;
   createSession(deviceId: string, shopId: string, version: string): Promise<AgentSession>;
-  createPairingCode(shopId: string, createdBy: string, ttlSeconds?: number): Promise<AgentPairingCode>;
+  createPairingCode(
+    shopId: string,
+    createdBy: string,
+    ttlSeconds?: number
+  ): Promise<AgentPairingCode>;
   findPairingCode(code: string): Promise<AgentPairingCode | null>;
   consumePairingCode(code: string, deviceId: string): Promise<AgentPairingCode | null>;
   clear(): void;

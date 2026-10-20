@@ -1,9 +1,5 @@
 export type LifecycleEventType =
-  | 'job_queued'
-  | 'job_printing'
-  | 'job_ready'
-  | 'job_failed'
-  | 'job_cancelled';
+  'job_queued' | 'job_printing' | 'job_ready' | 'job_failed' | 'job_cancelled';
 
 export interface UserFcmToken {
   id: string;

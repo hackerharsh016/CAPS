@@ -64,9 +64,24 @@ describe('Task P06-M01-F03: Pay-at-Counter Opt-In & Fulfillment', () => {
       geo_lng: 77.5946,
       status: 'open',
       pricing_config: {
-        A4: { bw_single_paise: 100, bw_double_paise: 80, color_single_paise: 500, color_double_paise: 400 },
-        A3: { bw_single_paise: 200, bw_double_paise: 160, color_single_paise: 1000, color_double_paise: 800 },
-        Legal: { bw_single_paise: 150, bw_double_paise: 120, color_single_paise: 700, color_double_paise: 600 },
+        A4: {
+          bw_single_paise: 100,
+          bw_double_paise: 80,
+          color_single_paise: 500,
+          color_double_paise: 400
+        },
+        A3: {
+          bw_single_paise: 200,
+          bw_double_paise: 160,
+          color_single_paise: 1000,
+          color_double_paise: 800
+        },
+        Legal: {
+          bw_single_paise: 150,
+          bw_double_paise: 120,
+          color_single_paise: 700,
+          color_double_paise: 600
+        },
         binding_prices_paise: { none: 0, spiral: 3000, staple: 500, lamination: 2000 },
         gst_percentage: 18
       },
@@ -138,7 +153,9 @@ describe('Task P06-M01-F03: Pay-at-Counter Opt-In & Fulfillment', () => {
       } catch (err) {
         expect(err).toBeInstanceOf(PayAtCounterNotAllowedError);
         expect((err as PayAtCounterNotAllowedError).code).toBe('PAY_AT_COUNTER_NOT_ALLOWED');
-        expect((err as PayAtCounterNotAllowedError).message).toContain('does not allow Pay-at-Counter');
+        expect((err as PayAtCounterNotAllowedError).message).toContain(
+          'does not allow Pay-at-Counter'
+        );
       }
     });
 
@@ -378,9 +395,9 @@ describe('Task P06-M01-F03: Pay-at-Counter Opt-In & Fulfillment', () => {
     });
 
     it('rejects report request from unauthorized user', async () => {
-      await expect(
-        payAtCounterService.getShopPaymentReport(shopAId, customerId)
-      ).rejects.toThrow(UnauthorizedOperatorError);
+      await expect(payAtCounterService.getShopPaymentReport(shopAId, customerId)).rejects.toThrow(
+        UnauthorizedOperatorError
+      );
     });
   });
 

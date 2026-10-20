@@ -1,4 +1,9 @@
-import { ApiError, AuthError, NotFoundError, ValidationError } from '../../plugins/error-handler.js';
+import {
+  ApiError,
+  AuthError,
+  NotFoundError,
+  ValidationError
+} from '../../plugins/error-handler.js';
 import type { IShopsRepository } from '../shops/shops.repository.js';
 import type { IQuotesRepository } from '../pricing/quotes.repository.js';
 import type { IDocumentsRepository } from '../documents/documents.repository.js';
@@ -185,11 +190,7 @@ export class PrintJobsService {
 
     // Role-scoped access enforcement
     if (user.role === 'customer' && job.customer_id !== user.id) {
-      throw new AuthError(
-        403,
-        'FORBIDDEN',
-        `Forbidden: Access denied to print job "${jobId}".`
-      );
+      throw new AuthError(403, 'FORBIDDEN', `Forbidden: Access denied to print job "${jobId}".`);
     }
 
     if (user.role === 'shop_owner') {
@@ -308,7 +309,11 @@ export class PrintJobsService {
     } else if (user.role === 'shop_owner') {
       const shop = await this.shopsRepo.findById(job.shop_id);
       if (shop?.owner_id !== user.id) {
-        throw new AuthError(403, 'FORBIDDEN', `Forbidden: You do not own the shop for job "${jobId}".`);
+        throw new AuthError(
+          403,
+          'FORBIDDEN',
+          `Forbidden: You do not own the shop for job "${jobId}".`
+        );
       }
     }
 
@@ -356,7 +361,14 @@ export class PrintJobsService {
         );
       }
     } else if (user.role === 'agent') {
-      const agentAllowedTargets: JobStatus[] = ['claimed', 'downloading', 'printing', 'completed', 'failed', 'approved'];
+      const agentAllowedTargets: JobStatus[] = [
+        'claimed',
+        'downloading',
+        'printing',
+        'completed',
+        'failed',
+        'approved'
+      ];
       if (!agentAllowedTargets.includes(toStatus)) {
         throw new AuthError(
           403,

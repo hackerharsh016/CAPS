@@ -27,7 +27,8 @@ export interface CreateJobEventDto {
 }
 
 export type DocumentDeletedBy = 'agent_post_spool' | 'cloud_ttl_sweeper' | 'admin_intervention';
-export type DocumentDeletionReason = 'print_completed' | 'retention_expired' | 'job_cancelled' | 'manual_purge';
+export type DocumentDeletionReason =
+  'print_completed' | 'retention_expired' | 'job_cancelled' | 'manual_purge';
 
 export interface DocumentDeletionLog {
   id: string;

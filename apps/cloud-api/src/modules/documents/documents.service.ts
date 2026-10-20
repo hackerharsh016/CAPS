@@ -23,7 +23,12 @@ import type { IDocumentsRepository } from './documents.repository.js';
 import type { IStorageService } from './storage.service.js';
 import type { IDocumentConverter } from './document-converter.js';
 import { SecuritySandboxError, withSandboxTimeout } from './security-sandbox.js';
-import { ApiError, AuthError, NotFoundError, ValidationError } from '../../plugins/error-handler.js';
+import {
+  ApiError,
+  AuthError,
+  NotFoundError,
+  ValidationError
+} from '../../plugins/error-handler.js';
 
 export class DocumentsError extends Error {
   readonly statusCode: number;
@@ -71,7 +76,9 @@ export class DocumentsService {
     }
 
     if (input.file_size_bytes <= 0) {
-      throw new ValidationError('File size must be positive.', { providedSizeBytes: input.file_size_bytes });
+      throw new ValidationError('File size must be positive.', {
+        providedSizeBytes: input.file_size_bytes
+      });
     }
 
     if (input.file_size_bytes > MAX_DOCUMENT_SIZE_BYTES) {
@@ -148,7 +155,11 @@ export class DocumentsService {
     }
 
     if (doc.status === 'purged') {
-      throw new DocumentError(410, 'DOCUMENT_PURGED', `Document "${documentId}" has already been purged.`);
+      throw new DocumentError(
+        410,
+        'DOCUMENT_PURGED',
+        `Document "${documentId}" has already been purged.`
+      );
     }
 
     if (new Date(doc.expires_at).getTime() < Date.now()) {
@@ -195,7 +206,11 @@ export class DocumentsService {
       });
 
       if (!updated) {
-        throw new DocumentError(500, 'INTERNAL_ERROR', `Failed to finalize document "${documentId}".`);
+        throw new DocumentError(
+          500,
+          'INTERNAL_ERROR',
+          `Failed to finalize document "${documentId}".`
+        );
       }
 
       return updated;
@@ -225,7 +240,11 @@ export class DocumentsService {
     }
 
     if (customerId && document.customer_id !== customerId) {
-      throw new DocumentsError(403, 'FORBIDDEN', 'Access denied to document owned by another customer.');
+      throw new DocumentsError(
+        403,
+        'FORBIDDEN',
+        'Access denied to document owned by another customer.'
+      );
     }
 
     if (document.status === 'purged') {
@@ -257,13 +276,7 @@ export class DocumentsService {
 
     try {
       const result = await withSandboxTimeout(
-        () =>
-          this.converter!.convert(
-            documentId,
-            sourceBuffer!,
-            document.mime_type,
-            timeoutMs
-          ),
+        () => this.converter!.convert(documentId, sourceBuffer!, document.mime_type, timeoutMs),
         timeoutMs
       );
 
@@ -327,10 +340,18 @@ export class DocumentsService {
       const isOwner = document.customer_id === user.id;
       const isAdmin = user.role === 'admin';
       if (!isOwner && !isAdmin) {
-        throw new AuthError(403, 'FORBIDDEN', `Forbidden: Access denied to document "${documentId}".`);
+        throw new AuthError(
+          403,
+          'FORBIDDEN',
+          `Forbidden: Access denied to document "${documentId}".`
+        );
       }
     } else if (customerId && document.customer_id !== customerId) {
-      throw new DocumentsError(403, 'FORBIDDEN', 'Access denied to document owned by another customer.');
+      throw new DocumentsError(
+        403,
+        'FORBIDDEN',
+        'Access denied to document owned by another customer.'
+      );
     }
 
     return document;
@@ -369,7 +390,10 @@ export class DocumentsService {
       const isAdmin = user.role === 'admin';
       let isAuthorizedAgent = false;
       if (user.role === 'agent' && this.documentsRepo.hasActiveLeaseForDocument) {
-        isAuthorizedAgent = await this.documentsRepo.hasActiveLeaseForDocument(user.id, document.id);
+        isAuthorizedAgent = await this.documentsRepo.hasActiveLeaseForDocument(
+          user.id,
+          document.id
+        );
       }
       if (!isOwner && !isAdmin && !isAuthorizedAgent) {
         throw new AuthError(
@@ -381,7 +405,11 @@ export class DocumentsService {
         );
       }
     } else if (customerId && document.customer_id !== customerId) {
-      throw new DocumentsError(403, 'FORBIDDEN', 'Access denied to document owned by another customer.');
+      throw new DocumentsError(
+        403,
+        'FORBIDDEN',
+        'Access denied to document owned by another customer.'
+      );
     }
 
     const keyToDownload = document.converted_storage_key || document.storage_key;

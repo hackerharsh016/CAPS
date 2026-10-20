@@ -63,53 +63,44 @@ const listShopsQuerySchema = z.object({
   search: z.string().optional()
 });
 
-export const shopsRoutes: FastifyPluginAsync<ShopsPluginOptions> = async (
-  fastify,
-  options
-) => {
+export const shopsRoutes: FastifyPluginAsync<ShopsPluginOptions> = async (fastify, options) => {
   const { shopsService } = options;
 
   // 1. GET /api/v1/shops (Public discovery with pagination & search)
-  fastify.get(
-    '/',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const parsed = listShopsQuerySchema.safeParse(request.query);
-      if (!parsed.success) {
-        return reply.status(400).send({
-          error: {
-            code: 'INVALID_PAYLOAD',
-            message: 'Invalid query parameters for shop discovery.',
-            request_id: request.requestId || 'unknown-request',
-            details: parsed.error.errors
-          }
-        });
-      }
-
-      const result = await shopsService.listShops({
-        status: parsed.data.status as ShopStatus | undefined,
-        page: parsed.data.page,
-        limit: parsed.data.limit,
-        search: parsed.data.search
-      });
-
-      return reply.status(200).send({
-        data: result.shops,
-        pagination: result.pagination
+  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsed = listShopsQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Invalid query parameters for shop discovery.',
+          request_id: request.requestId || 'unknown-request',
+          details: parsed.error.errors
+        }
       });
     }
-  );
+
+    const result = await shopsService.listShops({
+      status: parsed.data.status as ShopStatus | undefined,
+      page: parsed.data.page,
+      limit: parsed.data.limit,
+      search: parsed.data.search
+    });
+
+    return reply.status(200).send({
+      data: result.shops,
+      pagination: result.pagination
+    });
+  });
 
   // 2. GET /api/v1/shops/:id (Public shop profile & pricing discovery)
-  fastify.get(
-    '/:id',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { id } = request.params as { id: string };
-      const shop = await shopsService.getShopById(id);
-      return reply.status(200).send({
-        data: shop
-      });
-    }
-  );
+  fastify.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const shop = await shopsService.getShopById(id);
+    return reply.status(200).send({
+      data: shop
+    });
+  });
 
   // 3. POST /api/v1/shops (Shop onboarding - Owner only)
   fastify.post(

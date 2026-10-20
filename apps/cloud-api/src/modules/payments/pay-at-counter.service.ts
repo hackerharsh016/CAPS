@@ -136,11 +136,12 @@ export class PayAtCounterService {
     let payment = existingPayments[0];
 
     if (payment) {
-      payment = (await this.paymentsRepo.update(payment.id, {
-        method: 'pay_at_counter',
-        amount_paise: job.price_total_paise,
-        status: 'initiated'
-      })) ?? payment;
+      payment =
+        (await this.paymentsRepo.update(payment.id, {
+          method: 'pay_at_counter',
+          amount_paise: job.price_total_paise,
+          status: 'initiated'
+        })) ?? payment;
     } else {
       payment = await this.paymentsRepo.create({
         print_job_id: job.id,
@@ -213,10 +214,7 @@ export class PayAtCounterService {
 
     // Cash verification: Ensure received cash meets authoritative total
     const requiredAmount = job.price_total_paise;
-    if (
-      dto.received_amount_paise !== undefined &&
-      dto.received_amount_paise < requiredAmount
-    ) {
+    if (dto.received_amount_paise !== undefined && dto.received_amount_paise < requiredAmount) {
       throw new InsufficientCashSettlementError(
         `Received cash amount (${dto.received_amount_paise} paise) is less than required price (${requiredAmount} paise).`
       );
@@ -230,12 +228,13 @@ export class PayAtCounterService {
     let payment = existingPayments[0];
 
     if (payment) {
-      payment = (await this.paymentsRepo.update(payment.id, {
-        status: 'success',
-        method: 'pay_at_counter',
-        amount_paise: requiredAmount,
-        gateway_ref: receiptRef
-      })) ?? payment;
+      payment =
+        (await this.paymentsRepo.update(payment.id, {
+          status: 'success',
+          method: 'pay_at_counter',
+          amount_paise: requiredAmount,
+          gateway_ref: receiptRef
+        })) ?? payment;
     } else {
       payment = await this.paymentsRepo.create({
         print_job_id: job.id,

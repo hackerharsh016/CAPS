@@ -15,10 +15,7 @@ import type {
   IJobEventsRepository,
   IDocumentDeletionLogsRepository
 } from '../events/events.repository.js';
-import type {
-  DocumentDeletionLog,
-  DocumentDeletionReason
-} from '../events/events.types.js';
+import type { DocumentDeletionLog, DocumentDeletionReason } from '../events/events.types.js';
 
 export interface PrivacyRetentionConfig {
   terminalRetentionMs?: number | undefined; // Default 30 min (1,800,000 ms)
@@ -61,7 +58,10 @@ export class PrivacyRetentionService {
   /**
    * Sweeps and destroys storage objects for expired print jobs.
    */
-  async sweepExpiredPrintJobs(now: Date = new Date(), limit: number = 100): Promise<{
+  async sweepExpiredPrintJobs(
+    now: Date = new Date(),
+    limit: number = 100
+  ): Promise<{
     scanned: number;
     purged: number;
     errors: Array<{ id: string; message: string }>;
@@ -141,7 +141,10 @@ export class PrivacyRetentionService {
   /**
    * Sweeps and destroys storage objects for expired standalone documents.
    */
-  async sweepExpiredDocuments(now: Date = new Date(), limit: number = 100): Promise<{
+  async sweepExpiredDocuments(
+    now: Date = new Date(),
+    limit: number = 100
+  ): Promise<{
     scanned: number;
     purged: number;
     errors: Array<{ id: string; message: string }>;

@@ -32,15 +32,9 @@ export interface IStorageService {
     expiresInSeconds?: number
   ): Promise<any>;
 
-  createDownloadSignedUrl(
-    storageKey: string,
-    expiresInSeconds?: number
-  ): Promise<any>;
+  createDownloadSignedUrl(storageKey: string, expiresInSeconds?: number): Promise<any>;
 
-  verifyToken?(
-    token: string,
-    expectedType: 'upload' | 'download'
-  ): TokenVerificationResult;
+  verifyToken?(token: string, expectedType: 'upload' | 'download'): TokenVerificationResult;
 
   putObject(storageKey: string, data: Buffer, mimeType?: string): Promise<void>;
 
@@ -50,10 +44,7 @@ export interface IStorageService {
 
   deleteObject(storageKey: string): Promise<boolean>;
 
-  verifyObject?(
-    storageKey: string,
-    expectedMimeType: string
-  ): Promise<ObjectVerificationResult>;
+  verifyObject?(storageKey: string, expectedMimeType: string): Promise<ObjectVerificationResult>;
 
   clear(): void;
 }
@@ -112,7 +103,10 @@ export class MockStorageService implements IStorageService {
         return { valid: false, error: 'Empty token components.' };
       }
 
-      const expectedSig = crypto.createHmac('sha256', this.secretKey).update(b64).digest('base64url');
+      const expectedSig = crypto
+        .createHmac('sha256', this.secretKey)
+        .update(b64)
+        .digest('base64url');
       if (signature !== expectedSig) {
         return { valid: false, error: 'Invalid storage token signature.' };
       }
@@ -159,10 +153,7 @@ export class MockStorageService implements IStorageService {
     };
   }
 
-  async createDownloadSignedUrl(
-    storageKey: string,
-    expiresInSeconds: number = 300
-  ): Promise<any> {
+  async createDownloadSignedUrl(storageKey: string, expiresInSeconds: number = 300): Promise<any> {
     const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
     const expiresAt = new Date(exp * 1000).toISOString();
     const token = this.signPayload({ key: storageKey, type: 'download', exp });

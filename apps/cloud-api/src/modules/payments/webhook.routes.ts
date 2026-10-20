@@ -16,10 +16,7 @@ interface RequestWithRawBody extends FastifyRequest {
   rawBody?: string;
 }
 
-export const webhookRoutes: FastifyPluginAsync<WebhookPluginOptions> = async (
-  fastify,
-  options
-) => {
+export const webhookRoutes: FastifyPluginAsync<WebhookPluginOptions> = async (fastify, options) => {
   const { webhookService } = options;
 
   // Webhook handler function supporting both /api/v1/webhooks/razorpay and /api/v1/payments/webhook
@@ -92,8 +89,7 @@ export const webhookRoutes: FastifyPluginAsync<WebhookPluginOptions> = async (
         data: result
       });
     } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Payment reconciliation failed.';
+      const errorMessage = err instanceof Error ? err.message : 'Payment reconciliation failed.';
       return reply.status(400).send({
         error: {
           code: 'RECONCILIATION_FAILED',

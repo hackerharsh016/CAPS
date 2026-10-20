@@ -262,7 +262,9 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
       expect(data1.status).toBe('COMPLETED');
 
       const eventsAfterFirst = await jobsRepo.getEvents(job.id);
-      const completedEventsCount1 = eventsAfterFirst.filter(e => e.to_status === 'completed').length;
+      const completedEventsCount1 = eventsAfterFirst.filter(
+        e => e.to_status === 'completed'
+      ).length;
       expect(completedEventsCount1).toBe(1);
 
       // 4. Duplicate status report (network retry replay)
@@ -291,7 +293,9 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
 
       // Assert no duplicate events were inserted in immutable audit ledger
       const eventsAfterSecond = await jobsRepo.getEvents(job.id);
-      const completedEventsCount2 = eventsAfterSecond.filter(e => e.to_status === 'completed').length;
+      const completedEventsCount2 = eventsAfterSecond.filter(
+        e => e.to_status === 'completed'
+      ).length;
       expect(completedEventsCount2).toBe(1);
     });
 
@@ -562,17 +566,39 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
       const futureTtl = new Date(Date.now() + 86400000).toISOString(); // 24h future
 
       // Storage files in bucket
-      await storageService.putObject('shops/s1/docs/completed.pdf', Buffer.from('%PDF-completed'), 'application/pdf');
-      await storageService.putObject('shops/s1/docs/failed-expired.pdf', Buffer.from('%PDF-failed'), 'application/pdf');
-      await storageService.putObject('shops/s1/docs/cancelled.pdf', Buffer.from('%PDF-cancelled'), 'application/pdf');
-      await storageService.putObject('shops/s1/docs/active-future.pdf', Buffer.from('%PDF-active'), 'application/pdf');
+      await storageService.putObject(
+        'shops/s1/docs/completed.pdf',
+        Buffer.from('%PDF-completed'),
+        'application/pdf'
+      );
+      await storageService.putObject(
+        'shops/s1/docs/failed-expired.pdf',
+        Buffer.from('%PDF-failed'),
+        'application/pdf'
+      );
+      await storageService.putObject(
+        'shops/s1/docs/cancelled.pdf',
+        Buffer.from('%PDF-cancelled'),
+        'application/pdf'
+      );
+      await storageService.putObject(
+        'shops/s1/docs/active-future.pdf',
+        Buffer.from('%PDF-active'),
+        'application/pdf'
+      );
 
       // Job 1: COMPLETED (storage file must be deleted per post-spool policy)
       const job1 = await jobsRepo.create({
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'shops/s1/docs/completed.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', copies: 1, binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          copies: 1,
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
         price_breakdown: { base_price: 200, page_count: 1, discount: 0, surge: 0 },
@@ -585,7 +611,13 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'shops/s1/docs/failed-expired.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', copies: 1, binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          copies: 1,
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
         price_breakdown: { base_price: 200, page_count: 1, discount: 0, surge: 0 },
@@ -598,7 +630,13 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'shops/s1/docs/cancelled.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', copies: 1, binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          copies: 1,
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
         price_breakdown: { base_price: 200, page_count: 1, discount: 0, surge: 0 },
@@ -611,7 +649,13 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'shops/s1/docs/active-future.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', copies: 1, binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          copies: 1,
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
         price_breakdown: { base_price: 200, page_count: 1, discount: 0, surge: 0 },
@@ -656,13 +700,23 @@ describe('Status/Retry/Outbox and Privacy Cleanup (P03-M03-F05)', () => {
 
     it('should support triggering privacy cleanup via POST /api/v1/shops/:shopId/privacy-cleanup', async () => {
       const pastTtl = new Date(Date.now() - 3600000).toISOString();
-      await storageService.putObject('shops/s1/docs/endpoint-test.pdf', Buffer.from('%PDF-test'), 'application/pdf');
+      await storageService.putObject(
+        'shops/s1/docs/endpoint-test.pdf',
+        Buffer.from('%PDF-test'),
+        'application/pdf'
+      );
 
       await jobsRepo.create({
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'shops/s1/docs/endpoint-test.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', copies: 1, binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          copies: 1,
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
         price_breakdown: { base_price: 200, page_count: 1, discount: 0, surge: 0 },

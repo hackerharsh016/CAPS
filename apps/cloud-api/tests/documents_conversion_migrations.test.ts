@@ -32,9 +32,13 @@ describe('Database Migrations: Documents Storage & Trusted PDF Conversion (P06-M
 
     expect(sql).toContain('CONSTRAINT chk_documents_allowed_mimes CHECK');
     expect(sql).toContain("'application/pdf'");
-    expect(sql).toContain("'application/vnd.openxmlformats-officedocument.wordprocessingml.document'");
+    expect(sql).toContain(
+      "'application/vnd.openxmlformats-officedocument.wordprocessingml.document'"
+    );
     expect(sql).toContain("'application/msword'");
-    expect(sql).toContain("'application/vnd.openxmlformats-officedocument.presentationml.presentation'");
+    expect(sql).toContain(
+      "'application/vnd.openxmlformats-officedocument.presentationml.presentation'"
+    );
     expect(sql).toContain("'application/vnd.ms-powerpoint'");
     expect(sql).toContain("'image/jpeg'");
     expect(sql).toContain("'image/png'");
@@ -50,9 +54,15 @@ describe('Database Migrations: Documents Storage & Trusted PDF Conversion (P06-M
   it('creates query indexes for customer isolation and auto-purge sweeper', () => {
     const sql = fs.readFileSync(migrationPath, 'utf-8');
 
-    expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_documents_customer_id ON public.documents(customer_id)');
-    expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_documents_status ON public.documents(status)');
-    expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_documents_expires_at ON public.documents(expires_at)');
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_documents_customer_id ON public.documents(customer_id)'
+    );
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_documents_status ON public.documents(status)'
+    );
+    expect(sql).toContain(
+      'CREATE INDEX IF NOT EXISTS idx_documents_expires_at ON public.documents(expires_at)'
+    );
   });
 
   it('configures updated_at trigger and enables Row Level Security (RLS)', () => {

@@ -1,11 +1,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { validateEnv } from '../src/config/env.js';
-import {
-  createTestJwt,
-  SupabaseJwtVerifier,
-  MockTokenVerifier
-} from '../src/plugins/auth.js';
+import { createTestJwt, SupabaseJwtVerifier, MockTokenVerifier } from '../src/plugins/auth.js';
 import { redactSensitiveData, redactHeaders } from '../src/plugins/logger.js';
 
 describe('Cloud API — Fastify Core, Auth Middleware, Rate Limiting & Error Taxonomy', () => {

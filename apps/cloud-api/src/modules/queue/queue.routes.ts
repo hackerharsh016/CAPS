@@ -51,10 +51,7 @@ const reconcileSchema = z.object({
   in_flight_lease_token: z.string().optional()
 });
 
-export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
-  fastify,
-  options
-) => {
+export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (fastify, options) => {
   const { queueService, realtimeSignalsService } = options;
 
   /**
@@ -95,10 +92,7 @@ export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
   fastify.get(
     '/:shopId/queue/next',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
@@ -121,10 +115,7 @@ export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
   fastify.post(
     '/:shopId/queue/recalculate',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
@@ -375,62 +366,50 @@ export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
    * GET /api/v1/shops/:shopId/urgent/status
    * Query urgent cap and fairness status for a shop.
    */
-  fastify.get(
-    '/:shopId/urgent/status',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { shopId } = request.params as { shopId: string };
-      const status = await queueService.getUrgentCapStatus(shopId);
-      return reply.status(200).send({
-        data: status
-      });
-    }
-  );
+  fastify.get('/:shopId/urgent/status', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { shopId } = request.params as { shopId: string };
+    const status = await queueService.getUrgentCapStatus(shopId);
+    return reply.status(200).send({
+      data: status
+    });
+  });
 
   /**
    * POST /api/v1/shops/:shopId/urgent/validate
    * Atomically validate urgent admission before checkout.
    */
-  fastify.post(
-    '/:shopId/urgent/validate',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { shopId } = request.params as { shopId: string };
-      const admission = await queueService.reserveUrgentAdmission(shopId);
-      return reply.status(200).send({
-        data: admission
-      });
-    }
-  );
+  fastify.post('/:shopId/urgent/validate', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { shopId } = request.params as { shopId: string };
+    const admission = await queueService.reserveUrgentAdmission(shopId);
+    return reply.status(200).send({
+      data: admission
+    });
+  });
 
   /**
    * PUT /api/v1/shops/:shopId/urgent/policy
    * Configure shop urgent surcharge and fairness policy (Owner/Admin).
    */
-  fastify.put(
-    '/:shopId/urgent/policy',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { shopId } = request.params as { shopId: string };
-      const bodyResult = configurePolicySchema.safeParse(request.body);
-      if (!bodyResult.success) {
-        return reply.status(400).send({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid urgent policy configuration payload.',
-            details: bodyResult.error.errors
-          }
-        });
-      }
-
-      const updatedShop = await queueService.configureUrgentPolicy(
-        shopId,
-        bodyResult.data
-      );
-
-      return reply.status(200).send({
-        data: {
-          shop_id: updatedShop.id,
-          urgent_surcharge_config: updatedShop.urgent_surcharge_config
+  fastify.put('/:shopId/urgent/policy', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { shopId } = request.params as { shopId: string };
+    const bodyResult = configurePolicySchema.safeParse(request.body);
+    if (!bodyResult.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid urgent policy configuration payload.',
+          details: bodyResult.error.errors
         }
       });
     }
-  );
+
+    const updatedShop = await queueService.configureUrgentPolicy(shopId, bodyResult.data);
+
+    return reply.status(200).send({
+      data: {
+        shop_id: updatedShop.id,
+        urgent_surcharge_config: updatedShop.urgent_surcharge_config
+      }
+    });
+  });
 };

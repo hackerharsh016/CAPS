@@ -47,7 +47,9 @@ describe('Migration 002: Printers and Registered Agent Schema DDL Verification',
     expect(sql).toContain('REFERENCES public.agent_devices(id) ON DELETE SET NULL');
 
     // Uniqueness
-    expect(sql).toContain('CONSTRAINT uq_agent_devices_shop_fingerprint UNIQUE (shop_id, device_fingerprint)');
+    expect(sql).toContain(
+      'CONSTRAINT uq_agent_devices_shop_fingerprint UNIQUE (shop_id, device_fingerprint)'
+    );
     expect(sql).toContain('CONSTRAINT uq_shop_printer_name UNIQUE (shop_id, name)');
   });
 
@@ -227,8 +229,8 @@ describe('Cloud API Printers & Agents Repository Layer (Business & RLS Invariant
     expect(revokedHeartbeatResult).toBe(false);
 
     // 5. Revoked agent is strictly DENIED session creation
-    await expect(
-      agentRepo.createSession(device.id, shopId, '0.1.0')
-    ).rejects.toThrow('Cannot create session for missing or revoked agent device.');
+    await expect(agentRepo.createSession(device.id, shopId, '0.1.0')).rejects.toThrow(
+      'Cannot create session for missing or revoked agent device.'
+    );
   });
 });

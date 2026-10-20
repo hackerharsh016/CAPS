@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import type { FastifyPluginAsync, FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { defaultTracer, sanitizeTraceData, type InMemoryTracer } from '../common/telemetry/tracer.js';
+import {
+  defaultTracer,
+  sanitizeTraceData,
+  type InMemoryTracer
+} from '../common/telemetry/tracer.js';
 import { defaultMetrics, type MetricsCollector } from '../common/telemetry/metrics.js';
 import { defaultAlertManager, type AlertManager } from '../common/telemetry/alerts.js';
 
@@ -99,7 +103,8 @@ export function registerLogger(fastify: FastifyInstance, options: LoggerPluginOp
   // Log completion of request with structured, redacted telemetry and record metrics
   fastify.addHook('onResponse', async (request: FastifyRequest, reply: FastifyReply) => {
     const durationMs = reply.elapsedTime;
-    const spanId = (request as unknown as Record<string, unknown>)['__spanId'] as string | undefined;
+    const spanId = (request as unknown as Record<string, unknown>)['__spanId'] as
+      string | undefined;
 
     if (spanId) {
       tracer.endSpan(spanId, {

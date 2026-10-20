@@ -132,9 +132,24 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
       geo_lat: 12.9716,
       geo_lng: 77.5946,
       pricing_config: {
-        A4: { bw_single_paise: 200, bw_double_paise: 350, color_single_paise: 1000, color_double_paise: 1800 },
-        A3: { bw_single_paise: 500, bw_double_paise: 900, color_single_paise: 2000, color_double_paise: 3500 },
-        Legal: { bw_single_paise: 250, bw_double_paise: 450, color_single_paise: 1200, color_double_paise: 2000 },
+        A4: {
+          bw_single_paise: 200,
+          bw_double_paise: 350,
+          color_single_paise: 1000,
+          color_double_paise: 1800
+        },
+        A3: {
+          bw_single_paise: 500,
+          bw_double_paise: 900,
+          color_single_paise: 2000,
+          color_double_paise: 3500
+        },
+        Legal: {
+          bw_single_paise: 250,
+          bw_double_paise: 450,
+          color_single_paise: 1200,
+          color_double_paise: 2000
+        },
         binding_prices_paise: { none: 0, spiral: 3000, staple: 500, lamination: 2000 },
         gst_percentage: 18
       },
@@ -148,12 +163,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
       owner_id: OTHER_OWNER.id,
       name: 'Competitor Print',
       address: 'North Campus',
-      geo_lat: 12.9800,
-      geo_lng: 77.6000,
+      geo_lat: 12.98,
+      geo_lng: 77.6,
       pricing_config: {
-        A4: { bw_single_paise: 200, bw_double_paise: 350, color_single_paise: 1000, color_double_paise: 1800 },
-        A3: { bw_single_paise: 500, bw_double_paise: 900, color_single_paise: 2000, color_double_paise: 3500 },
-        Legal: { bw_single_paise: 250, bw_double_paise: 450, color_single_paise: 1200, color_double_paise: 2000 },
+        A4: {
+          bw_single_paise: 200,
+          bw_double_paise: 350,
+          color_single_paise: 1000,
+          color_double_paise: 1800
+        },
+        A3: {
+          bw_single_paise: 500,
+          bw_double_paise: 900,
+          color_single_paise: 2000,
+          color_double_paise: 3500
+        },
+        Legal: {
+          bw_single_paise: 250,
+          bw_double_paise: 450,
+          color_single_paise: 1200,
+          color_double_paise: 2000
+        },
         binding_prices_paise: { none: 0, spiral: 3000, staple: 500, lamination: 2000 },
         gst_percentage: 18
       },
@@ -235,17 +265,34 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'unpaid.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'pending_payment',
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
       });
 
-      await expect(
-        claimService.approveJob(OWNER_USER, unpaidJob.id)
-      ).rejects.toThrow(/pending_payment/i);
+      await expect(claimService.approveJob(OWNER_USER, unpaidJob.id)).rejects.toThrow(
+        /pending_payment/i
+      );
     });
 
     it('rejects approval attempt by customers with 403 Forbidden', async () => {
@@ -253,10 +300,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'queued.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'queued',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -276,18 +340,35 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'queued.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'queued',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
       });
 
-      await expect(
-        claimService.approveJob(OTHER_OWNER, queuedJob.id)
-      ).rejects.toThrow(/do not own shop/i);
+      await expect(claimService.approveJob(OTHER_OWNER, queuedJob.id)).rejects.toThrow(
+        /do not own shop/i
+      );
     });
 
     it('allows shop owner to approve a queued job advancing it to approved', async () => {
@@ -295,10 +376,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'queued.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'queued',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -331,10 +429,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'queued.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'queued', // NOT approved yet!
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -416,7 +531,16 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         },
         priority_tier: 'flexible',
         price_total_paise: 1800,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 1600, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 1800, gst_paise: 324, total_paise: 2124 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 1600,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 1800,
+          gst_paise: 324,
+          total_paise: 2124
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -474,7 +598,16 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         },
         priority_tier: 'urgent',
         price_total_paise: 3200,
-        price_breakdown: { base_pages_paise: 700, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 500, urgent_surcharge_paise: 2000, subtotal_paise: 3200, gst_paise: 576, total_paise: 3776 },
+        price_breakdown: {
+          base_pages_paise: 700,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 500,
+          urgent_surcharge_paise: 2000,
+          subtotal_paise: 3200,
+          gst_paise: 576,
+          total_paise: 3776
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -537,10 +670,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'single.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -580,10 +730,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'idemp.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -635,10 +802,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'abandoned.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'claimed',
         enqueued_at: new Date(now - 15 * 60 * 1000).toISOString(),
         claimed_at: new Date(now - 10 * 60 * 1000).toISOString(),
@@ -698,10 +882,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'flaky.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'claimed',
         enqueued_at: new Date(now - 30 * 60 * 1000).toISOString(),
         claimed_at: new Date(now - 10 * 60 * 1000).toISOString(),
@@ -751,10 +952,27 @@ describe('Owner Approval & Exclusive Agent Claim Protocol', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'large.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()

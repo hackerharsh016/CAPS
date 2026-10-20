@@ -39,9 +39,7 @@ export const privacyCleanupRoutes: FastifyPluginAsync<PrivacyCleanupPluginOption
     }
 
     try {
-      const now = parseResult.data.as_of_time
-        ? new Date(parseResult.data.as_of_time)
-        : new Date();
+      const now = parseResult.data.as_of_time ? new Date(parseResult.data.as_of_time) : new Date();
       const limit = parseResult.data.limit ?? 100;
 
       const results = await privacyService.runFullSweep(now, limit);

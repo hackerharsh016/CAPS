@@ -55,7 +55,12 @@ describe('Task P06-M01-F02: Trusted Payment Webhook & Reconciliation', () => {
       settings: { paper_size: 'a4', color_mode: 'bw', copies: 1 },
       priority_tier: 'urgent',
       price_total_paise: 2950,
-      price_breakdown: { base_pages_paise: 200, urgent_surcharge_paise: 2500, gst_paise: 250, total_paise: 2950 },
+      price_breakdown: {
+        base_pages_paise: 200,
+        urgent_surcharge_paise: 2500,
+        gst_paise: 250,
+        total_paise: 2950
+      },
       status: 'pending_payment',
       document_expires_at: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
       created_at: new Date().toISOString()

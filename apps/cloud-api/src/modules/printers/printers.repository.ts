@@ -16,7 +16,10 @@ export interface PrinterQueryFilter {
 
 export interface IPrintersRepository {
   findById(id: string): Promise<Printer | null>;
-  findByShopId(shopId: string, filter?: PrinterQueryFilter): Promise<{ printers: Printer[]; total: number } & Printer[]>;
+  findByShopId(
+    shopId: string,
+    filter?: PrinterQueryFilter
+  ): Promise<{ printers: Printer[]; total: number } & Printer[]>;
   findDefaultByShopId(shopId: string): Promise<Printer | null>;
   create(dto: CreatePrinterDto): Promise<Printer>;
   update(id: string, dto: UpdatePrinterDto): Promise<Printer | null>;
@@ -50,7 +53,10 @@ export class MockPrintersRepository implements IPrintersRepository {
     const limit = filter.limit ?? (Object.keys(filter).length === 0 ? all.length : 10);
 
     const paged = all.slice(offset, offset + limit).map(p => ({ ...p }));
-    return Object.assign(paged, { printers: paged, total }) as { printers: Printer[]; total: number } & Printer[];
+    return Object.assign(paged, { printers: paged, total }) as {
+      printers: Printer[];
+      total: number;
+    } & Printer[];
   }
 
   async findDefaultByShopId(shopId: string): Promise<Printer | null> {

@@ -1,9 +1,5 @@
 import crypto from 'node:crypto';
-import type {
-  IFirebaseClient,
-  FcmMessage,
-  FcmSendResult
-} from './firebase.types.js';
+import type { IFirebaseClient, FcmMessage, FcmSendResult } from './firebase.types.js';
 
 export type { IFirebaseClient, FcmMessage, FcmSendResult };
 

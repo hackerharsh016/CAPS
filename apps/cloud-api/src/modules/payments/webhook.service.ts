@@ -54,8 +54,7 @@ export class WebhookService {
 
     // 2. Handle Payment Captured / Order Paid
     if (event === 'payment.captured' || event === 'order.paid') {
-      const orderId =
-        payload.payload.payment?.entity.order_id ?? payload.payload.order?.entity.id;
+      const orderId = payload.payload.payment?.entity.order_id ?? payload.payload.order?.entity.id;
       const paymentId = payload.payload.payment?.entity.id;
       const amount =
         payload.payload.payment?.entity.amount ?? payload.payload.order?.entity.amount ?? 0;

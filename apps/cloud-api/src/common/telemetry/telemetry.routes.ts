@@ -24,28 +24,22 @@ export const telemetryRoutes: FastifyPluginAsync<TelemetryPluginOptions> = async
   const alertManager = options.alertManager ?? defaultAlertManager;
 
   // 1. GET /api/v1/telemetry/metrics (Metrics snapshot)
-  fastify.get(
-    '/telemetry/metrics',
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      const snapshot = metrics.getMetricsSnapshot();
-      return reply.status(200).send({
-        data: snapshot
-      });
-    }
-  );
+  fastify.get('/telemetry/metrics', async (_request: FastifyRequest, reply: FastifyReply) => {
+    const snapshot = metrics.getMetricsSnapshot();
+    return reply.status(200).send({
+      data: snapshot
+    });
+  });
 
   // 3. GET /api/v1/telemetry/alerts (Active and historical alerts)
-  fastify.get(
-    '/telemetry/alerts',
-    async (_request: FastifyRequest, reply: FastifyReply) => {
-      return reply.status(200).send({
-        data: {
-          active: alertManager.getActiveAlerts(),
-          total_alerts: alertManager.getAllAlerts().length
-        }
-      });
-    }
-  );
+  fastify.get('/telemetry/alerts', async (_request: FastifyRequest, reply: FastifyReply) => {
+    return reply.status(200).send({
+      data: {
+        active: alertManager.getActiveAlerts(),
+        total_alerts: alertManager.getAllAlerts().length
+      }
+    });
+  });
 
   // 4. POST /api/v1/telemetry/alerts/simulate (Chaos testing / simulated incident trigger)
   fastify.post(

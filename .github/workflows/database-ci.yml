@@ -34,7 +34,7 @@ jobs:
       - name: Start Supabase Local Containers
         run: |
           if [ -f "supabase/config.toml" ]; then
-            supabase start
+            supabase start -x studio,analytics,imgproxy --ignore-health-check
             supabase db reset
           else
             echo "supabase/config.toml not present yet. Skipping live emulator start."

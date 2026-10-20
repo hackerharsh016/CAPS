@@ -85,10 +85,7 @@ export class AlertManager {
     return resolvedCount;
   }
 
-  simulateAlert(
-    ruleName: string,
-    context: Record<string, unknown> = {}
-  ): AlertRecord {
+  simulateAlert(ruleName: string, context: Record<string, unknown> = {}): AlertRecord {
     return this.fireAlert({
       rule_name: ruleName,
       severity: 'critical',

@@ -179,12 +179,7 @@ export interface DownloadGrantResponseDto {
 }
 
 export type JobAgentStatus =
-  | 'CLAIMED'
-  | 'DOWNLOADING'
-  | 'RENDERING'
-  | 'PRINTING'
-  | 'COMPLETED'
-  | 'FAILED';
+  'CLAIMED' | 'DOWNLOADING' | 'RENDERING' | 'PRINTING' | 'COMPLETED' | 'FAILED';
 
 export interface JobStatusUpdateRequestDto {
   contract_version: string;

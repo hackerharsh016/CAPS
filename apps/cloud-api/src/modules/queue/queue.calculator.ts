@@ -8,7 +8,12 @@
  * - Dynamic queue position derivation without sorting on mutable columns.
  */
 
-import type { PrintJobRecord, JobStatus, PriceBreakdown, PrintSettings } from '../print-jobs/print-jobs.types.js';
+import type {
+  PrintJobRecord,
+  JobStatus,
+  PriceBreakdown,
+  PrintSettings
+} from '../print-jobs/print-jobs.types.js';
 import type { PriorityTier } from '../pricing/pricing.types.js';
 import type { UrgentSurchargeConfig } from '../shops/shops.types.js';
 import type {
@@ -42,11 +47,7 @@ export interface ExtractedJobSettings {
   binding: 'none' | 'spiral' | 'staple' | 'lamination';
 }
 
-const ACTIVE_EXECUTION_STATUSES = new Set<JobStatus>([
-  'printing',
-  'claimed',
-  'downloading'
-]);
+const ACTIVE_EXECUTION_STATUSES = new Set<JobStatus>(['printing', 'claimed', 'downloading']);
 
 /**
  * Checks whether a job status represents an actively claimed or executing print job
@@ -59,7 +60,9 @@ export function isActivelyExecuting(status: JobStatus): boolean {
 /**
  * Normalizes print settings from job record.
  */
-export function extractJobSettings(settings: Record<string, unknown> | undefined): ExtractedJobSettings {
+export function extractJobSettings(
+  settings: Record<string, unknown> | undefined
+): ExtractedJobSettings {
   if (!settings) {
     return {
       pages: 1,
@@ -122,14 +125,9 @@ export function calculatePrintDurationSeconds(settings: {
   }
 
   const printTimeSeconds = Math.round(pages * copies * secondsPerPage);
-  const bindingTimeSeconds =
-    THROUGHPUT_CONSTANTS.BINDING_OVERHEAD_SECONDS[binding] ?? 0;
+  const bindingTimeSeconds = THROUGHPUT_CONSTANTS.BINDING_OVERHEAD_SECONDS[binding] ?? 0;
 
-  return (
-    THROUGHPUT_CONSTANTS.WARMUP_OVERHEAD_SECONDS +
-    printTimeSeconds +
-    bindingTimeSeconds
-  );
+  return THROUGHPUT_CONSTANTS.WARMUP_OVERHEAD_SECONDS + printTimeSeconds + bindingTimeSeconds;
 }
 
 /**
@@ -252,7 +250,9 @@ export function projectQueueSchedule(
 
   if (currentlyExecuting) {
     const remainingSeconds = getRemainingJobDurationSeconds(currentlyExecuting, nowMs);
-    const norm = extractJobSettings(currentlyExecuting.settings as unknown as Record<string, unknown> | undefined);
+    const norm = extractJobSettings(
+      currentlyExecuting.settings as unknown as Record<string, unknown> | undefined
+    );
     const completionTime = new Date(nowMs + remainingSeconds * 1000).toISOString();
 
     currentlyPrintingSummary = {
@@ -436,8 +436,7 @@ export function evaluateUrgentCapAndFairness(
     typeof config.max_urgent_jobs_per_hour === 'number' && config.max_urgent_jobs_per_hour > 0
       ? config.max_urgent_jobs_per_hour
       : null;
-  const hourlyRemaining =
-    hourlyCap !== null ? Math.max(0, hourlyCap - hourlyUsage) : null;
+  const hourlyRemaining = hourlyCap !== null ? Math.max(0, hourlyCap - hourlyUsage) : null;
 
   const currentlyQueuedUrgent = allShopJobs.filter(
     j => j.priority_tier === 'urgent' && j.status === 'queued'
@@ -447,8 +446,7 @@ export function evaluateUrgentCapAndFairness(
     typeof config.max_urgent_jobs_in_queue === 'number' && config.max_urgent_jobs_in_queue > 0
       ? config.max_urgent_jobs_in_queue
       : null;
-  const queueRemaining =
-    queueCap !== null ? Math.max(0, queueCap - currentlyQueuedUrgent) : null;
+  const queueRemaining = queueCap !== null ? Math.max(0, queueCap - currentlyQueuedUrgent) : null;
 
   const queuedFlexibleJobs = allShopJobs.filter(
     j => j.priority_tier === 'flexible' && j.status === 'queued'

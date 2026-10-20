@@ -22,10 +22,10 @@ describe('Exclusive Agent Claim Leases & Recovery SQL Migrations', () => {
     expect(content).toContain('p_printer_id UUID');
     expect(content).toContain('SECURITY DEFINER');
     expect(content).toContain("v_job.status = 'pending_payment'::public.job_status");
-    expect(content).toContain("Job % is pending payment; unpaid jobs cannot be claimed");
+    expect(content).toContain('Job % is pending payment; unpaid jobs cannot be claimed');
     expect(content).toContain("v_job.status != 'approved'::public.job_status");
-    expect(content).toContain("Agent device % is revoked and cannot claim jobs");
-    expect(content).toContain("Agent device shop % does not match job shop %");
+    expect(content).toContain('Agent device % is revoked and cannot claim jobs');
+    expect(content).toContain('Agent device shop % does not match job shop %');
   });
 
   it('performs atomic insertion into job_attempts and updates print_jobs to claimed', () => {
@@ -46,10 +46,10 @@ describe('Exclusive Agent Claim Leases & Recovery SQL Migrations', () => {
 
     expect(content).toContain('CREATE OR REPLACE FUNCTION public.reconcile_expired_job_leases');
     expect(content).toContain('ja.lease_expires_at < timezone');
-    expect(content).toContain("UPDATE public.job_attempts");
+    expect(content).toContain('UPDATE public.job_attempts');
     expect(content).toContain("SET status = 'failed'::public.attempt_status");
     expect(content).toContain("error_code = 'LEASE_EXPIRED'");
-    expect(content).toContain("v_attempts_count < 3");
+    expect(content).toContain('v_attempts_count < 3');
     expect(content).toContain("v_target_status := 'approved'::public.job_status");
     expect(content).toContain("v_target_status := 'requires_review'::public.job_status");
   });

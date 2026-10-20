@@ -27,23 +27,26 @@ const printSettingsInputSchema = z.object({
   binding: z.enum(['none', 'spiral', 'staple', 'lamination']).default('none').optional()
 });
 
-const createQuoteRequestSchema = z.object({
-  shop_id: z.string().min(1, 'shop_id is required').optional(),
-  shopId: z.string().min(1, 'shopId is required').optional(),
-  settings: printSettingsInputSchema,
-  priority_tier: z.enum(['urgent', 'flexible']).optional(),
-  priorityTier: z.enum(['urgent', 'flexible']).optional(),
-  document_page_count: z.number().int().min(1, 'document_page_count must be at least 1').optional(),
-  documentPageCount: z.number().int().min(1, 'documentPageCount must be at least 1').optional(),
-  document_id: z.string().optional(),
-  documentId: z.string().optional()
-  // Any extra fields supplied by client (like client_price, total_paise, etc.) are stripped
-}).passthrough(); // Allow passthrough so we can test that tampered fields sent by client are cleanly ignored
+const createQuoteRequestSchema = z
+  .object({
+    shop_id: z.string().min(1, 'shop_id is required').optional(),
+    shopId: z.string().min(1, 'shopId is required').optional(),
+    settings: printSettingsInputSchema,
+    priority_tier: z.enum(['urgent', 'flexible']).optional(),
+    priorityTier: z.enum(['urgent', 'flexible']).optional(),
+    document_page_count: z
+      .number()
+      .int()
+      .min(1, 'document_page_count must be at least 1')
+      .optional(),
+    documentPageCount: z.number().int().min(1, 'documentPageCount must be at least 1').optional(),
+    document_id: z.string().optional(),
+    documentId: z.string().optional()
+    // Any extra fields supplied by client (like client_price, total_paise, etc.) are stripped
+  })
+  .passthrough(); // Allow passthrough so we can test that tampered fields sent by client are cleanly ignored
 
-export const quotesRoutes: FastifyPluginAsync<QuotesPluginOptions> = async (
-  fastify,
-  options
-) => {
+export const quotesRoutes: FastifyPluginAsync<QuotesPluginOptions> = async (fastify, options) => {
   const { quotesService } = options;
 
   // Optional authentication handler: attaches user if authorization header is provided
@@ -90,7 +93,9 @@ export const quotesRoutes: FastifyPluginAsync<QuotesPluginOptions> = async (
       const pageRange = rawSettings.page_range || rawSettings.pageRange || 'all';
       const binding = (rawSettings.binding || 'none') as BindingType;
 
-      const priorityTier = (parsed.data.priority_tier || parsed.data.priorityTier || 'flexible') as PriorityTier;
+      const priorityTier = (parsed.data.priority_tier ||
+        parsed.data.priorityTier ||
+        'flexible') as PriorityTier;
       const docPageCount = parsed.data.document_page_count ?? parsed.data.documentPageCount;
 
       if (!docPageCount) {

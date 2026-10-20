@@ -20,7 +20,11 @@ export interface INotificationOutboxRepository {
   updateStatus(
     id: string,
     status: OutboxStatus,
-    details?: { last_error?: string | undefined; delivered_at?: string | undefined; attempts?: number | undefined }
+    details?: {
+      last_error?: string | undefined;
+      delivered_at?: string | undefined;
+      attempts?: number | undefined;
+    }
   ): Promise<NotificationOutboxEntry | null>;
   findByUserId(userId: string): Promise<NotificationOutboxEntry[]>;
 }
@@ -127,7 +131,11 @@ export class MockNotificationOutboxRepository implements INotificationOutboxRepo
   async updateStatus(
     id: string,
     status: OutboxStatus,
-    details?: { last_error?: string | undefined; delivered_at?: string | undefined; attempts?: number | undefined }
+    details?: {
+      last_error?: string | undefined;
+      delivered_at?: string | undefined;
+      attempts?: number | undefined;
+    }
   ): Promise<NotificationOutboxEntry | null> {
     const existing = this.entries.get(id);
     if (!existing) return null;
@@ -137,7 +145,8 @@ export class MockNotificationOutboxRepository implements INotificationOutboxRepo
       status,
       attempts: details?.attempts !== undefined ? details.attempts : existing.attempts,
       last_error: details?.last_error !== undefined ? details.last_error : existing.last_error,
-      delivered_at: details?.delivered_at !== undefined ? details.delivered_at : existing.delivered_at,
+      delivered_at:
+        details?.delivered_at !== undefined ? details.delivered_at : existing.delivered_at,
       updated_at: new Date().toISOString()
     };
 

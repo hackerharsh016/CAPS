@@ -4,22 +4,24 @@ import { Env, validateEnv } from './config/env.js';
 import { registerLogger } from './plugins/logger.js';
 import { registerErrorHandlers } from './plugins/error-handler.js';
 import { registerRateLimiter, RateLimiterOptions } from './plugins/rate-limiter.js';
-import {
-  createAuthHooks,
-  ITokenVerifier,
-  SupabaseJwtVerifier
-} from './plugins/auth.js';
+import { createAuthHooks, ITokenVerifier, SupabaseJwtVerifier } from './plugins/auth.js';
 
 // Domain Repositories & Services
 import { MockShopsRepository, IShopsRepository } from './modules/shops/shops.repository.js';
 import { ShopsService } from './modules/shops/shops.service.js';
 import { shopsRoutes } from './modules/shops/shops.routes.js';
 
-import { MockPrintersRepository, IPrintersRepository } from './modules/printers/printers.repository.js';
+import {
+  MockPrintersRepository,
+  IPrintersRepository
+} from './modules/printers/printers.repository.js';
 import { PrintersService } from './modules/printers/printers.service.js';
 import { printersRoutes } from './modules/printers/printers.routes.js';
 
-import { MockDocumentsRepository, IDocumentsRepository } from './modules/documents/documents.repository.js';
+import {
+  MockDocumentsRepository,
+  IDocumentsRepository
+} from './modules/documents/documents.repository.js';
 import { MockStorageService, IStorageService } from './modules/documents/storage.service.js';
 import {
   TrustedDocumentConverter,
@@ -34,7 +36,10 @@ import { MockQuotesRepository, IQuotesRepository } from './modules/pricing/quote
 import { QuotesService } from './modules/pricing/quotes.service.js';
 import { quotesRoutes } from './modules/pricing/quotes.routes.js';
 
-import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-jobs/print-jobs.repository.js';
+import {
+  MockPrintJobsRepository,
+  IPrintJobsRepository
+} from './modules/print-jobs/print-jobs.repository.js';
 import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 import { telemetryRoutes } from './common/telemetry/telemetry.routes.js';
@@ -51,12 +56,18 @@ import {
 } from './modules/queue/realtime-signals.service.js';
 
 import { MockAgentsRepository, IAgentsRepository } from './modules/agents/agents.repository.js';
-import { MockJobAttemptsRepository, IJobAttemptsRepository } from './modules/agents/attempts.repository.js';
+import {
+  MockJobAttemptsRepository,
+  IJobAttemptsRepository
+} from './modules/agents/attempts.repository.js';
 import { AgentClaimService } from './modules/agents/agent-claim.service.js';
 import { PairingService } from './modules/agents/pairing.service.js';
 import { agentsRoutes } from './modules/agents/agents.routes.js';
 
-import { MockPaymentsRepository, IPaymentsRepository } from './modules/payments/payments.repository.js';
+import {
+  MockPaymentsRepository,
+  IPaymentsRepository
+} from './modules/payments/payments.repository.js';
 import { PaymentsService } from './modules/payments/payments.service.js';
 import { paymentsRoutes } from './modules/payments/payments.routes.js';
 import { WebhookService } from './modules/payments/webhook.service.js';
@@ -72,7 +83,10 @@ import {
   IDocumentDeletionLogsRepository
 } from './modules/events/events.repository.js';
 
-import { MockFirebaseClient, type IFirebaseClient } from './integrations/firebase/firebase.client.js';
+import {
+  MockFirebaseClient,
+  type IFirebaseClient
+} from './integrations/firebase/firebase.client.js';
 import {
   MockUserFcmTokensRepository,
   type IUserFcmTokensRepository,
@@ -145,22 +159,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
 
   // Preserve raw body buffer for secure HMAC-SHA256 webhook signature validation
-  app.addContentTypeParser(
-    'application/json',
-    { parseAs: 'buffer' },
-    (req, body, done) => {
-      try {
-        const raw = body.toString('utf-8');
-        (req as unknown as { rawBody: string }).rawBody = raw;
-        const json = raw.trim().length === 0 ? {} : JSON.parse(raw);
-        done(null, json);
-      } catch (err: unknown) {
-        const error = err as Error & { statusCode?: number };
-        error.statusCode = 400;
-        done(error, undefined);
-      }
+  app.addContentTypeParser('application/json', { parseAs: 'buffer' }, (req, body, done) => {
+    try {
+      const raw = body.toString('utf-8');
+      (req as unknown as { rawBody: string }).rawBody = raw;
+      const json = raw.trim().length === 0 ? {} : JSON.parse(raw);
+      done(null, json);
+    } catch (err: unknown) {
+      const error = err as Error & { statusCode?: number };
+      error.statusCode = 400;
+      done(error, undefined);
     }
-  );
+  });
 
   // 1. Register structured logger and request-id tracing
   registerLogger(app, {
@@ -176,13 +186,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const rateLimitOpts: RateLimiterOptions = {
     max: options.rateLimitOptions?.max ?? env.RATE_LIMIT_MAX,
     windowMs: options.rateLimitOptions?.windowMs ?? env.RATE_LIMIT_WINDOW_MS,
-    skip: options.rateLimitOptions?.skip ?? ((req) => req.url === '/health' || req.url === '/ready')
+    skip: options.rateLimitOptions?.skip ?? (req => req.url === '/health' || req.url === '/ready')
   };
   registerRateLimiter(app, rateLimitOpts);
 
   // 4. Supabase JWT authentication and role authorization decorators
-  const tokenVerifier =
-    options.tokenVerifier ?? new SupabaseJwtVerifier(env.SUPABASE_JWT_SECRET);
+  const tokenVerifier = options.tokenVerifier ?? new SupabaseJwtVerifier(env.SUPABASE_JWT_SECRET);
   const { authenticate, authorize } = createAuthHooks(tokenVerifier);
   app.decorateRequest('user', null);
   app.decorate('tokenVerifier', tokenVerifier);
@@ -209,55 +218,40 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       useMock: env.NODE_ENV === 'test' || !env.RAZORPAY_KEY_ID
     });
   const jobEventsRepo = options.jobEventsRepo ?? new MockJobEventsRepository();
-  const deletionLogsRepo =
-    options.deletionLogsRepo ?? new MockDocumentDeletionLogsRepository();
+  const deletionLogsRepo = options.deletionLogsRepo ?? new MockDocumentDeletionLogsRepository();
   const firebaseClient = options.firebaseClient ?? new MockFirebaseClient();
-  const userFcmTokensRepo =
-    options.userFcmTokensRepo ?? new MockUserFcmTokensRepository();
+  const userFcmTokensRepo = options.userFcmTokensRepo ?? new MockUserFcmTokensRepository();
   const notificationOutboxRepo =
     options.notificationOutboxRepo ?? new MockNotificationOutboxRepository();
   const documentsRepo = options.documentsRepo ?? new MockDocumentsRepository();
   const storageService = options.storageService ?? new MockStorageService();
-  const documentConverter =
-    options.documentConverter ?? new TrustedDocumentConverter();
+  const documentConverter = options.documentConverter ?? new TrustedDocumentConverter();
   const quotesRepo = options.quotesRepo ?? new MockQuotesRepository();
   const agentsRepo = options.agentsRepo ?? new MockAgentsRepository();
   const attemptsRepo = options.attemptsRepo ?? new MockJobAttemptsRepository();
 
   // 7. Initialize domain services
   const shopsService = options.shopsService ?? new ShopsService(shopsRepo);
-  const printersService =
-    options.printersService ?? new PrintersService(printersRepo, shopsRepo);
+  const printersService = options.printersService ?? new PrintersService(printersRepo, shopsRepo);
   const documentsService =
     options.documentsService ??
     new DocumentsService(documentsRepo, storageService, documentConverter);
-  const quotesService =
-    options.quotesService ?? new QuotesService(quotesRepo, shopsRepo);
+  const quotesService = options.quotesService ?? new QuotesService(quotesRepo, shopsRepo);
   const printJobsService =
     options.printJobsService ??
     new PrintJobsService(jobsRepo, shopsRepo, quotesRepo, documentsRepo);
   const paymentsService =
     options.paymentsService ??
     new PaymentsService(printJobsRepo, paymentsRepo, razorpayClient, jobEventsRepo);
-  const webhookSecret =
-    env.RAZORPAY_WEBHOOK_SECRET ?? 'mock_webhook_secret_for_testing';
+  const webhookSecret = env.RAZORPAY_WEBHOOK_SECRET ?? 'mock_webhook_secret_for_testing';
   const webhookService =
     options.webhookService ??
-    new WebhookService(
-      printJobsRepo,
-      paymentsRepo,
-      razorpayClient,
-      jobEventsRepo,
-      webhookSecret
-    );
+    new WebhookService(printJobsRepo, paymentsRepo, razorpayClient, jobEventsRepo, webhookSecret);
   const payAtCounterService =
     options.payAtCounterService ??
     new PayAtCounterService(shopsRepo, printJobsRepo, paymentsRepo, jobEventsRepo);
-  const queueService =
-    options.queueService ??
-    new QueueService(jobsRepo, shopsRepo, printersRepo);
-  const realtimeBroadcaster =
-    options.realtimeBroadcaster ?? new InMemoryRealtimeBroadcaster();
+  const queueService = options.queueService ?? new QueueService(jobsRepo, shopsRepo, printersRepo);
+  const realtimeBroadcaster = options.realtimeBroadcaster ?? new InMemoryRealtimeBroadcaster();
   const realtimeSignalsService =
     options.realtimeSignalsService ??
     new RealtimeSignalsService(
@@ -281,8 +275,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       storageService
     );
   const pairingService =
-    options.pairingService ??
-    new PairingService(agentsRepo, shopsRepo, agentClaimService);
+    options.pairingService ?? new PairingService(agentsRepo, shopsRepo, agentClaimService);
   const notificationsService =
     options.notificationsService ??
     new NotificationsService(
@@ -385,17 +378,13 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
 
   // 9. Auth verification & role testing routes
-  app.get(
-    '/api/v1/auth/me',
-    { preHandler: [app.authenticate] },
-    async (request, reply) => {
-      return reply.status(200).send({
-        data: {
-          user: request.user
-        }
-      });
-    }
-  );
+  app.get('/api/v1/auth/me', { preHandler: [app.authenticate] }, async (request, reply) => {
+    return reply.status(200).send({
+      data: {
+        user: request.user
+      }
+    });
+  });
 
   app.get(
     '/api/v1/auth/owner-only',
@@ -440,18 +429,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       name: 'database',
       ok: Boolean(
         shopsRepo &&
-          printersRepo &&
-          documentsRepo &&
-          quotesRepo &&
-          jobsRepo &&
-          queueService &&
-          agentsRepo &&
-          attemptsRepo &&
-          agentClaimService &&
-          pairingService &&
-          realtimeSignalsService &&
-          paymentsRepo &&
-          jobEventsRepo
+        printersRepo &&
+        documentsRepo &&
+        quotesRepo &&
+        jobsRepo &&
+        queueService &&
+        agentsRepo &&
+        attemptsRepo &&
+        agentClaimService &&
+        pairingService &&
+        realtimeSignalsService &&
+        paymentsRepo &&
+        jobEventsRepo
       ),
       message: 'Repositories operational'
     }),

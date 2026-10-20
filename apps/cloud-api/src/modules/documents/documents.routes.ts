@@ -8,7 +8,11 @@ import { z } from 'zod';
 import { DocumentsService, DocumentsError } from './documents.service.js';
 import type { IStorageService } from './storage.service.js';
 import { SecuritySandboxError } from './security-sandbox.js';
-import { ALLOWED_DOCUMENT_MIMES, MAX_DOCUMENT_SIZE_BYTES, type AllowedDocumentMime } from './documents.types.js';
+import {
+  ALLOWED_DOCUMENT_MIMES,
+  MAX_DOCUMENT_SIZE_BYTES,
+  type AllowedDocumentMime
+} from './documents.types.js';
 
 export interface DocumentsPluginOptions {
   documentsService: DocumentsService;
@@ -132,7 +136,8 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
       });
     }
 
-    const { file_name, fileName, mime_type, mimeType, file_size_bytes, fileSizeBytes } = parsed.data;
+    const { file_name, fileName, mime_type, mimeType, file_size_bytes, fileSizeBytes } =
+      parsed.data;
     const finalMime = mime_type || mimeType;
     const finalSize = file_size_bytes ?? fileSizeBytes;
 
@@ -155,8 +160,7 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
     }
 
     const customerId =
-      parsed.data.customer_id ??
-      (request.headers['x-customer-id'] as string | undefined);
+      parsed.data.customer_id ?? (request.headers['x-customer-id'] as string | undefined);
 
     if (!customerId) {
       return reply.status(400).send({
@@ -177,7 +181,10 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
       return reply.status(201).send({
         data: {
           ...intent,
-          upload_url: intent.upload_url.replace('/api/v1/documents/storage/upload', '/api/v1/storage/upload')
+          upload_url: intent.upload_url.replace(
+            '/api/v1/documents/storage/upload',
+            '/api/v1/storage/upload'
+          )
         }
       });
     } catch (err: unknown) {
@@ -230,8 +237,7 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
     }
 
     const customerId =
-      bodyResult.data.customer_id ??
-      (request.headers['x-customer-id'] as string | undefined);
+      bodyResult.data.customer_id ?? (request.headers['x-customer-id'] as string | undefined);
     const timeoutMs = bodyResult.data.timeout_ms;
     const fileBuffer = bodyResult.data.file_base64
       ? Buffer.from(bodyResult.data.file_base64, 'base64')
@@ -365,16 +371,24 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
         const tokenResult = storageService.verifyToken(query.token, 'upload');
         if (!tokenResult.valid) {
           return reply.status(403).send({
-            error: { code: tokenResult.expired ? 'TOKEN_EXPIRED' : 'FORBIDDEN', message: tokenResult.error }
+            error: {
+              code: tokenResult.expired ? 'TOKEN_EXPIRED' : 'FORBIDDEN',
+              message: tokenResult.error
+            }
           });
         }
 
         let buffer: Buffer;
-        const contentType = (request.headers['content-type'] as string) || 'application/octet-stream';
+        const contentType =
+          (request.headers['content-type'] as string) || 'application/octet-stream';
 
         if (Buffer.isBuffer(request.body)) {
           buffer = request.body;
-        } else if (typeof request.body === 'object' && request.body !== null && 'fileBase64' in (request.body as any)) {
+        } else if (
+          typeof request.body === 'object' &&
+          request.body !== null &&
+          'fileBase64' in (request.body as any)
+        ) {
           buffer = Buffer.from((request.body as { fileBase64: string }).fileBase64, 'base64');
         } else if (typeof request.body === 'string') {
           buffer = Buffer.from(request.body);
@@ -383,7 +397,9 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
         }
 
         await storageService.putObject(tokenResult.storageKey!, buffer, contentType);
-        return reply.status(200).send({ success: true, message: 'File successfully uploaded to storage.' });
+        return reply
+          .status(200)
+          .send({ success: true, message: 'File successfully uploaded to storage.' });
       }
 
       return reply.status(200).send({ success: true });
@@ -397,7 +413,10 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
         const tokenResult = storageService.verifyToken(query.token, 'download');
         if (!tokenResult.valid) {
           return reply.status(403).send({
-            error: { code: tokenResult.expired ? 'TOKEN_EXPIRED' : 'FORBIDDEN', message: tokenResult.error }
+            error: {
+              code: tokenResult.expired ? 'TOKEN_EXPIRED' : 'FORBIDDEN',
+              message: tokenResult.error
+            }
           });
         }
         const item = await storageService.getObject(tokenResult.storageKey!);
@@ -408,7 +427,10 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
         }
         return reply
           .status(200)
-          .header('Content-Type', item.contentType || (item as any).mimeType || 'application/octet-stream')
+          .header(
+            'Content-Type',
+            item.contentType || (item as any).mimeType || 'application/octet-stream'
+          )
           .send(item.data);
       }
 
@@ -421,11 +443,16 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
         }
         return reply
           .status(200)
-          .header('Content-Type', item.contentType || (item as any).mimeType || 'application/octet-stream')
+          .header(
+            'Content-Type',
+            item.contentType || (item as any).mimeType || 'application/octet-stream'
+          )
           .send(item.data);
       }
 
-      return reply.status(400).send({ error: { code: 'INVALID_PAYLOAD', message: 'Missing key or token' } });
+      return reply
+        .status(400)
+        .send({ error: { code: 'INVALID_PAYLOAD', message: 'Missing key or token' } });
     });
   }
 };

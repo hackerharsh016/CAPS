@@ -1,9 +1,6 @@
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import {
-  PayAtCounterService,
-  PayAtCounterError
-} from './pay-at-counter.service.js';
+import { PayAtCounterService, PayAtCounterError } from './pay-at-counter.service.js';
 
 export interface PayAtCounterPluginOptions {
   payAtCounterService: PayAtCounterService;
@@ -75,35 +72,35 @@ export const payAtCounterRoutes: FastifyPluginAsync<PayAtCounterPluginOptions> =
   });
 
   // 2. Shop owner/operator authorizes and confirms cash settlement at the physical counter
-  fastify.post('/payments/counter/confirm', async (request: FastifyRequest, reply: FastifyReply) => {
-    const parseResult = confirmSchema.safeParse(request.body);
-    if (!parseResult.success) {
-      return reply.status(400).send({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid cash confirmation payload.',
-          details: parseResult.error.errors
-        }
-      });
-    }
+  fastify.post(
+    '/payments/counter/confirm',
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parseResult = confirmSchema.safeParse(request.body);
+      if (!parseResult.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid cash confirmation payload.',
+            details: parseResult.error.errors
+          }
+        });
+      }
 
-    try {
-      const result = await payAtCounterService.confirmCashSettlement(parseResult.data);
-      return reply.status(200).send({
-        data: result
-      });
-    } catch (err: unknown) {
-      return handleError(err, reply);
+      try {
+        const result = await payAtCounterService.confirmCashSettlement(parseResult.data);
+        return reply.status(200).send({
+          data: result
+        });
+      } catch (err: unknown) {
+        return handleError(err, reply);
+      }
     }
-  });
+  );
 
   // 3. Shop owner configures pay-at-counter policy (opt-in / opt-out)
   fastify.post(
     '/shops/:shop_id/pay-at-counter',
-    async (
-      request: FastifyRequest<{ Params: { shop_id: string } }>,
-      reply: FastifyReply
-    ) => {
+    async (request: FastifyRequest<{ Params: { shop_id: string } }>, reply: FastifyReply) => {
       const { shop_id } = request.params;
       const parseResult = configureShopSchema.safeParse(request.body);
       if (!parseResult.success) {
@@ -142,8 +139,7 @@ export const payAtCounterRoutes: FastifyPluginAsync<PayAtCounterPluginOptions> =
       reply: FastifyReply
     ) => {
       const { shop_id } = request.params;
-      const requestingUserId =
-        request.query.user_id ?? (request.headers['x-user-id'] as string);
+      const requestingUserId = request.query.user_id ?? (request.headers['x-user-id'] as string);
 
       if (!requestingUserId) {
         return reply.status(401).send({
@@ -155,10 +151,7 @@ export const payAtCounterRoutes: FastifyPluginAsync<PayAtCounterPluginOptions> =
       }
 
       try {
-        const report = await payAtCounterService.getShopPaymentReport(
-          shop_id,
-          requestingUserId
-        );
+        const report = await payAtCounterService.getShopPaymentReport(shop_id, requestingUserId);
         return reply.status(200).send({
           data: report
         });

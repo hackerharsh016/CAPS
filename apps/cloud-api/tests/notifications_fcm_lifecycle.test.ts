@@ -9,9 +9,7 @@ import {
   MockUserFcmTokensRepository,
   MockNotificationOutboxRepository
 } from '../src/modules/notifications/notifications.repository.js';
-import {
-  NotificationsService
-} from '../src/modules/notifications/notifications.service.js';
+import { NotificationsService } from '../src/modules/notifications/notifications.service.js';
 import {
   renderLifecycleNotification,
   validateNoDocumentContent
@@ -57,9 +55,24 @@ describe('FCM Lifecycle Notification Pipeline (P06-M03-F01)', () => {
       geo_lat: 28.69,
       geo_lng: 77.21,
       pricing_config: {
-        A4: { bw_single_paise: 200, bw_double_paise: 300, color_single_paise: 1000, color_double_paise: 1500 },
-        A3: { bw_single_paise: 500, bw_double_paise: 800, color_single_paise: 2000, color_double_paise: 3000 },
-        Legal: { bw_single_paise: 300, bw_double_paise: 450, color_single_paise: 1200, color_double_paise: 1800 },
+        A4: {
+          bw_single_paise: 200,
+          bw_double_paise: 300,
+          color_single_paise: 1000,
+          color_double_paise: 1500
+        },
+        A3: {
+          bw_single_paise: 500,
+          bw_double_paise: 800,
+          color_single_paise: 2000,
+          color_double_paise: 3000
+        },
+        Legal: {
+          bw_single_paise: 300,
+          bw_double_paise: 450,
+          color_single_paise: 1200,
+          color_double_paise: 1800
+        },
         binding_prices_paise: { none: 0, spiral: 3000, staple: 500, lamination: 2000 },
         gst_percentage: 18
       },

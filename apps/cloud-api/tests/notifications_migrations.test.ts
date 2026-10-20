@@ -21,14 +21,20 @@ describe('Database Migrations: Notifications Schema Verification (P06-M03-F01)',
     const sql = fs.readFileSync(migrationPath, 'utf-8');
 
     expect(sql).toContain('dedupe_key TEXT NOT NULL UNIQUE');
-    expect(sql).toContain("event_type IN ('job_queued', 'job_printing', 'job_ready', 'job_failed', 'job_cancelled')");
-    expect(sql).toContain("status IN ('pending', 'delivered', 'failed', 'duplicate_skipped', 'revoked')");
+    expect(sql).toContain(
+      "event_type IN ('job_queued', 'job_printing', 'job_ready', 'job_failed', 'job_cancelled')"
+    );
+    expect(sql).toContain(
+      "status IN ('pending', 'delivered', 'failed', 'duplicate_skipped', 'revoked')"
+    );
   });
 
   it('enforces token registration uniqueness and performance indices', () => {
     const sql = fs.readFileSync(migrationPath, 'utf-8');
 
-    expect(sql).toContain('CONSTRAINT uq_user_fcm_tokens_user_device UNIQUE (user_id, device_token)');
+    expect(sql).toContain(
+      'CONSTRAINT uq_user_fcm_tokens_user_device UNIQUE (user_id, device_token)'
+    );
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_user_fcm_tokens_user_active');
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_notification_outbox_user_id');
   });

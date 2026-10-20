@@ -67,7 +67,9 @@ describe('Migration 003: Print Jobs and Payments Schema DDL Verification', () =>
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_print_jobs_customer_id');
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_print_jobs_document_expires');
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_print_jobs_two_tier_queue');
-    expect(sql).toContain("CASE priority_tier WHEN 'urgent'::public.priority_tier THEN 0 ELSE 1 END");
+    expect(sql).toContain(
+      "CASE priority_tier WHEN 'urgent'::public.priority_tier THEN 0 ELSE 1 END"
+    );
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_payments_print_job_id');
     expect(sql).toContain('CREATE INDEX IF NOT EXISTS idx_payments_gateway_ref');
   });

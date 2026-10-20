@@ -107,22 +107,14 @@ describe('Priority Queue, Urgent Surcharge & Live ETA (P06-M02-F01)', () => {
   describe('1. Urgent Surcharge Calculation', () => {
     it('applies flat surcharge correctly to urgent jobs and 0 to flexible jobs', async () => {
       // Base: ₹100 (10000 paise)
-      const resUrgent = await queueService.calculateUrgentSurcharge(
-        shopFlat.id,
-        10000,
-        'urgent'
-      );
+      const resUrgent = await queueService.calculateUrgentSurcharge(shopFlat.id, 10000, 'urgent');
       expect(resUrgent.priority_tier).toBe('urgent');
       expect(resUrgent.base_price_paise).toBe(10000);
       expect(resUrgent.urgent_surcharge_paise).toBe(1500);
       expect(resUrgent.total_price_paise).toBe(11500);
       expect(resUrgent.surcharge_type).toBe('flat');
 
-      const resFlex = await queueService.calculateUrgentSurcharge(
-        shopFlat.id,
-        10000,
-        'flexible'
-      );
+      const resFlex = await queueService.calculateUrgentSurcharge(shopFlat.id, 10000, 'flexible');
       expect(resFlex.priority_tier).toBe('flexible');
       expect(resFlex.base_price_paise).toBe(10000);
       expect(resFlex.urgent_surcharge_paise).toBe(0);
@@ -132,11 +124,7 @@ describe('Priority Queue, Urgent Surcharge & Live ETA (P06-M02-F01)', () => {
 
     it('applies percentage surcharge correctly to urgent jobs', async () => {
       // Base: ₹200 (20000 paise) at 25% -> surcharge ₹50 (5000 paise)
-      const res = await queueService.calculateUrgentSurcharge(
-        shopPct.id,
-        20000,
-        'urgent'
-      );
+      const res = await queueService.calculateUrgentSurcharge(shopPct.id, 20000, 'urgent');
       expect(res.urgent_surcharge_paise).toBe(5000);
       expect(res.total_price_paise).toBe(25000);
       expect(res.surcharge_type).toBe('percentage');

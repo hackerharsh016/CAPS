@@ -1,4 +1,10 @@
-import type { FastifyPluginAsync, FastifyInstance, FastifyRequest, FastifyReply, FastifyError } from 'fastify';
+import type {
+  FastifyPluginAsync,
+  FastifyInstance,
+  FastifyRequest,
+  FastifyReply,
+  FastifyError
+} from 'fastify';
 
 /**
  * Standard base API error class following CAPS Master Plan §5.4.
@@ -77,83 +83,96 @@ export function registerErrorHandlers(fastify: FastifyInstance): void {
   });
 
   // Global Error Handler
-  fastify.setErrorHandler((error: FastifyError | ApiError | Error, request: FastifyRequest, reply: FastifyReply) => {
-    const requestId =
-      request.requestId ||
-      (typeof request.headers['x-request-id'] === 'string'
-        ? request.headers['x-request-id']
-        : 'unknown-request');
+  fastify.setErrorHandler(
+    (error: FastifyError | ApiError | Error, request: FastifyRequest, reply: FastifyReply) => {
+      const requestId =
+        request.requestId ||
+        (typeof request.headers['x-request-id'] === 'string'
+          ? request.headers['x-request-id']
+          : 'unknown-request');
 
-    // 1. Explicit ApiError or derived instance
-    if (error instanceof ApiError) {
-      const responsePayload: {
-        error: {
-          code: string;
-          message: string;
-          request_id: string;
-          details?: unknown;
+      // 1. Explicit ApiError or derived instance
+      if (error instanceof ApiError) {
+        const responsePayload: {
+          error: {
+            code: string;
+            message: string;
+            request_id: string;
+            details?: unknown;
+          };
+        } = {
+          error: {
+            code: error.code,
+            message: error.message,
+            request_id: requestId,
+            ...(error.details !== undefined ? { details: error.details } : {})
+          }
         };
-      } = {
-        error: {
-          code: error.code,
-          message: error.message,
-          request_id: requestId,
-          ...(error.details !== undefined ? { details: error.details } : {})
-        }
+        return reply.status(error.statusCode).send(responsePayload);
+      }
+
+      // 2. Fastify Validation Error
+      const fastifyErr = error as FastifyError;
+      if (fastifyErr.validation || fastifyErr.statusCode === 400) {
+        return reply.status(400).send({
+          error: {
+            code: 'INVALID_PAYLOAD',
+            message: fastifyErr.message || 'Validation failed for request.',
+            request_id: requestId,
+            ...(fastifyErr.validation ? { details: fastifyErr.validation } : {})
+          }
+        });
+      }
+
+      // 3. Fastify Not Found error (status 404)
+      if (fastifyErr.statusCode === 404) {
+        return reply.status(404).send({
+          error: {
+            code: 'NOT_FOUND',
+            message: fastifyErr.message || 'Resource not found',
+            request_id: requestId
+          }
+        });
+      }
+
+      // 4. Custom module errors with code/statusCode
+      const customErr = error as {
+        statusCode?: number;
+        code?: string;
+        message?: string;
+        details?: unknown;
       };
-      return reply.status(error.statusCode).send(responsePayload);
-    }
+      if (customErr.statusCode && customErr.code) {
+        return reply.status(customErr.statusCode).send({
+          error: {
+            code: customErr.code,
+            message: customErr.message || 'Error processing request',
+            request_id: requestId,
+            ...(customErr.details !== undefined ? { details: customErr.details } : {})
+          }
+        });
+      }
 
-    // 2. Fastify Validation Error
-    const fastifyErr = error as FastifyError;
-    if (fastifyErr.validation || fastifyErr.statusCode === 400) {
-      return reply.status(400).send({
-        error: {
-          code: 'INVALID_PAYLOAD',
-          message: fastifyErr.message || 'Validation failed for request.',
-          request_id: requestId,
-          ...(fastifyErr.validation ? { details: fastifyErr.validation } : {})
-        }
-      });
-    }
+      // 5. Unhandled / 500 internal errors
+      request.log.error(error);
+      const statusCode =
+        typeof fastifyErr.statusCode === 'number' && fastifyErr.statusCode >= 400
+          ? fastifyErr.statusCode
+          : 500;
+      const code = statusCode >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR';
 
-    // 3. Fastify Not Found error (status 404)
-    if (fastifyErr.statusCode === 404) {
-      return reply.status(404).send({
+      return reply.status(statusCode).send({
         error: {
-          code: 'NOT_FOUND',
-          message: fastifyErr.message || 'Resource not found',
+          code,
+          message:
+            statusCode >= 500
+              ? 'An unexpected internal error occurred.'
+              : error.message || 'An error occurred.',
           request_id: requestId
         }
       });
     }
-
-    // 4. Custom module errors with code/statusCode
-    const customErr = error as { statusCode?: number; code?: string; message?: string; details?: unknown };
-    if (customErr.statusCode && customErr.code) {
-      return reply.status(customErr.statusCode).send({
-        error: {
-          code: customErr.code,
-          message: customErr.message || 'Error processing request',
-          request_id: requestId,
-          ...(customErr.details !== undefined ? { details: customErr.details } : {})
-        }
-      });
-    }
-
-    // 5. Unhandled / 500 internal errors
-    request.log.error(error);
-    const statusCode = typeof fastifyErr.statusCode === 'number' && fastifyErr.statusCode >= 400 ? fastifyErr.statusCode : 500;
-    const code = statusCode >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_ERROR';
-
-    return reply.status(statusCode).send({
-      error: {
-        code,
-        message: statusCode >= 500 ? 'An unexpected internal error occurred.' : (error.message || 'An error occurred.'),
-        request_id: requestId
-      }
-    });
-  });
+  );
 }
 
 export const errorHandlerPlugin: FastifyPluginAsync = async fastify => {

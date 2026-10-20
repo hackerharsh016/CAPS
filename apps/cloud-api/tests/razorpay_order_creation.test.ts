@@ -4,7 +4,10 @@ import { MockPrintJobsRepository } from '../src/modules/print-jobs/print-jobs.re
 import { MockPaymentsRepository } from '../src/modules/payments/payments.repository.js';
 import { MockJobEventsRepository } from '../src/modules/events/events.repository.js';
 import { MockJobAttemptsRepository } from '../src/modules/attempts/attempts.repository.js';
-import { MockRazorpayClient, createRazorpayClient } from '../src/modules/payments/razorpay.service.js';
+import {
+  MockRazorpayClient,
+  createRazorpayClient
+} from '../src/modules/payments/razorpay.service.js';
 import {
   PaymentsService,
   AmountTamperingError,
@@ -61,7 +64,10 @@ describe('Task P06-M01-F01: Razorpay Order Creation & Security Invariants', () =
     (firstJob as { status: string }).status = 'pending_payment';
     (firstJob as { price_total_paise: number }).price_total_paise = 354;
     // Update map manually for deterministic lookup
-    (printJobsRepo as unknown as { jobs: Map<string, PrintJob> }).jobs.set(samplePendingJobId, firstJob);
+    (printJobsRepo as unknown as { jobs: Map<string, PrintJob> }).jobs.set(
+      samplePendingJobId,
+      firstJob
+    );
 
     // Create a queued job (paid)
     const queuedJob: PrintJob = {
@@ -70,7 +76,10 @@ describe('Task P06-M01-F01: Razorpay Order Creation & Security Invariants', () =
       status: 'queued',
       enqueued_at: new Date().toISOString()
     };
-    (printJobsRepo as unknown as { jobs: Map<string, PrintJob> }).jobs.set(sampleQueuedJobId, queuedJob);
+    (printJobsRepo as unknown as { jobs: Map<string, PrintJob> }).jobs.set(
+      sampleQueuedJobId,
+      queuedJob
+    );
 
     // Create a completed job
     const completedJob: PrintJob = {
@@ -79,7 +88,10 @@ describe('Task P06-M01-F01: Razorpay Order Creation & Security Invariants', () =
       status: 'completed',
       enqueued_at: new Date().toISOString()
     };
-    (printJobsRepo as unknown as { jobs: Map<string, PrintJob> }).jobs.set(sampleCompletedJobId, completedJob);
+    (printJobsRepo as unknown as { jobs: Map<string, PrintJob> }).jobs.set(
+      sampleCompletedJobId,
+      completedJob
+    );
   });
 
   // ============================================================================
@@ -161,7 +173,9 @@ describe('Task P06-M01-F01: Razorpay Order Creation & Security Invariants', () =
       } catch (err) {
         expect(err).toBeInstanceOf(JobNotClaimableError);
         expect((err as JobNotClaimableError).code).toBe('PAYMENT_PENDING');
-        expect((err as JobNotClaimableError).message).toContain('Unpaid print jobs cannot be claimed');
+        expect((err as JobNotClaimableError).message).toContain(
+          'Unpaid print jobs cannot be claimed'
+        );
       }
 
       // Claim attempt execution must fail

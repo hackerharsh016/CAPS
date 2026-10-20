@@ -119,7 +119,9 @@ export class MockPrintJobsRepository implements IPrintJobsRepository {
     }));
   }
 
-  async findAll(filter: ListPrintJobsFilter = {}): Promise<{ jobs: PrintJobRecord[]; total: number }> {
+  async findAll(
+    filter: ListPrintJobsFilter = {}
+  ): Promise<{ jobs: PrintJobRecord[]; total: number }> {
     let all = Array.from(this.jobs.values());
 
     if (filter.shop_id) {
@@ -150,7 +152,8 @@ export class MockPrintJobsRepository implements IPrintJobsRepository {
     if (!existing) return null;
 
     const now = new Date().toISOString();
-    let newEnqueuedAt = partial.enqueued_at !== undefined ? partial.enqueued_at : existing.enqueued_at;
+    let newEnqueuedAt =
+      partial.enqueued_at !== undefined ? partial.enqueued_at : existing.enqueued_at;
 
     if (partial.status === 'queued' && existing.status !== 'queued' && !newEnqueuedAt) {
       newEnqueuedAt = now;
@@ -248,9 +251,7 @@ export class MockPrintJobsRepository implements IPrintJobsRepository {
   }
 
   async getEvents(jobId: string): Promise<JobEventRecord[]> {
-    return this.events
-      .filter(e => e.job_id === jobId)
-      .map(e => ({ ...e }));
+    return this.events.filter(e => e.job_id === jobId).map(e => ({ ...e }));
   }
 
   clear(): void {

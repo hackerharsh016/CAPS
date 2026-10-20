@@ -46,35 +46,32 @@ export const printersRoutes: FastifyPluginAsync<PrintersPluginOptions> = async (
   const { printersService } = options;
 
   // 1. GET /api/v1/shops/:shop_id/printers (Public / customer / owner printer discovery)
-  fastify.get(
-    '/:shop_id/printers',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { shop_id } = request.params as { shop_id: string };
-      const parsed = listPrintersQuerySchema.safeParse(request.query);
-      if (!parsed.success) {
-        return reply.status(400).send({
-          error: {
-            code: 'INVALID_PAYLOAD',
-            message: 'Invalid printer query parameters.',
-            request_id: request.requestId || 'unknown-request',
-            details: parsed.error.errors
-          }
-        });
-      }
-
-      const result = await printersService.listPrinters(shop_id, {
-        role: parsed.data.role as PrinterRole | undefined,
-        status: parsed.data.status as PrinterStatus | undefined,
-        page: parsed.data.page,
-        limit: parsed.data.limit
-      });
-
-      return reply.status(200).send({
-        data: result.printers,
-        pagination: result.pagination
+  fastify.get('/:shop_id/printers', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { shop_id } = request.params as { shop_id: string };
+    const parsed = listPrintersQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Invalid printer query parameters.',
+          request_id: request.requestId || 'unknown-request',
+          details: parsed.error.errors
+        }
       });
     }
-  );
+
+    const result = await printersService.listPrinters(shop_id, {
+      role: parsed.data.role as PrinterRole | undefined,
+      status: parsed.data.status as PrinterStatus | undefined,
+      page: parsed.data.page,
+      limit: parsed.data.limit
+    });
+
+    return reply.status(200).send({
+      data: result.printers,
+      pagination: result.pagination
+    });
+  });
 
   // 2. GET /api/v1/shops/:shop_id/printers/:printer_id (Printer detail and capabilities lookup)
   fastify.get(
@@ -126,10 +123,7 @@ export const printersRoutes: FastifyPluginAsync<PrintersPluginOptions> = async (
   fastify.patch(
     '/:shop_id/printers/:printer_id',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin', 'agent'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin', 'agent'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shop_id, printer_id } = request.params as {

@@ -6,7 +6,12 @@
  */
 
 import crypto from 'node:crypto';
-import { ApiError, AuthError, NotFoundError, ValidationError } from '../../plugins/error-handler.js';
+import {
+  ApiError,
+  AuthError,
+  NotFoundError,
+  ValidationError
+} from '../../plugins/error-handler.js';
 import type { IPrintJobsRepository } from '../print-jobs/print-jobs.repository.js';
 import type { IShopsRepository } from '../shops/shops.repository.js';
 import type { IPrintersRepository } from '../printers/printers.repository.js';
@@ -33,12 +38,7 @@ import {
 } from './queue.calculator.js';
 
 export class QueueError extends ApiError {
-  constructor(
-    arg1: number | string,
-    arg2: string,
-    arg3?: number | string,
-    arg4?: unknown
-  ) {
+  constructor(arg1: number | string, arg2: string, arg3?: number | string, arg4?: unknown) {
     if (typeof arg1 === 'number') {
       super(arg1, arg2, typeof arg3 === 'string' ? arg3 : '', arg4);
       this.name = 'QueueError';
@@ -58,10 +58,8 @@ export interface GetShopQueueOptions {
 }
 
 export class QueueService {
-  private readonly urgentReservations: Map<
-    string,
-    Array<{ id: string; expiresAtMs: number }>
-  > = new Map();
+  private readonly urgentReservations: Map<string, Array<{ id: string; expiresAtMs: number }>> =
+    new Map();
   private readonly locks: Map<string, Promise<void>> = new Map();
 
   constructor(
@@ -109,10 +107,7 @@ export class QueueService {
   /**
    * Evaluates the current urgent cap status (hourly quota, queue depth, fairness guard).
    */
-  async getUrgentCapStatus(
-    shopId: string,
-    nowMs: number = Date.now()
-  ): Promise<UrgentCapStatus> {
+  async getUrgentCapStatus(shopId: string, nowMs: number = Date.now()): Promise<UrgentCapStatus> {
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
       throw new QueueError('SHOP_NOT_FOUND', `Shop '${shopId}' not found`, 404);
@@ -162,8 +157,8 @@ export class QueueService {
           status.rejection_details?.cap_type === 'hourly'
             ? 'URGENT_CAP_EXCEEDED'
             : status.rejection_details?.cap_type === 'queue_depth'
-            ? 'URGENT_QUEUE_LIMIT_REACHED'
-            : 'FAIRNESS_GUARD_TRIGGERED';
+              ? 'URGENT_QUEUE_LIMIT_REACHED'
+              : 'FAIRNESS_GUARD_TRIGGERED';
 
         throw new QueueError(
           code,
@@ -197,10 +192,7 @@ export class QueueService {
   /**
    * Configures shop urgent surcharge, hourly limits, queue caps, and starvation fairness policies.
    */
-  async configureUrgentPolicy(
-    shopId: string,
-    dto: ConfigureUrgentPolicyRequest
-  ): Promise<Shop> {
+  async configureUrgentPolicy(shopId: string, dto: ConfigureUrgentPolicyRequest): Promise<Shop> {
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
       throw new QueueError('SHOP_NOT_FOUND', `Shop '${shopId}' not found`, 404);
@@ -212,16 +204,10 @@ export class QueueService {
     if (typeof dto.amount === 'number' && dto.amount < 0) {
       throw new ValidationError('Surcharge amount must be non-negative');
     }
-    if (
-      typeof dto.max_urgent_jobs_per_hour === 'number' &&
-      dto.max_urgent_jobs_per_hour < 0
-    ) {
+    if (typeof dto.max_urgent_jobs_per_hour === 'number' && dto.max_urgent_jobs_per_hour < 0) {
       throw new ValidationError('Max urgent jobs per hour must be non-negative');
     }
-    if (
-      typeof dto.max_urgent_jobs_in_queue === 'number' &&
-      dto.max_urgent_jobs_in_queue < 0
-    ) {
+    if (typeof dto.max_urgent_jobs_in_queue === 'number' && dto.max_urgent_jobs_in_queue < 0) {
       throw new ValidationError('Max urgent jobs in queue must be non-negative');
     }
     if (
@@ -247,11 +233,15 @@ export class QueueService {
       amount: dto.amount ?? currentConfig.amount,
       max_urgent_jobs_per_hour:
         dto.max_urgent_jobs_per_hour !== undefined
-          ? (dto.max_urgent_jobs_per_hour === null ? undefined : dto.max_urgent_jobs_per_hour)
+          ? dto.max_urgent_jobs_per_hour === null
+            ? undefined
+            : dto.max_urgent_jobs_per_hour
           : currentConfig.max_urgent_jobs_per_hour,
       max_urgent_jobs_in_queue:
         dto.max_urgent_jobs_in_queue !== undefined
-          ? (dto.max_urgent_jobs_in_queue === null ? undefined : dto.max_urgent_jobs_in_queue)
+          ? dto.max_urgent_jobs_in_queue === null
+            ? undefined
+            : dto.max_urgent_jobs_in_queue
           : currentConfig.max_urgent_jobs_in_queue,
       fairness_guard_enabled:
         dto.fairness_guard_enabled !== undefined
@@ -259,7 +249,9 @@ export class QueueService {
           : currentConfig.fairness_guard_enabled,
       max_flexible_wait_threshold_seconds:
         dto.max_flexible_wait_threshold_seconds !== undefined
-          ? (dto.max_flexible_wait_threshold_seconds === null ? undefined : dto.max_flexible_wait_threshold_seconds)
+          ? dto.max_flexible_wait_threshold_seconds === null
+            ? undefined
+            : dto.max_flexible_wait_threshold_seconds
           : currentConfig.max_flexible_wait_threshold_seconds
     };
 
@@ -316,10 +308,7 @@ export class QueueService {
    * Concurrency-safe: multiple simultaneous claims for the same shop will not dispatch
    * duplicate jobs or violate priority ordering.
    */
-  async getNextEligibleJob(
-    shopId: string,
-    printerId?: string
-  ): Promise<PrintJobRecord | null> {
+  async getNextEligibleJob(shopId: string, printerId?: string): Promise<PrintJobRecord | null> {
     return this.withLock(shopId, async () => {
       const shop = await this.shopsRepo.findById(shopId);
       if (!shop) {
@@ -363,13 +352,10 @@ export class QueueService {
     const allJobs = await this.fetchAllShopJobs(shopId);
 
     // Active execution statuses: printing, claimed, downloading, submitted
-    const currentlyExecuting =
-      allJobs.find(j => isActivelyExecuting(j.status)) ?? null;
+    const currentlyExecuting = allJobs.find(j => isActivelyExecuting(j.status)) ?? null;
 
     // Queued statuses: queued, approved
-    const queuedJobs = allJobs.filter(
-      j => j.status === 'queued' || j.status === 'approved'
-    );
+    const queuedJobs = allJobs.filter(j => j.status === 'queued' || j.status === 'approved');
 
     const schedule = projectQueueSchedule(currentlyExecuting, queuedJobs, nowMs);
 
@@ -386,9 +372,7 @@ export class QueueService {
     const isCustomerCaller = options.callerRole === 'customer';
     const callerCustomerId = options.callerCustomerId;
 
-    const formatJob = (
-      job: QueueJobSummary
-    ): QueueJobSummary | CustomerRedactedQueueJob => {
+    const formatJob = (job: QueueJobSummary): QueueJobSummary | CustomerRedactedQueueJob => {
       if (!isCustomerCaller) {
         return job;
       }
@@ -447,10 +431,7 @@ export class QueueService {
   /**
    * Calculates live projected queue position and waiting time, noting urgent cap availability.
    */
-  async getLiveEta(
-    request: LiveEtaRequest,
-    nowMs: number = Date.now()
-  ): Promise<LiveEtaResponse> {
+  async getLiveEta(request: LiveEtaRequest, nowMs: number = Date.now()): Promise<LiveEtaResponse> {
     if (request.pages <= 0) {
       throw new ValidationError('Page count must be greater than zero.');
     }
@@ -470,11 +451,8 @@ export class QueueService {
 
     const allJobs = await this.fetchAllShopJobs(request.shop_id);
 
-    const currentlyExecuting =
-      allJobs.find(j => isActivelyExecuting(j.status)) ?? null;
-    const queuedJobs = allJobs.filter(
-      j => j.status === 'queued' || j.status === 'approved'
-    );
+    const currentlyExecuting = allJobs.find(j => isActivelyExecuting(j.status)) ?? null;
+    const queuedJobs = allJobs.filter(j => j.status === 'queued' || j.status === 'approved');
 
     const eta = calculateLiveEta(request, currentlyExecuting, queuedJobs, nowMs);
 
@@ -523,11 +501,7 @@ export class QueueService {
     }
 
     if (job.shop_id !== request.shop_id) {
-      throw new AuthError(
-        403,
-        'FORBIDDEN',
-        `Job does not belong to shop '${request.shop_id}'.`
-      );
+      throw new AuthError(403, 'FORBIDDEN', `Job does not belong to shop '${request.shop_id}'.`);
     }
 
     if (this.printersRepo) {

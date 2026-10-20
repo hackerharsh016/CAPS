@@ -44,19 +44,11 @@ export class PairingService {
     }
 
     if (user.role !== 'admin' && shop.owner_id !== user.id) {
-      throw new AuthError(
-        403,
-        'FORBIDDEN',
-        `Forbidden: You do not own shop '${shopId}'.`
-      );
+      throw new AuthError(403, 'FORBIDDEN', `Forbidden: You do not own shop '${shopId}'.`);
     }
 
     const clampedTtl = Math.min(1800, Math.max(60, ttlSeconds));
-    const pairing = await this.agentsRepo.createPairingCode(
-      shopId,
-      user.id,
-      clampedTtl
-    );
+    const pairing = await this.agentsRepo.createPairingCode(shopId, user.id, clampedTtl);
 
     return {
       pairing_code: pairing.code,
@@ -70,9 +62,7 @@ export class PairingService {
    * Generates per-device secret and Windows DPAPI storage guidance.
    * Strictly never returns Supabase service-role keys.
    */
-  async pairDevice(
-    dto: PairAgentDeviceDto
-  ): Promise<PairAgentDeviceResponseDto> {
+  async pairDevice(dto: PairAgentDeviceDto): Promise<PairAgentDeviceResponseDto> {
     const pairing = await this.agentsRepo.findPairingCode(dto.pairing_code);
     if (!pairing) {
       throw new NotFoundError('Invalid or nonexistent pairing code.');
@@ -97,10 +87,7 @@ export class PairingService {
     // Generate random 256-bit device secret (caps_agent_sec_...)
     const rawSecretBytes = crypto.randomBytes(32).toString('hex');
     const deviceSecret = `caps_agent_sec_${rawSecretBytes}`;
-    const authTokenHash = crypto
-      .createHash('sha256')
-      .update(deviceSecret)
-      .digest('hex');
+    const authTokenHash = crypto.createHash('sha256').update(deviceSecret).digest('hex');
 
     // Register or re-activate device
     const device = await this.agentsRepo.registerDevice({
@@ -172,11 +159,7 @@ export class PairingService {
     }
 
     if (user.role !== 'admin' && shop.owner_id !== user.id) {
-      throw new AuthError(
-        403,
-        'FORBIDDEN',
-        `Forbidden: You do not own shop '${shopId}'.`
-      );
+      throw new AuthError(403, 'FORBIDDEN', `Forbidden: You do not own shop '${shopId}'.`);
     }
 
     const device = await this.agentsRepo.findDeviceById(deviceId);
@@ -184,10 +167,7 @@ export class PairingService {
       throw new NotFoundError(`Agent device '${deviceId}' not found in shop '${shopId}'.`);
     }
 
-    const revoked = await this.agentsRepo.revokeDevice(
-      deviceId,
-      reason || 'Revoked by shop owner'
-    );
+    const revoked = await this.agentsRepo.revokeDevice(deviceId, reason || 'Revoked by shop owner');
 
     if (!revoked) {
       throw new ClaimError(500, 'REVOCATION_FAILED', 'Failed to revoke device.');
@@ -204,21 +184,14 @@ export class PairingService {
   /**
    * Lists devices for a shop.
    */
-  async listDevices(
-    user: { id: string; role: string },
-    shopId: string
-  ): Promise<AgentDevice[]> {
+  async listDevices(user: { id: string; role: string }, shopId: string): Promise<AgentDevice[]> {
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
       throw new NotFoundError(`Shop '${shopId}' not found.`);
     }
 
     if (user.role !== 'admin' && shop.owner_id !== user.id) {
-      throw new AuthError(
-        403,
-        'FORBIDDEN',
-        `Forbidden: You do not own shop '${shopId}'.`
-      );
+      throw new AuthError(403, 'FORBIDDEN', `Forbidden: You do not own shop '${shopId}'.`);
     }
 
     return this.agentsRepo.listDevicesByShop(shopId);

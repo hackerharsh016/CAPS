@@ -5,7 +5,11 @@ import type { IJobEventsRepository } from '../events/events.repository.js';
 import type { CreateOrderRequestDto, CreateOrderResponseDto } from './payments.types.js';
 
 export class PaymentError extends Error {
-  constructor(message: string, public readonly statusCode = 400, public readonly code = 'PAYMENT_ERROR') {
+  constructor(
+    message: string,
+    public readonly statusCode = 400,
+    public readonly code = 'PAYMENT_ERROR'
+  ) {
     super(message);
     this.name = 'PaymentError';
   }
@@ -68,7 +72,11 @@ export class PaymentsService {
     // 3. Amount tampering denial
     const authoritativeAmountPaise = job.price_total_paise;
     if (authoritativeAmountPaise <= 0) {
-      throw new PaymentError('Print job total price must be greater than zero.', 400, 'INVALID_PRICE');
+      throw new PaymentError(
+        'Print job total price must be greater than zero.',
+        400,
+        'INVALID_PRICE'
+      );
     }
 
     if (

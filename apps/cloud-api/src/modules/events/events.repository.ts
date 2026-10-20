@@ -38,9 +38,7 @@ export class MockJobEventsRepository implements IJobEventsRepository {
   }
 
   async findByJobId(jobId: string): Promise<JobEvent[]> {
-    return this.events
-      .filter(e => e.job_id === jobId)
-      .map(e => ({ ...e }));
+    return this.events.filter(e => e.job_id === jobId).map(e => ({ ...e }));
   }
 
   async create(dto: CreateJobEventDto): Promise<JobEvent> {

@@ -4,10 +4,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('Atomic Priority Queue SQL Migrations', () => {
   const migrationsDir = path.resolve(__dirname, '../../../supabase/migrations');
-  const migrationFile = path.join(
-    migrationsDir,
-    '20261019000008_create_atomic_priority_queue.sql'
-  );
+  const migrationFile = path.join(migrationsDir, '20261019000008_create_atomic_priority_queue.sql');
 
   it('migration file exists in supabase/migrations/', () => {
     expect(fs.existsSync(migrationFile)).toBe(true);
@@ -16,11 +13,15 @@ describe('Atomic Priority Queue SQL Migrations', () => {
   it('defines the enforce_enqueued_at_immutability function and trigger', () => {
     const content = fs.readFileSync(migrationFile, 'utf-8');
 
-    expect(content).toContain('CREATE OR REPLACE FUNCTION public.enforce_enqueued_at_immutability()');
+    expect(content).toContain(
+      'CREATE OR REPLACE FUNCTION public.enforce_enqueued_at_immutability()'
+    );
     expect(content).toContain('OLD.enqueued_at IS NOT NULL');
     expect(content).toContain('NEW.enqueued_at IS DISTINCT FROM OLD.enqueued_at');
     expect(content).toContain('enqueued_at is immutable and cannot be updated once set');
-    expect(content).toContain('DROP TRIGGER IF EXISTS trg_prevent_enqueued_at_update ON public.print_jobs');
+    expect(content).toContain(
+      'DROP TRIGGER IF EXISTS trg_prevent_enqueued_at_update ON public.print_jobs'
+    );
     expect(content).toContain('BEFORE UPDATE ON public.print_jobs');
     expect(content).toContain('FOR EACH ROW');
     expect(content).toContain('EXECUTE FUNCTION public.enforce_enqueued_at_immutability()');
@@ -46,7 +47,9 @@ describe('Atomic Priority Queue SQL Migrations', () => {
     expect(content).toContain('SECURITY DEFINER');
     expect(content).toContain('LIMIT 1');
     expect(content).toContain('FOR UPDATE SKIP LOCKED');
-    expect(content).toContain("(CASE pj.priority_tier WHEN 'urgent'::public.priority_tier THEN 0 ELSE 1 END)");
+    expect(content).toContain(
+      "(CASE pj.priority_tier WHEN 'urgent'::public.priority_tier THEN 0 ELSE 1 END)"
+    );
     expect(content).toContain('pj.enqueued_at ASC');
     expect(content).toContain('pj.id ASC');
   });

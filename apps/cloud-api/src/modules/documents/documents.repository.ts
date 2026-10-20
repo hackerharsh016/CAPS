@@ -1,5 +1,10 @@
 import crypto from 'node:crypto';
-import type { DocumentMetadata, DocumentStatus, AllowedDocumentMime, DocumentDeletionLog } from './documents.types.js';
+import type {
+  DocumentMetadata,
+  DocumentStatus,
+  AllowedDocumentMime,
+  DocumentDeletionLog
+} from './documents.types.js';
 
 export interface ActiveJobLease {
   agent_id: string;
@@ -31,9 +36,16 @@ export interface IDocumentsRepository {
   delete(id: string): Promise<boolean>;
 
   hasActiveLeaseForDocument?(agentId: string, documentIdOrStorageKey: string): Promise<boolean>;
-  addJobLease?(agentId: string, documentId: string, storageKey: string, leaseExpiresAt: string): void;
+  addJobLease?(
+    agentId: string,
+    documentId: string,
+    storageKey: string,
+    leaseExpiresAt: string
+  ): void;
   removeJobLease?(agentId: string, documentId: string): void;
-  recordDeletionLog(log: Omit<DocumentDeletionLog, 'id' | 'deleted_at'>): Promise<DocumentDeletionLog>;
+  recordDeletionLog(
+    log: Omit<DocumentDeletionLog, 'id' | 'deleted_at'>
+  ): Promise<DocumentDeletionLog>;
   getDeletionLogs(jobId?: string): Promise<DocumentDeletionLog[]>;
   clear(): void;
 }
@@ -121,17 +133,26 @@ export class MockDocumentsRepository implements IDocumentsRepository {
     return this.documents.delete(id);
   }
 
-  async hasActiveLeaseForDocument(agentId: string, documentIdOrStorageKey: string): Promise<boolean> {
+  async hasActiveLeaseForDocument(
+    agentId: string,
+    documentIdOrStorageKey: string
+  ): Promise<boolean> {
     const now = new Date().toISOString();
     return this.activeLeases.some(
       lease =>
         lease.agent_id === agentId &&
-        (lease.document_id === documentIdOrStorageKey || lease.storage_key === documentIdOrStorageKey) &&
+        (lease.document_id === documentIdOrStorageKey ||
+          lease.storage_key === documentIdOrStorageKey) &&
         lease.lease_expires_at > now
     );
   }
 
-  addJobLease(agentId: string, documentId: string, storageKey: string, leaseExpiresAt: string): void {
+  addJobLease(
+    agentId: string,
+    documentId: string,
+    storageKey: string,
+    leaseExpiresAt: string
+  ): void {
     this.activeLeases.push({
       agent_id: agentId,
       document_id: documentId,
@@ -149,7 +170,9 @@ export class MockDocumentsRepository implements IDocumentsRepository {
     }
   }
 
-  async recordDeletionLog(log: Omit<DocumentDeletionLog, 'id' | 'deleted_at'>): Promise<DocumentDeletionLog> {
+  async recordDeletionLog(
+    log: Omit<DocumentDeletionLog, 'id' | 'deleted_at'>
+  ): Promise<DocumentDeletionLog> {
     const entry: DocumentDeletionLog = {
       id: crypto.randomUUID(),
       job_id: log.job_id,

@@ -48,17 +48,13 @@ export class QuotesService {
       input.document_page_count <= 0 ||
       !Number.isInteger(input.document_page_count)
     ) {
-      throw new ValidationError(
-        'Document page count must be a positive integer.',
-        { document_page_count: input.document_page_count }
-      );
+      throw new ValidationError('Document page count must be a positive integer.', {
+        document_page_count: input.document_page_count
+      });
     }
 
     // 4. Calculate effective pages based on page range
-    const effectivePageCount = parsePageRange(
-      input.settings.page_range,
-      input.document_page_count
-    );
+    const effectivePageCount = parsePageRange(input.settings.page_range, input.document_page_count);
 
     // 5. Authoritative price breakdown (ignores any client-side price fields)
     const breakdown = calculatePriceBreakdown({

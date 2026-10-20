@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { buildApp } from '../src/app.js';
 import { validateEnv } from '../src/config/env.js';
-import {
-  createTestJwt,
-  SupabaseJwtVerifier
-} from '../src/plugins/auth.js';
+import { createTestJwt, SupabaseJwtVerifier } from '../src/plugins/auth.js';
 import { MockShopsRepository } from '../src/modules/shops/shops.repository.js';
 import { MockPrintersRepository } from '../src/modules/printers/printers.repository.js';
 import type { FastifyInstance } from 'fastify';

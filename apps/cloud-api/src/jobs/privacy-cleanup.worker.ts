@@ -21,10 +21,12 @@ export interface PrivacyCleanupWorkerOptions {
   printJobsRepo: IPrintJobsRepository;
   documentsRepo: IDocumentsRepository;
   storageService: IStorageService;
-  logger?: {
-    info: (msg: string, ...args: unknown[]) => void;
-    error: (msg: string, ...args: unknown[]) => void;
-  } | undefined;
+  logger?:
+    | {
+        info: (msg: string, ...args: unknown[]) => void;
+        error: (msg: string, ...args: unknown[]) => void;
+      }
+    | undefined;
 }
 
 export class PrivacyCleanupWorker {

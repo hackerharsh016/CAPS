@@ -69,7 +69,11 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
 
       // 1. Failed job past TTL
       const failedKey = 'uploads/customer1/failed_doc.pdf';
-      await storageService.putObject(failedKey, Buffer.from('failed doc content'), 'application/pdf');
+      await storageService.putObject(
+        failedKey,
+        Buffer.from('failed doc content'),
+        'application/pdf'
+      );
       const failedJob = await printJobsRepo.create({
         shop_id: testShopId,
         customer_id: testCustomerId,
@@ -83,7 +87,11 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
 
       // 2. Cancelled job past TTL
       const cancelledKey = 'uploads/customer1/cancelled_doc.pdf';
-      await storageService.putObject(cancelledKey, Buffer.from('cancelled doc content'), 'application/pdf');
+      await storageService.putObject(
+        cancelledKey,
+        Buffer.from('cancelled doc content'),
+        'application/pdf'
+      );
       const cancelledJob = await printJobsRepo.create({
         shop_id: testShopId,
         customer_id: testCustomerId,
@@ -97,7 +105,11 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
 
       // 3. Stuck pending_payment job past TTL
       const stuckKey = 'uploads/customer1/stuck_unpaid.docx';
-      await storageService.putObject(stuckKey, Buffer.from('stuck unpaid doc'), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      await storageService.putObject(
+        stuckKey,
+        Buffer.from('stuck unpaid doc'),
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      );
       const stuckJob = await printJobsRepo.create({
         shop_id: testShopId,
         customer_id: testCustomerId,
@@ -111,7 +123,11 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
       // 4. Standalone document past TTL
       const docRawKey = 'uploads/customer1/doc_raw.docx';
       const docPdfKey = 'converted/customer1/doc_converted.pdf';
-      await storageService.putObject(docRawKey, Buffer.from('docx content'), 'application/octet-stream');
+      await storageService.putObject(
+        docRawKey,
+        Buffer.from('docx content'),
+        'application/octet-stream'
+      );
       await storageService.putObject(docPdfKey, Buffer.from('pdf content'), 'application/pdf');
       const standaloneDoc = await documentsRepo.create({
         customer_id: testCustomerId,
@@ -167,7 +183,11 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
 
       // Job 1: Completed 45 minutes ago -> eligible for purge
       const expiredCompletedKey = 'uploads/customer1/old_completed.pdf';
-      await storageService.putObject(expiredCompletedKey, Buffer.from('old print'), 'application/pdf');
+      await storageService.putObject(
+        expiredCompletedKey,
+        Buffer.from('old print'),
+        'application/pdf'
+      );
       const oldJob = await printJobsRepo.create({
         shop_id: testShopId,
         customer_id: testCustomerId,
@@ -180,12 +200,18 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
       await printJobsRepo.update(oldJob.id, { status: 'completed' });
       // Simulate completed 45 minutes ago
       const fortyFiveMinsAgo = new Date(now.getTime() - 45 * 60 * 1000).toISOString();
-      const oldJobRef = (printJobsRepo as unknown as { jobs: Map<string, { updated_at: string }> }).jobs.get(oldJob.id);
+      const oldJobRef = (
+        printJobsRepo as unknown as { jobs: Map<string, { updated_at: string }> }
+      ).jobs.get(oldJob.id);
       if (oldJobRef) oldJobRef.updated_at = fortyFiveMinsAgo;
 
       // Job 2: Completed 10 minutes ago -> within 30m window, MUST NOT be purged yet
       const recentCompletedKey = 'uploads/customer1/recent_completed.pdf';
-      await storageService.putObject(recentCompletedKey, Buffer.from('recent print'), 'application/pdf');
+      await storageService.putObject(
+        recentCompletedKey,
+        Buffer.from('recent print'),
+        'application/pdf'
+      );
       const recentJob = await printJobsRepo.create({
         shop_id: testShopId,
         customer_id: testCustomerId,
@@ -198,7 +224,9 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
       await printJobsRepo.update(recentJob.id, { status: 'completed' });
       // Simulate completed 10 minutes ago
       const tenMinsAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
-      const recentJobRef = (printJobsRepo as unknown as { jobs: Map<string, { updated_at: string }> }).jobs.get(recentJob.id);
+      const recentJobRef = (
+        printJobsRepo as unknown as { jobs: Map<string, { updated_at: string }> }
+      ).jobs.get(recentJob.id);
       if (recentJobRef) recentJobRef.updated_at = tenMinsAgo;
 
       // Run sweep
@@ -310,7 +338,11 @@ describe('Document Retention & Audit Cleanup (P06-M04-F02)', () => {
     it('ensures audit ledger records contain zero raw document binaries or sensitive keys', async () => {
       const pastTtl = new Date(Date.now() - 3600000).toISOString();
       const secretDocKey = 'uploads/customer1/secret.pdf';
-      await storageService.putObject(secretDocKey, Buffer.from('top secret customer data'), 'application/pdf');
+      await storageService.putObject(
+        secretDocKey,
+        Buffer.from('top secret customer data'),
+        'application/pdf'
+      );
 
       const job = await printJobsRepo.create({
         shop_id: testShopId,

@@ -188,7 +188,8 @@ describe('Trusted Office & Image Document Conversion to PDF (P06-M04-F01)', () =
       const docxBuffer = createMockZip([
         {
           name: 'word/document.xml',
-          content: '<w:document><w:body><w:p><w:r><w:t>CAPS Document Body</w:t></w:r></w:p></w:body></w:document>'
+          content:
+            '<w:document><w:body><w:p><w:r><w:t>CAPS Document Body</w:t></w:r></w:p></w:body></w:document>'
         }
       ]);
 
@@ -238,7 +239,8 @@ describe('Trusted Office & Image Document Conversion to PDF (P06-M04-F01)', () =
       const pptxBuffer = createMockZip([
         {
           name: 'ppt/slides/slide1.xml',
-          content: '<p:sld><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>Pitch Deck</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>'
+          content:
+            '<p:sld><p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>Pitch Deck</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>'
         }
       ]);
 
@@ -585,7 +587,8 @@ describe('Trusted Office & Image Document Conversion to PDF (P06-M04-F01)', () =
       const docxBuffer = createMockZip([
         {
           name: 'word/document.xml',
-          content: '<w:document><w:body><w:p><w:r><w:t>Slow body</w:t></w:r></w:p></w:body></w:document>'
+          content:
+            '<w:document><w:body><w:p><w:r><w:t>Slow body</w:t></w:r></w:p></w:body></w:document>'
         }
       ]);
 

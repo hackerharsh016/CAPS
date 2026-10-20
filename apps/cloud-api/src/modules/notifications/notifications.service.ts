@@ -135,16 +135,18 @@ export class NotificationsService {
 
     // 4. Create outbox record
     const maxAttempts = options.maxRetries ?? 3;
-    const outboxEntry = existing ?? (await this.outboxRepo.create({
-      dedupe_key: dedupeKey,
-      job_id: jobId,
-      user_id: job.customer_id,
-      event_type: eventType,
-      title: rendered.title,
-      body: rendered.body,
-      data: rendered.data,
-      max_attempts: maxAttempts
-    }));
+    const outboxEntry =
+      existing ??
+      (await this.outboxRepo.create({
+        dedupe_key: dedupeKey,
+        job_id: jobId,
+        user_id: job.customer_id,
+        event_type: eventType,
+        title: rendered.title,
+        body: rendered.body,
+        data: rendered.data,
+        max_attempts: maxAttempts
+      }));
 
     // 5. Fetch user's active device tokens
     const activeTokens = await this.tokensRepo.findActiveByUserId(job.customer_id);
@@ -209,9 +211,11 @@ export class NotificationsService {
     }
 
     // 7. Update outbox entry status
-    const finalStatus = successfulDispatches > 0 || (activeTokens.length > 0 && revokedTokensCount === activeTokens.length)
-      ? 'delivered'
-      : 'failed';
+    const finalStatus =
+      successfulDispatches > 0 ||
+      (activeTokens.length > 0 && revokedTokensCount === activeTokens.length)
+        ? 'delivered'
+        : 'failed';
 
     await this.outboxRepo.updateStatus(outboxEntry.id, finalStatus, {
       delivered_at: finalStatus === 'delivered' ? new Date().toISOString() : undefined,
@@ -254,8 +258,10 @@ export class NotificationsService {
         return null;
     }
 
-    const failureReason = typeof event.metadata['reason'] === 'string' ? event.metadata['reason'] : undefined;
-    const pickupCode = typeof event.metadata['pickup_code'] === 'string' ? event.metadata['pickup_code'] : undefined;
+    const failureReason =
+      typeof event.metadata['reason'] === 'string' ? event.metadata['reason'] : undefined;
+    const pickupCode =
+      typeof event.metadata['pickup_code'] === 'string' ? event.metadata['pickup_code'] : undefined;
 
     return this.dispatchJobLifecycleNotification(event.job_id, lifecycleType, {
       failure_reason: failureReason,

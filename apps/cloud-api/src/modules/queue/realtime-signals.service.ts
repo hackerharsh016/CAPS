@@ -10,7 +10,12 @@
  * 5. Refreshed dynamic queue positions and ETA broadcasts for owner & customer channels.
  */
 
-import { ApiError, AuthError, NotFoundError, ValidationError } from '../../plugins/error-handler.js';
+import {
+  ApiError,
+  AuthError,
+  NotFoundError,
+  ValidationError
+} from '../../plugins/error-handler.js';
 import type { IPrintJobsRepository } from '../print-jobs/print-jobs.repository.js';
 import type { IShopsRepository } from '../shops/shops.repository.js';
 import type { IAgentsRepository } from '../agents/agents.repository.js';
@@ -79,7 +84,11 @@ export class InMemoryRealtimeBroadcaster implements IRealtimeBroadcaster {
     return signal;
   }
 
-  async getMissedEvents(shopId: string, afterId: number = 0, limit: number = 100): Promise<QueueSignal[]> {
+  async getMissedEvents(
+    shopId: string,
+    afterId: number = 0,
+    limit: number = 100
+  ): Promise<QueueSignal[]> {
     return this.events
       .filter(e => e.shop_id === shopId && e.id > afterId)
       .slice(0, Math.min(limit, 500));
@@ -246,7 +255,9 @@ export class RealtimeSignalsService {
     nowMs: number = Date.now()
   ): Promise<MissedEventReconcileResponse> {
     if (!request.device_id) {
-      throw new ValidationError('Missing required parameter "device_id" in reconciliation request.');
+      throw new ValidationError(
+        'Missing required parameter "device_id" in reconciliation request.'
+      );
     }
 
     // 1. Verify shop exists

@@ -47,7 +47,9 @@ describe('Cloud API — Private Document Upload and Metadata (P03-M02-F03)', () 
 
   // Sample file buffers
   const validPdfBuffer = Buffer.from('%PDF-1.4\n%CAPS Test Document Content\n%%EOF');
-  const validPngBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+  const validPngBuffer = Buffer.from([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d
+  ]);
   const validJpgBuffer = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]);
   const corruptFileBuffer = Buffer.from('NOT A VALID DOCUMENT CONTENT - CORRUPT BYTES');
 
@@ -180,7 +182,12 @@ describe('Cloud API — Private Document Upload and Metadata (P03-M02-F03)', () 
     });
 
     it('rejects unsupported MIME types with 400 INVALID_PAYLOAD', async () => {
-      const unsupportedTypes = ['application/zip', 'text/html', 'application/x-msdownload', 'application/json'];
+      const unsupportedTypes = [
+        'application/zip',
+        'text/html',
+        'application/x-msdownload',
+        'application/json'
+      ];
 
       for (const mime of unsupportedTypes) {
         const response = await app.inject({
@@ -274,7 +281,11 @@ describe('Cloud API — Private Document Upload and Metadata (P03-M02-F03)', () 
     it('rejects direct storage upload when upload token has expired', async () => {
       // Create an already-expired token directly via storage service
       const expiredStorage = new MockStorageService();
-      const { token } = await expiredStorage.createUploadSignedUrl('documents/customer/doc', 'application/pdf', -10);
+      const { token } = await expiredStorage.createUploadSignedUrl(
+        'documents/customer/doc',
+        'application/pdf',
+        -10
+      );
 
       const res = await app.inject({
         method: 'PUT',

@@ -32,14 +32,22 @@ export class SecuritySandboxError extends Error {
  */
 export function validateMagicBytes(buffer: Buffer, declaredMime: string): void {
   if (buffer.length < 4) {
-    throw new SecuritySandboxError(400, 'CORRUPT_FILE', 'File buffer too short for binary signature verification.');
+    throw new SecuritySandboxError(
+      400,
+      'CORRUPT_FILE',
+      'File buffer too short for binary signature verification.'
+    );
   }
 
   // 1. PDF: %PDF- (0x25 0x50 0x44 0x46)
   if (declaredMime === 'application/pdf') {
     const isPdf = buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
     if (!isPdf) {
-      throw new SecuritySandboxError(400, 'MAGIC_BYTE_MISMATCH', 'File magic bytes do not match declared application/pdf format.');
+      throw new SecuritySandboxError(
+        400,
+        'MAGIC_BYTE_MISMATCH',
+        'File magic bytes do not match declared application/pdf format.'
+      );
     }
     return;
   }
@@ -57,16 +65,25 @@ export function validateMagicBytes(buffer: Buffer, declaredMime: string): void {
       buffer[6] === 0x1a &&
       buffer[7] === 0x0a;
     if (!isPng) {
-      throw new SecuritySandboxError(400, 'MAGIC_BYTE_MISMATCH', 'File magic bytes do not match declared image/png format.');
+      throw new SecuritySandboxError(
+        400,
+        'MAGIC_BYTE_MISMATCH',
+        'File magic bytes do not match declared image/png format.'
+      );
     }
     return;
   }
 
   // 3. JPEG: 0xFF 0xD8 0xFF
   if (declaredMime === 'image/jpeg') {
-    const isJpeg = buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    const isJpeg =
+      buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
     if (!isJpeg) {
-      throw new SecuritySandboxError(400, 'MAGIC_BYTE_MISMATCH', 'File magic bytes do not match declared image/jpeg format.');
+      throw new SecuritySandboxError(
+        400,
+        'MAGIC_BYTE_MISMATCH',
+        'File magic bytes do not match declared image/jpeg format.'
+      );
     }
     return;
   }
@@ -84,15 +101,18 @@ export function validateMagicBytes(buffer: Buffer, declaredMime: string): void {
       buffer[2] === 0x03 &&
       buffer[3] === 0x04;
     if (!isZip) {
-      throw new SecuritySandboxError(400, 'MAGIC_BYTE_MISMATCH', `File magic bytes do not match declared OOXML archive format (${declaredMime}).`);
+      throw new SecuritySandboxError(
+        400,
+        'MAGIC_BYTE_MISMATCH',
+        `File magic bytes do not match declared OOXML archive format (${declaredMime}).`
+      );
     }
     return;
   }
 
   // 5. Legacy Microsoft Office (DOC, PPT): OLE2 Compound Document (0xD0 0xCF 0x11 0xE0 0xA1 0xB1 0x1A 0xE1)
   const isLegacyOfficeMime =
-    declaredMime === 'application/msword' ||
-    declaredMime === 'application/vnd.ms-powerpoint';
+    declaredMime === 'application/msword' || declaredMime === 'application/vnd.ms-powerpoint';
 
   if (isLegacyOfficeMime) {
     const isOle2 =
@@ -115,12 +135,20 @@ export function validateMagicBytes(buffer: Buffer, declaredMime: string): void {
       buffer[3] === 0x04;
 
     if (!isOle2 && !isZip) {
-      throw new SecuritySandboxError(400, 'MAGIC_BYTE_MISMATCH', `File magic bytes do not match declared legacy office format (${declaredMime}).`);
+      throw new SecuritySandboxError(
+        400,
+        'MAGIC_BYTE_MISMATCH',
+        `File magic bytes do not match declared legacy office format (${declaredMime}).`
+      );
     }
     return;
   }
 
-  throw new SecuritySandboxError(400, 'UNSUPPORTED_MIME', `Unsupported MIME type '${declaredMime}'.`);
+  throw new SecuritySandboxError(
+    400,
+    'UNSUPPORTED_MIME',
+    `Unsupported MIME type '${declaredMime}'.`
+  );
 }
 
 /**
@@ -141,7 +169,11 @@ export function inspectZipSafety(buffer: Buffer): void {
 
     fileCount += 1;
     if (fileCount > 5000) {
-      throw new SecuritySandboxError(422, 'ZIP_BOMB_DETECTED', 'Archive contains too many file entries (possible zip bomb).');
+      throw new SecuritySandboxError(
+        422,
+        'ZIP_BOMB_DETECTED',
+        'Archive contains too many file entries (possible zip bomb).'
+      );
     }
 
     const compressedSize = buffer.readUInt32LE(offset + 18);
@@ -173,7 +205,9 @@ export function inspectZipSafety(buffer: Buffer): void {
     // Inspect file name for dangerous contents
     const fileNameStart = offset + 30;
     if (fileNameStart + fileNameLength <= buffer.length) {
-      const entryName = buffer.subarray(fileNameStart, fileNameStart + fileNameLength).toString('utf8');
+      const entryName = buffer
+        .subarray(fileNameStart, fileNameStart + fileNameLength)
+        .toString('utf8');
 
       // 1. VBA Macro projects
       if (

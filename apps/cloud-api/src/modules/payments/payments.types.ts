@@ -89,12 +89,16 @@ export interface RazorpayWebhookPayload {
   event: 'payment.captured' | 'payment.failed' | 'order.paid' | string;
   contains?: string[] | undefined;
   payload: {
-    payment?: {
-      entity: RazorpayPaymentEntity;
-    } | undefined;
-    order?: {
-      entity: RazorpayOrderEntity;
-    } | undefined;
+    payment?:
+      | {
+          entity: RazorpayPaymentEntity;
+        }
+      | undefined;
+    order?:
+      | {
+          entity: RazorpayOrderEntity;
+        }
+      | undefined;
   };
   created_at?: number | undefined;
 }

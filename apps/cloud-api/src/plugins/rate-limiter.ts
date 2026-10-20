@@ -11,10 +11,14 @@ interface ClientRecord {
   timestamps: number[];
 }
 
-export function registerRateLimiter(fastify: FastifyInstance, options: RateLimiterOptions = {}): void {
+export function registerRateLimiter(
+  fastify: FastifyInstance,
+  options: RateLimiterOptions = {}
+): void {
   const max = options.max ?? 100;
   const windowMs = options.windowMs ?? 60000;
-  const skip = options.skip ?? ((req: FastifyRequest) => req.url === '/health' || req.url === '/ready');
+  const skip =
+    options.skip ?? ((req: FastifyRequest) => req.url === '/health' || req.url === '/ready');
   const keyGenerator =
     options.keyGenerator ??
     ((req: FastifyRequest) => {
@@ -28,15 +32,18 @@ export function registerRateLimiter(fastify: FastifyInstance, options: RateLimit
   const clientRecords = new Map<string, ClientRecord>();
 
   // Periodically clean up stale client records to avoid memory leaks
-  const cleanupInterval = setInterval(() => {
-    const cutoff = Date.now() - windowMs;
-    for (const [key, record] of clientRecords.entries()) {
-      record.timestamps = record.timestamps.filter(ts => ts > cutoff);
-      if (record.timestamps.length === 0) {
-        clientRecords.delete(key);
+  const cleanupInterval = setInterval(
+    () => {
+      const cutoff = Date.now() - windowMs;
+      for (const [key, record] of clientRecords.entries()) {
+        record.timestamps = record.timestamps.filter(ts => ts > cutoff);
+        if (record.timestamps.length === 0) {
+          clientRecords.delete(key);
+        }
       }
-    }
-  }, Math.max(windowMs, 30000));
+    },
+    Math.max(windowMs, 30000)
+  );
 
   // Ensure timer does not prevent process exit
   if (cleanupInterval.unref) {

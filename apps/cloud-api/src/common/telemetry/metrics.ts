@@ -3,17 +3,21 @@ export interface AgentHeartbeatPayload {
   shop_id: string;
   version: string;
   status: 'online' | 'printing' | 'idle' | 'offline' | 'error';
-  printers?: Array<{
-    printer_id: string;
-    name: string;
-    status: 'online' | 'offline' | 'paper_jam' | 'out_of_paper' | 'error';
-  }> | undefined;
-  system_info?: {
-    hostname?: string | undefined;
-    os?: string | undefined;
-    cpu_percent?: number | undefined;
-    memory_mb?: number | undefined;
-  } | undefined;
+  printers?:
+    | Array<{
+        printer_id: string;
+        name: string;
+        status: 'online' | 'offline' | 'paper_jam' | 'out_of_paper' | 'error';
+      }>
+    | undefined;
+  system_info?:
+    | {
+        hostname?: string | undefined;
+        os?: string | undefined;
+        cpu_percent?: number | undefined;
+        memory_mb?: number | undefined;
+      }
+    | undefined;
   timestamp?: string | undefined;
 }
 

@@ -32,9 +32,24 @@ describe('Configurable Urgent Cap & Fairness Guard (P06-M02-F02)', () => {
       geo_lat: 28.7,
       geo_lng: 77.2,
       pricing_config: {
-        A4: { bw_single_paise: 200, bw_double_paise: 300, color_single_paise: 1000, color_double_paise: 1500 },
-        A3: { bw_single_paise: 500, bw_double_paise: 800, color_single_paise: 2000, color_double_paise: 3000 },
-        Legal: { bw_single_paise: 300, bw_double_paise: 450, color_single_paise: 1200, color_double_paise: 1800 },
+        A4: {
+          bw_single_paise: 200,
+          bw_double_paise: 300,
+          color_single_paise: 1000,
+          color_double_paise: 1500
+        },
+        A3: {
+          bw_single_paise: 500,
+          bw_double_paise: 800,
+          color_single_paise: 2000,
+          color_double_paise: 3000
+        },
+        Legal: {
+          bw_single_paise: 300,
+          bw_double_paise: 450,
+          color_single_paise: 1200,
+          color_double_paise: 1800
+        },
         binding_prices_paise: { none: 0, spiral: 3000, staple: 500, lamination: 2000 },
         gst_percentage: 18
       },
@@ -110,12 +125,15 @@ describe('Configurable Urgent Cap & Fairness Guard (P06-M02-F02)', () => {
       expect(surcharge.cap_status?.is_urgent_available).toBe(false);
 
       // ETA query signals cap exhaustion with transparent fallback details
-      const eta = await queueService.getLiveEta({
-        shop_id: shop.id,
-        pages: 10,
-        copies: 1,
-        priority_tier: 'urgent'
-      }, now);
+      const eta = await queueService.getLiveEta(
+        {
+          shop_id: shop.id,
+          pages: 10,
+          copies: 1,
+          priority_tier: 'urgent'
+        },
+        now
+      );
       expect(eta.urgent_available).toBe(false);
       expect(eta.cap_rejection?.fallback_tier).toBe('flexible');
       expect(eta.cap_rejection?.cap_type).toBe('hourly');
@@ -241,7 +259,10 @@ describe('Configurable Urgent Cap & Fairness Guard (P06-M02-F02)', () => {
         price_total_paise: 1000,
         price_breakdown: {}
       });
-      await printJobsRepo.update(j1.id, { status: 'queued', enqueued_at: new Date(now).toISOString() });
+      await printJobsRepo.update(j1.id, {
+        status: 'queued',
+        enqueued_at: new Date(now).toISOString()
+      });
 
       const j2 = await printJobsRepo.create({
         shop_id: shop.id,
@@ -252,7 +273,10 @@ describe('Configurable Urgent Cap & Fairness Guard (P06-M02-F02)', () => {
         price_total_paise: 1000,
         price_breakdown: {}
       });
-      await printJobsRepo.update(j2.id, { status: 'queued', enqueued_at: new Date(now).toISOString() });
+      await printJobsRepo.update(j2.id, {
+        status: 'queued',
+        enqueued_at: new Date(now).toISOString()
+      });
 
       // Hourly usage is 2 (below 3), but queue depth is 2 (equals max_urgent_jobs_in_queue)
       const status = await queueService.getUrgentCapStatus(shop.id, now);
@@ -318,14 +342,15 @@ describe('Configurable Urgent Cap & Fairness Guard (P06-M02-F02)', () => {
           price_total_paise: 1000,
           price_breakdown: {}
         });
-        await printJobsRepo.update(j.id, { status: 'completed', enqueued_at: new Date(now - 10000).toISOString() });
+        await printJobsRepo.update(j.id, {
+          status: 'completed',
+          enqueued_at: new Date(now - 10000).toISOString()
+        });
       }
 
       // Fire 10 concurrent requests at the exact same millisecond
       const results = await Promise.allSettled(
-        Array.from({ length: 10 }).map(() =>
-          queueService.reserveUrgentAdmission(shop.id, now)
-        )
+        Array.from({ length: 10 }).map(() => queueService.reserveUrgentAdmission(shop.id, now))
       );
 
       const fulfilled = results.filter(r => r.status === 'fulfilled');
@@ -420,7 +445,10 @@ describe('Configurable Urgent Cap & Fairness Guard (P06-M02-F02)', () => {
           price_total_paise: 1000,
           price_breakdown: {}
         });
-        await printJobsRepo.update(j.id, { status: 'queued', enqueued_at: new Date(now).toISOString() });
+        await printJobsRepo.update(j.id, {
+          status: 'queued',
+          enqueued_at: new Date(now).toISOString()
+        });
       }
 
       // 2. Cap hit -> 429 rejection

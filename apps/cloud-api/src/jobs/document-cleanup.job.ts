@@ -7,7 +7,10 @@
  * - Sanitizes audit events in job_events without document payload data.
  */
 
-import type { PrivacyRetentionService, SweepResults } from '../modules/documents/privacy-retention.service.js';
+import type {
+  PrivacyRetentionService,
+  SweepResults
+} from '../modules/documents/privacy-retention.service.js';
 
 export interface IDocumentCleanupJob {
   run(now?: Date): Promise<SweepResults>;

@@ -117,9 +117,24 @@ describe('Agent Pairing, Heartbeat, Revocation & Status Reporting', () => {
       geo_lat: 12.9716,
       geo_lng: 77.5946,
       pricing_config: {
-        A4: { bw_single_paise: 200, bw_double_paise: 350, color_single_paise: 1000, color_double_paise: 1800 },
-        A3: { bw_single_paise: 500, bw_double_paise: 900, color_single_paise: 2000, color_double_paise: 3500 },
-        Legal: { bw_single_paise: 250, bw_double_paise: 450, color_single_paise: 1200, color_double_paise: 2000 },
+        A4: {
+          bw_single_paise: 200,
+          bw_double_paise: 350,
+          color_single_paise: 1000,
+          color_double_paise: 1800
+        },
+        A3: {
+          bw_single_paise: 500,
+          bw_double_paise: 900,
+          color_single_paise: 2000,
+          color_double_paise: 3500
+        },
+        Legal: {
+          bw_single_paise: 250,
+          bw_double_paise: 450,
+          color_single_paise: 1200,
+          color_double_paise: 2000
+        },
         binding_prices_paise: { none: 0, spiral: 3000, staple: 500, lamination: 2000 },
         gst_percentage: 18
       },
@@ -386,10 +401,27 @@ describe('Agent Pairing, Heartbeat, Revocation & Status Reporting', () => {
         customer_id: CUSTOMER_USER.id,
         document_id: doc.id,
         document_storage_key: doc.storage_key,
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()
@@ -424,7 +456,9 @@ describe('Agent Pairing, Heartbeat, Revocation & Status Reporting', () => {
       const body = JSON.parse(res.body);
       expect(body.data.download_url).toContain('grant_token=');
       expect(body.data.download_url).toContain('expires_at=');
-      expect(body.data.checksum_sha256).toBe('a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90');
+      expect(body.data.checksum_sha256).toBe(
+        'a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90'
+      );
       expect(body.data.file_size_bytes).toBe(88200);
       expect(body.data.content_type).toBe('application/pdf');
 
@@ -472,10 +506,27 @@ describe('Agent Pairing, Heartbeat, Revocation & Status Reporting', () => {
         shop_id: shopId,
         customer_id: CUSTOMER_USER.id,
         document_storage_key: 'status-job.pdf',
-        settings: { paper_size: 'A4', color_mode: 'bw', sides: 'single', orientation: 'portrait', copies: 1, page_range: 'all', binding: 'none' },
+        settings: {
+          paper_size: 'A4',
+          color_mode: 'bw',
+          sides: 'single',
+          orientation: 'portrait',
+          copies: 1,
+          page_range: 'all',
+          binding: 'none'
+        },
         priority_tier: 'flexible',
         price_total_paise: 200,
-        price_breakdown: { base_pages_paise: 200, color_surcharge_paise: 0, duplex_discount_paise: 0, binding_fee_paise: 0, urgent_surcharge_paise: 0, subtotal_paise: 200, gst_paise: 36, total_paise: 236 },
+        price_breakdown: {
+          base_pages_paise: 200,
+          color_surcharge_paise: 0,
+          duplex_discount_paise: 0,
+          binding_fee_paise: 0,
+          urgent_surcharge_paise: 0,
+          subtotal_paise: 200,
+          gst_paise: 36,
+          total_paise: 236
+        },
         status: 'approved',
         enqueued_at: new Date().toISOString(),
         document_expires_at: new Date(Date.now() + 86400000).toISOString()

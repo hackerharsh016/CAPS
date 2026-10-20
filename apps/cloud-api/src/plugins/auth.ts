@@ -56,10 +56,7 @@ export function createTestJwt(
   const payloadB64 = Buffer.from(JSON.stringify(fullPayload)).toString('base64url');
   const signingInput = `${headerB64}.${payloadB64}`;
 
-  const signature = crypto
-    .createHmac('sha256', secret)
-    .update(signingInput)
-    .digest('base64url');
+  const signature = crypto.createHmac('sha256', secret).update(signingInput).digest('base64url');
 
   return `${signingInput}.${signature}`;
 }
@@ -159,8 +156,7 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
     let resolvedRole: UserRole = 'customer';
 
     const candidateRole = (appMeta['role'] || userMeta['role'] || payload.role) as
-      | string
-      | undefined;
+      string | undefined;
     if (
       candidateRole === 'customer' ||
       candidateRole === 'shop_owner' ||
@@ -170,9 +166,8 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
       resolvedRole = candidateRole;
     }
 
-    const shopId = (payload.shop_id ||
-      appMeta['shop_id'] ||
-      userMeta['shop_id']) as string | undefined;
+    const shopId = (payload.shop_id || appMeta['shop_id'] || userMeta['shop_id']) as
+      string | undefined;
     const email = payload.email;
 
     return {
@@ -259,8 +254,7 @@ export function createAuthHooks(verifier: ITokenVerifier) {
 }
 
 export const authPlugin: FastifyPluginAsync<AuthPluginOptions> = async (fastify, options) => {
-  const secret =
-    options.jwtSecret || 'caps-jwt-secret-dev-and-testing-default-at-least-32-chars';
+  const secret = options.jwtSecret || 'caps-jwt-secret-dev-and-testing-default-at-least-32-chars';
   const verifier = options.tokenVerifier ?? new SupabaseJwtVerifier(secret);
   const { authenticate, authorize } = createAuthHooks(verifier);
 

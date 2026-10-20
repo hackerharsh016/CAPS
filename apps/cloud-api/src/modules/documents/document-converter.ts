@@ -9,10 +9,7 @@
  */
 
 import crypto from 'node:crypto';
-import type {
-  ConversionResult,
-  PageDimensions
-} from './documents.types.js';
+import type { ConversionResult, PageDimensions } from './documents.types.js';
 import {
   validateMagicBytes,
   inspectZipSafety,
@@ -53,7 +50,7 @@ function createDeterministicPdf(
   objects.push(`2 0 obj\n<< /Type /Pages /Kids [ ${pageRefs} ] /Count ${pages.length} >>\nendobj`);
 
   let currentObjId = 3;
-  pages.forEach((p) => {
+  pages.forEach(p => {
     const pageObjId = currentObjId;
     const contentObjId = currentObjId + 1;
     currentObjId += 2;
@@ -184,7 +181,9 @@ export class TrustedDocumentConverter implements IDocumentConverter {
           // Extract content metrics for Word documents
           const estimatedPages = Math.max(1, Math.ceil(sourceBuffer.length / 3000));
           pageCount = Math.min(estimatedPages, 500);
-          hasColor = sourceBuffer.includes(Buffer.from('color')) || sourceBuffer.includes(Buffer.from('RGB'));
+          hasColor =
+            sourceBuffer.includes(Buffer.from('color')) ||
+            sourceBuffer.includes(Buffer.from('RGB'));
           dimensions = { width_pt: 595.28, height_pt: 841.89, format: 'A4' };
 
           const pages = Array.from({ length: pageCount }, (_, idx) => ({
@@ -229,7 +228,11 @@ export class TrustedDocumentConverter implements IDocumentConverter {
         }
 
         default:
-          throw new SecuritySandboxError(415, 'UNSUPPORTED_MEDIA_TYPE', `Unsupported format for PDF conversion: '${mimeType}'.`);
+          throw new SecuritySandboxError(
+            415,
+            'UNSUPPORTED_MEDIA_TYPE',
+            `Unsupported format for PDF conversion: '${mimeType}'.`
+          );
       }
 
       const durationMs = Date.now() - startTime;

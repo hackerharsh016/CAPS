@@ -48,9 +48,7 @@ export class MockShopsRepository implements IShopsRepository {
     if (filter.search && filter.search.trim().length > 0) {
       const q = filter.search.toLowerCase().trim();
       all = all.filter(
-        s =>
-          s.name.toLowerCase().includes(q) ||
-          s.address.toLowerCase().includes(q)
+        s => s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)
       );
     }
 
@@ -104,9 +102,7 @@ export class MockShopsRepository implements IShopsRepository {
           ? dto.urgent_surcharge_config
           : existing.urgent_surcharge_config,
       auto_print_enabled:
-        dto.auto_print_enabled !== undefined
-          ? dto.auto_print_enabled
-          : existing.auto_print_enabled,
+        dto.auto_print_enabled !== undefined ? dto.auto_print_enabled : existing.auto_print_enabled,
       ...(dto.allow_pay_at_counter !== undefined
         ? { allow_pay_at_counter: dto.allow_pay_at_counter }
         : {}),

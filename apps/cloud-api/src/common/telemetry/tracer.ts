@@ -21,11 +21,13 @@ export interface TraceSpan {
   endTimeMs?: number | undefined;
   durationMs?: number | undefined;
   status: 'ok' | 'error';
-  error?: {
-    code?: string | undefined;
-    message: string;
-    stack?: string | undefined;
-  } | undefined;
+  error?:
+    | {
+        code?: string | undefined;
+        message: string;
+        stack?: string | undefined;
+      }
+    | undefined;
 }
 
 const SENSITIVE_KEY_REGEX =

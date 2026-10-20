@@ -42,7 +42,9 @@ export class MockPaymentsRepository implements IPaymentsRepository {
     if (dto.gateway_ref) {
       const existing = await this.findByGatewayRef(dto.gateway_ref);
       if (existing) {
-        throw new Error(`Duplicate payment gateway_ref '${dto.gateway_ref}' rejected (replay attack prevention).`);
+        throw new Error(
+          `Duplicate payment gateway_ref '${dto.gateway_ref}' rejected (replay attack prevention).`
+        );
       }
     }
 

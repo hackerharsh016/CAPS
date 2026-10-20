@@ -10,7 +10,12 @@
  */
 
 import crypto from 'node:crypto';
-import { ApiError, AuthError, NotFoundError, ValidationError } from '../../plugins/error-handler.js';
+import {
+  ApiError,
+  AuthError,
+  NotFoundError,
+  ValidationError
+} from '../../plugins/error-handler.js';
 import type { IPrintJobsRepository } from '../print-jobs/print-jobs.repository.js';
 import type { IShopsRepository } from '../shops/shops.repository.js';
 import type { IPrintersRepository } from '../printers/printers.repository.js';
@@ -112,10 +117,7 @@ export class AgentClaimService {
    * Owner Approval Gate (ADR 0004 & Master Plan §5.2).
    * Validates paid/pay-at-counter authorization and advances job status from 'queued' to 'approved'.
    */
-  async approveJob(
-    user: { id: string; role: string },
-    jobId: string
-  ): Promise<PrintJobRecord> {
+  async approveJob(user: { id: string; role: string }, jobId: string): Promise<PrintJobRecord> {
     const job = await this.printJobsRepo.findById(jobId);
     if (!job) {
       throw new NotFoundError(`Print job '${jobId}' not found.`);
@@ -337,10 +339,7 @@ export class AgentClaimService {
       }
 
       // 7. Calculate lease duration (clamped 30s to 600s, default 120s per frozen schema)
-      const leaseSeconds = Math.min(
-        600,
-        Math.max(30, request.lease_duration_seconds ?? 120)
-      );
+      const leaseSeconds = Math.min(600, Math.max(30, request.lease_duration_seconds ?? 120));
       const leaseExpiresAt = new Date(Date.now() + leaseSeconds * 1000).toISOString();
       const leaseToken = crypto.randomUUID();
 
@@ -365,7 +364,11 @@ export class AgentClaimService {
       });
 
       if (!updatedJob) {
-        throw new ClaimError(500, 'UPDATE_FAILED', `Failed to transition job '${selectedJob.id}' to claimed.`);
+        throw new ClaimError(
+          500,
+          'UPDATE_FAILED',
+          `Failed to transition job '${selectedJob.id}' to claimed.`
+        );
       }
 
       // 10. Record audit event
@@ -400,7 +403,12 @@ export class AgentClaimService {
    */
   private async buildClaimResponse(
     job: PrintJobRecord,
-    attempt: { id: string; lease_token: string; lease_expires_at: string; printer_id?: string | undefined },
+    attempt: {
+      id: string;
+      lease_token: string;
+      lease_expires_at: string;
+      printer_id?: string | undefined;
+    },
     printer: Printer
   ): Promise<JobClaimResponseDto> {
     let sha256Checksum = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
@@ -494,7 +502,11 @@ export class AgentClaimService {
           const recovered = await this.printJobsRepo.findById(job.id);
           if (recovered) {
             await this.realtimeSignalsService.emitAgentWake(job.shop_id, recovered);
-            await this.realtimeSignalsService.emitJobStatusChanged(job.shop_id, recovered, job.status);
+            await this.realtimeSignalsService.emitJobStatusChanged(
+              job.shop_id,
+              recovered,
+              job.status
+            );
           }
         }
       } else {
@@ -587,7 +599,9 @@ export class AgentClaimService {
     }
 
     if (attempt.job_id !== input.job_id) {
-      throw new ValidationError(`Attempt '${input.attempt_id}' does not match job '${input.job_id}'.`);
+      throw new ValidationError(
+        `Attempt '${input.attempt_id}' does not match job '${input.job_id}'.`
+      );
     }
 
     if (attempt.lease_token !== input.lease_token) {
@@ -757,7 +771,8 @@ export class AgentClaimService {
         input.error_code && uncertainErrorCodes.includes(input.error_code.toUpperCase())
       );
       const attempts = await this.attemptsRepo.findByJobId(job.id);
-      const targetStatus: JobStatus = isUncertain || attempts.length >= 3 ? 'requires_review' : 'approved';
+      const targetStatus: JobStatus =
+        isUncertain || attempts.length >= 3 ? 'requires_review' : 'approved';
 
       await this.printJobsRepo.update(job.id, {
         status: targetStatus,
@@ -865,7 +880,9 @@ export class AgentClaimService {
     } else if (resolution === 'mark_completed') {
       targetStatus = 'completed';
     } else {
-      throw new ValidationError(`Invalid resolution '${resolution}'. Must be retry, cancel, or mark_completed.`);
+      throw new ValidationError(
+        `Invalid resolution '${resolution}'. Must be retry, cancel, or mark_completed.`
+      );
     }
 
     const updated = await this.printJobsRepo.update(job.id, {
@@ -874,7 +891,11 @@ export class AgentClaimService {
     });
 
     if (!updated) {
-      throw new ClaimError(500, 'UPDATE_FAILED', `Failed to update job '${jobId}' to '${targetStatus}'.`);
+      throw new ClaimError(
+        500,
+        'UPDATE_FAILED',
+        `Failed to update job '${jobId}' to '${targetStatus}'.`
+      );
     }
 
     await this.printJobsRepo.recordEvent({

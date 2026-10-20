@@ -108,14 +108,7 @@ const jobStatusUpdateSchema = z.object({
   job_id: z.string().uuid('job_id must be a valid UUID'),
   attempt_id: z.string().min(1, 'attempt_id is required'),
   lease_token: z.string().min(16, 'lease_token must be at least 16 characters'),
-  status: z.enum([
-    'CLAIMED',
-    'DOWNLOADING',
-    'RENDERING',
-    'PRINTING',
-    'COMPLETED',
-    'FAILED'
-  ]),
+  status: z.enum(['CLAIMED', 'DOWNLOADING', 'RENDERING', 'PRINTING', 'COMPLETED', 'FAILED']),
   spooler_job_id: z.number().int().min(1).nullable().optional(),
   pages_printed: z.number().int().min(0),
   total_pages: z.number().int().min(1),
@@ -137,16 +130,9 @@ const resolveUnresolvedSchema = z.object({
   notes: z.string().max(1000).optional()
 });
 
-export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
-  fastify,
-  options
-) => {
-  const {
-    agentClaimService,
-    pairingService,
-    realtimeSignalsService,
-    privacyCleanupWorker
-  } = options;
+export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fastify, options) => {
+  const { agentClaimService, pairingService, realtimeSignalsService, privacyCleanupWorker } =
+    options;
 
   /**
    * POST /api/v1/shops/:shopId/agents/pairing-code
@@ -155,21 +141,14 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/shops/:shopId/agents/pairing-code',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
       const parsed = generatePairingCodeSchema.safeParse(request.body || {});
       const ttl = parsed.success ? parsed.data.ttl_seconds : 600;
 
-      const result = await pairingService.generatePairingCode(
-        request.user!,
-        shopId,
-        ttl
-      );
+      const result = await pairingService.generatePairingCode(request.user!, shopId, ttl);
 
       return reply.status(200).send({
         data: result
@@ -182,28 +161,25 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
    * Public onboarding: Agent exchanges single-use pairing code for per-device credentials.
    * Strictly never returns or reveals master service-role keys!
    */
-  fastify.post(
-    '/agents/pair',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const parsed = pairAgentDeviceSchema.safeParse(request.body);
-      if (!parsed.success) {
-        return reply.status(400).send({
-          error: {
-            code: 'INVALID_PAYLOAD',
-            message: 'Invalid agent pairing payload.',
-            request_id: request.requestId || 'unknown-request',
-            details: parsed.error.errors
-          }
-        });
-      }
-
-      const result = await pairingService.pairDevice(parsed.data);
-
-      return reply.status(200).send({
-        data: result
+  fastify.post('/agents/pair', async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsed = pairAgentDeviceSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Invalid agent pairing payload.',
+          request_id: request.requestId || 'unknown-request',
+          details: parsed.error.errors
+        }
       });
     }
-  );
+
+    const result = await pairingService.pairDevice(parsed.data);
+
+    return reply.status(200).send({
+      data: result
+    });
+  });
 
   /**
    * POST /api/v1/agents/heartbeat
@@ -259,7 +235,12 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
                   severity: 'warning',
                   summary: `Printer Hardware Issue: ${p.name} (${p.status})`,
                   description: `Agent ${agentId} reported printer ${p.name} status as ${p.status}.`,
-                  context: { agent_id: agentId, shop_id: shopId, printer_id: p.printer_id, status: p.status }
+                  context: {
+                    agent_id: agentId,
+                    shop_id: shopId,
+                    printer_id: p.printer_id,
+                    status: p.status
+                  }
                 });
               }
             }
@@ -292,10 +273,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/shops/:shopId/agents/:deviceId/revoke',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId, deviceId } = request.params as {
@@ -305,12 +283,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
       const parsed = revokeDeviceSchema.safeParse(request.body || {});
       const reason = parsed.success ? parsed.data.reason : undefined;
 
-      const result = await pairingService.revokeDevice(
-        request.user!,
-        shopId,
-        deviceId,
-        reason
-      );
+      const result = await pairingService.revokeDevice(request.user!, shopId, deviceId, reason);
 
       return reply.status(200).send({
         data: result
@@ -325,10 +298,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.get(
     '/shops/:shopId/agents',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
@@ -349,10 +319,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/agents/claim',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = claimRequestSchema.safeParse(request.body);
@@ -367,10 +334,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
         });
       }
 
-      const claimResult = await agentClaimService.claimJob(
-        request.user!,
-        parsed.data
-      );
+      const claimResult = await agentClaimService.claimJob(request.user!, parsed.data);
 
       return reply.status(200).send({
         data: claimResult,
@@ -386,10 +350,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/agents/download-grant',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = downloadGrantSchema.safeParse(request.body);
@@ -404,10 +365,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
         });
       }
 
-      const result = await agentClaimService.generateDownloadGrant(
-        request.user!,
-        parsed.data
-      );
+      const result = await agentClaimService.generateDownloadGrant(request.user!, parsed.data);
 
       return reply.status(200).send({
         data: result
@@ -422,10 +380,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/agents/status',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = jobStatusUpdateSchema.safeParse(request.body);
@@ -440,10 +395,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
         });
       }
 
-      const result = await agentClaimService.updateJobStatus(
-        request.user!,
-        parsed.data
-      );
+      const result = await agentClaimService.updateJobStatus(request.user!, parsed.data);
 
       return reply.status(200).send({
         data: result,
@@ -459,10 +411,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/agents/leases/renew',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = renewLeaseSchema.safeParse(request.body);
@@ -477,10 +426,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
         });
       }
 
-      const result = await agentClaimService.renewLease(
-        request.user!,
-        parsed.data
-      );
+      const result = await agentClaimService.renewLease(request.user!, parsed.data);
 
       return reply.status(200).send({
         data: result
@@ -495,10 +441,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/shops/:shopId/jobs/:jobId/approve',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { jobId } = request.params as { shopId: string; jobId: string };
@@ -520,10 +463,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/shops/:shopId/leases/reconcile',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
@@ -543,10 +483,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/agents/reconcile',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['agent', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = reconcileRequestSchema.safeParse(request.body);
@@ -598,10 +535,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/shops/:shopId/jobs/:jobId/resolve-unresolved',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { jobId } = request.params as { shopId: string; jobId: string };
@@ -656,10 +590,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/admin/privacy-cleanup',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['admin'])]
     },
     handlePrivacyCleanup
   );
@@ -667,10 +598,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/shops/:shopId/privacy-cleanup',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     handlePrivacyCleanup
   );

@@ -43,7 +43,9 @@ export class MockJobAttemptsRepository implements IJobAttemptsRepository {
     // Check idempotency uniqueness constraint: (job_id, idempotency_key)
     const existing = await this.findByIdempotencyKey(dto.job_id, dto.idempotency_key);
     if (existing) {
-      throw new Error(`Duplicate attempt detected for job ${dto.job_id} and idempotency_key ${dto.idempotency_key}`);
+      throw new Error(
+        `Duplicate attempt detected for job ${dto.job_id} and idempotency_key ${dto.idempotency_key}`
+      );
     }
 
     // Check single active lease constraint: only 1 attempt in active status per job
@@ -52,7 +54,9 @@ export class MockJobAttemptsRepository implements IJobAttemptsRepository {
     if (activeStatuses.includes(status)) {
       const active = await this.findActiveByJobId(dto.job_id);
       if (active) {
-        throw new Error(`Active attempt already exists for job ${dto.job_id} (attempt ID: ${active.id})`);
+        throw new Error(
+          `Active attempt already exists for job ${dto.job_id} (attempt ID: ${active.id})`
+        );
       }
     }
 

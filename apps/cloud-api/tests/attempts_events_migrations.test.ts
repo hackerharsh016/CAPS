@@ -42,7 +42,9 @@ describe('Migration 004: Job Attempts, Events Ledger, and Privacy Schema DDL', (
     expect(sql).toContain('REFERENCES public.agent_devices(id) ON DELETE SET NULL');
 
     // Idempotency constraint
-    expect(sql).toContain('CONSTRAINT uq_job_attempts_idempotency UNIQUE (job_id, idempotency_key)');
+    expect(sql).toContain(
+      'CONSTRAINT uq_job_attempts_idempotency UNIQUE (job_id, idempotency_key)'
+    );
 
     // Active lease partial unique index
     expect(sql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS idx_job_attempts_active_lease');
@@ -61,7 +63,9 @@ describe('Migration 004: Job Attempts, Events Ledger, and Privacy Schema DDL', (
     expect(sql).toContain("metadata ? 'password'");
 
     // Ledger immutability trigger
-    expect(sql).toContain('CREATE OR REPLACE FUNCTION public.prevent_modification_of_immutable_ledger');
+    expect(sql).toContain(
+      'CREATE OR REPLACE FUNCTION public.prevent_modification_of_immutable_ledger'
+    );
     expect(sql).toContain('CREATE TRIGGER trg_job_events_immutable');
     expect(sql).toContain('CREATE TRIGGER trg_document_deletion_logs_immutable');
   });
@@ -211,7 +215,9 @@ describe('Job Events & Privacy Ledger Domain Logic', () => {
       metadata: { pdf_content: 'JVBERi0xLjQKJeLjz9MK...', filename: 'invoice.pdf' }
     };
 
-    await expect(repo.create(sensitiveDto)).rejects.toThrow(/Privacy violation: event metadata contains sensitive key/);
+    await expect(repo.create(sensitiveDto)).rejects.toThrow(
+      /Privacy violation: event metadata contains sensitive key/
+    );
 
     // Privacy violation: attempt to store password
     const passwordDto: CreateJobEventDto = {
@@ -222,7 +228,9 @@ describe('Job Events & Privacy Ledger Domain Logic', () => {
       metadata: { password: 'secret_cleartext' }
     };
 
-    await expect(repo.create(passwordDto)).rejects.toThrow(/Privacy violation: event metadata contains sensitive key/);
+    await expect(repo.create(passwordDto)).rejects.toThrow(
+      /Privacy violation: event metadata contains sensitive key/
+    );
   });
 
   it('records document deletion audit log with deletion reason and origin', async () => {

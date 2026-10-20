@@ -15,11 +15,7 @@ export const ALLOWED_DOCUMENT_MIMES = [
 
 export type AllowedDocumentMime = (typeof ALLOWED_DOCUMENT_MIMES)[number];
 
-export type AllowedMimeType =
-  | 'application/pdf'
-  | 'image/png'
-  | 'image/jpeg'
-  | AllowedDocumentMime;
+export type AllowedMimeType = 'application/pdf' | 'image/png' | 'image/jpeg' | AllowedDocumentMime;
 
 export const ALLOWED_MIME_TYPES = ALLOWED_DOCUMENT_MIMES;
 
@@ -32,12 +28,7 @@ export const UPLOAD_URL_EXPIRY_SECONDS = 15 * 60; // 15 minutes (900s)
 export const DOWNLOAD_URL_EXPIRY_SECONDS = 300; // 5 minutes (300s)
 
 export type DocumentStatus =
-  | 'upload_pending'
-  | 'converting'
-  | 'ready'
-  | 'processing'
-  | 'failed'
-  | 'purged';
+  'upload_pending' | 'converting' | 'ready' | 'processing' | 'failed' | 'purged';
 
 export interface PageDimensions {
   width_pt: number;
@@ -146,15 +137,9 @@ export interface DownloadUrlResult {
 }
 
 export type DeletionReason =
-  | 'print_completed'
-  | 'retention_expired'
-  | 'job_cancelled'
-  | 'manual_purge';
+  'print_completed' | 'retention_expired' | 'job_cancelled' | 'manual_purge';
 
-export type DeletedByType =
-  | 'agent_post_spool'
-  | 'cloud_ttl_sweeper'
-  | 'admin_intervention';
+export type DeletedByType = 'agent_post_spool' | 'cloud_ttl_sweeper' | 'admin_intervention';
 
 export interface DocumentDeletionLog {
   id: string;

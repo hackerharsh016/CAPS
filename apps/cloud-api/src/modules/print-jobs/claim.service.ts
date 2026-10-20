@@ -3,7 +3,10 @@ import type { IJobAttemptsRepository } from '../attempts/attempts.repository.js'
 import type { JobAttempt } from '../attempts/attempts.types.js';
 
 export class JobNotClaimableError extends Error {
-  constructor(message: string, public readonly code = 'JOB_NOT_CLAIMABLE') {
+  constructor(
+    message: string,
+    public readonly code = 'JOB_NOT_CLAIMABLE'
+  ) {
     super(message);
     this.name = 'JobNotClaimableError';
   }
