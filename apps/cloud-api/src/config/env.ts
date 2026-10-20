@@ -10,6 +10,15 @@ export const envSchema = z.object({
     .transform(val => val.split(',').map(s => s.trim())),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(10).optional(),
+  SUPABASE_JWT_SECRET: z
+    .string()
+    .min(16)
+    .default('caps-jwt-secret-dev-and-testing-default-at-least-32-chars'),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+  LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+    .default('info'),
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional()
