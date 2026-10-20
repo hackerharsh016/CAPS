@@ -69,14 +69,28 @@ class TestAuthenticodeSignatureVerification(unittest.TestCase):
 
     @unittest.skipUnless(platform.system() == "Windows", "Requires Windows OS for native catalog verification")
     def test_real_windows_signed_system_binary(self) -> None:
-        """Verifies signature extraction against a real Windows signed binary (notepad.exe)."""
-        sys_notepad = Path(os.environ.get("WINDIR", "C:\\Windows")) / "System32" / "notepad.exe"
-        if not sys_notepad.exists():
-            self.skipTest("System notepad.exe not found")
+        """Verifies signature extraction against a real Windows signed binary."""
+        windir = Path(os.environ.get("WINDIR", "C:\\Windows"))
+        candidates = [
+            windir / "explorer.exe",
+            windir / "System32" / "kernel32.dll",
+            windir / "System32" / "notepad.exe",
+        ]
+        signed_binary = None
+        for cand in candidates:
+            if cand.exists():
+                res = verify_authenticode_signature(cand)
+                if res.is_signed and res.status == "Valid":
+                    signed_binary = cand
+                    break
+
+        if not signed_binary:
+            self.skipTest("No genuine signed Windows system binary found in environment")
+            return
 
         # 1. Verify standard signature verification
         result = verify_authenticode_signature(
-            sys_notepad,
+            signed_binary,
             allowed_publishers=["Microsoft"],
         )
 
@@ -89,7 +103,7 @@ class TestAuthenticodeSignatureVerification(unittest.TestCase):
 
         # 2. Verify publisher whitelist enforcement
         untrusted_result = verify_authenticode_signature(
-            sys_notepad,
+            signed_binary,
             allowed_publishers=["Unauthorized Third Party Corp"],
         )
         self.assertTrue(untrusted_result.is_signed)

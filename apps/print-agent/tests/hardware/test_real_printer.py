@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import os
 import sys
+import tempfile
+import unittest
 from pathlib import Path
 from typing import Any
-
-import pytest
 
 from caps_agent.printing.capabilities import CapabilityDetector
 from caps_agent.printing.engine import PrintSettings, WindowsPrintEngine
@@ -74,42 +74,48 @@ def generate_sample_pdf(output_path: Path) -> Path:
     return output_path
 
 
-class TestPhysicalPrinterHardware:
+class TestPhysicalPrinterHardware(unittest.TestCase):
     """Physical hardware integration test suite.
 
     Requires live hardware. Does NOT fake pass.
     """
 
-    @pytest.mark.skipif(
-        not REAL_PRINTER_AVAILABLE,
-        reason=(
-            "Physical printer hardware verification BLOCKED: "
-            "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable."
-        ),
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
+
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
+
+    @unittest.skipUnless(
+        REAL_PRINTER_AVAILABLE,
+        "Physical printer hardware verification BLOCKED: "
+        "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable.",
     )
     def test_real_printer_capability_query(self) -> None:
         """Query DeviceCapabilities from the real Windows printer driver."""
+        self.assertIsNotNone(TEST_PRINTER_NAME)
         assert TEST_PRINTER_NAME is not None
         detector = CapabilityDetector()
         caps = detector.get_capabilities(TEST_PRINTER_NAME)
 
+        self.assertIsNotNone(caps)
         assert caps is not None
-        assert caps.printer_id == TEST_PRINTER_NAME
-        assert caps.supports_color in (True, False)
-        assert caps.supports_duplex in (True, False)
-        assert len(caps.supported_paper_sizes) > 0
+        self.assertEqual(caps.printer_id, TEST_PRINTER_NAME)
+        self.assertIn(caps.supports_color, (True, False))
+        self.assertIn(caps.supports_duplex, (True, False))
+        self.assertGreater(len(caps.supported_paper_sizes), 0)
 
-    @pytest.mark.skipif(
-        not REAL_PRINTER_AVAILABLE,
-        reason=(
-            "Physical printer hardware submission BLOCKED: "
-            "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable."
-        ),
+    @unittest.skipUnless(
+        REAL_PRINTER_AVAILABLE,
+        "Physical printer hardware submission BLOCKED: "
+        "Requires Windows OS, pywin32, and CAPS_TEST_PRINTER_NAME environment variable.",
     )
-    def test_real_printer_submission_and_spooler_tracking(self, tmp_path: Path) -> None:
+    def test_real_printer_submission_and_spooler_tracking(self) -> None:
         """Submit a rasterized test page to real Windows Spooler and monitor completion."""
+        self.assertIsNotNone(TEST_PRINTER_NAME)
         assert TEST_PRINTER_NAME is not None
-        pdf_path = generate_sample_pdf(tmp_path / "hardware_gate_test.pdf")
+        pdf_path = generate_sample_pdf(self.tmp_path / "hardware_gate_test.pdf")
 
         settings = PrintSettings(
             paper_size="a4",
@@ -129,9 +135,9 @@ class TestPhysicalPrinterHardware:
             attempt_id="hardware-gate-attempt-1",
         )
 
-        assert result.accepted is True
-        assert result.spooler_job_id is not None
-        assert result.can_auto_reprint is False
+        self.assertTrue(result.accepted)
+        self.assertIsNotNone(result.spooler_job_id)
+        self.assertFalse(result.can_auto_reprint)
 
         # Monitor spooler until job completes or watchdog triggers
         monitor = SpoolerMonitor()
@@ -142,8 +148,8 @@ class TestPhysicalPrinterHardware:
             poll_interval_seconds=0.5,
         )
 
-        assert outcome.is_terminal is True
-        assert outcome.can_auto_reprint is False
+        self.assertTrue(outcome.is_terminal)
+        self.assertFalse(outcome.can_auto_reprint)
 
 
 def get_hardware_status_summary() -> dict[str, Any]:
@@ -157,3 +163,7 @@ def get_hardware_status_summary() -> dict[str, Any]:
         "hardware_test_ready": REAL_PRINTER_AVAILABLE,
         "status": "PASS" if REAL_PRINTER_AVAILABLE else "BLOCKED (needs physical printer hardware)",
     }
+
+
+if __name__ == "__main__":
+    unittest.main()
