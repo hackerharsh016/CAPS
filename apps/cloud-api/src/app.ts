@@ -12,7 +12,7 @@ import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-j
 import { MockShopsRepository, IShopsRepository } from './modules/shops/shops.repository.js';
 import { MockPrintersRepository, IPrintersRepository } from './modules/printers/printers.repository.js';
 import { createRazorpayClient, IRazorpayClient } from './modules/payments/razorpay.service.js';
-import { MockJobEventsRepository, IJobEventsRepository } from './modules/events/events.repository.js';
+import { MockJobEventsRepository, IJobEventsRepository, MockDocumentDeletionLogsRepository, IDocumentDeletionLogsRepository } from './modules/events/events.repository.js';
 import { QueueService } from './modules/queue/queue.service.js';
 import { queueRoutes } from './modules/queue/queue.routes.js';
 import { MockFirebaseClient, type IFirebaseClient } from './integrations/firebase/firebase.client.js';
@@ -38,6 +38,9 @@ import {
 } from './modules/documents/document-converter.js';
 import { DocumentsService } from './modules/documents/documents.service.js';
 import { documentsRoutes } from './modules/documents/documents.routes.js';
+import { PrivacyRetentionService } from './modules/documents/privacy-retention.service.js';
+import { privacyCleanupRoutes } from './modules/documents/privacy-cleanup.routes.js';
+import { DocumentCleanupJob } from './jobs/document-cleanup.job.js';
 
 export interface AppOptions {
   env?: Env | undefined;
@@ -47,6 +50,7 @@ export interface AppOptions {
   paymentsRepo?: IPaymentsRepository | undefined;
   razorpayClient?: IRazorpayClient | undefined;
   jobEventsRepo?: IJobEventsRepository | undefined;
+  deletionLogsRepo?: IDocumentDeletionLogsRepository | undefined;
   firebaseClient?: IFirebaseClient | undefined;
   userFcmTokensRepo?: IUserFcmTokensRepository | undefined;
   notificationOutboxRepo?: INotificationOutboxRepository | undefined;
@@ -59,6 +63,8 @@ export interface AppOptions {
   queueService?: QueueService | undefined;
   notificationsService?: NotificationsService | undefined;
   documentsService?: DocumentsService | undefined;
+  privacyRetentionService?: PrivacyRetentionService | undefined;
+  documentCleanupJob?: DocumentCleanupJob | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -151,6 +157,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     options.documentsService ??
     new DocumentsService(documentsRepo, storageService, documentConverter);
 
+  const deletionLogsRepo =
+    options.deletionLogsRepo ?? new MockDocumentDeletionLogsRepository();
+  const privacyRetentionService =
+    options.privacyRetentionService ??
+    new PrivacyRetentionService(
+      printJobsRepo,
+      documentsRepo,
+      storageService,
+      deletionLogsRepo,
+      jobEventsRepo
+    );
+
   // Register feature routes under API v1 namespace
   app.register(paymentsRoutes, {
     prefix: '/api/v1/payments',
@@ -180,6 +198,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(documentsRoutes, {
     prefix: '/api/v1/documents',
     documentsService
+  });
+
+  app.register(privacyCleanupRoutes, {
+    prefix: '/api/v1/documents',
+    privacyService: privacyRetentionService
   });
 
   // Health check endpoint

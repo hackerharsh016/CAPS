@@ -31,7 +31,8 @@ export type DocumentDeletionReason = 'print_completed' | 'retention_expired' | '
 
 export interface DocumentDeletionLog {
   id: string;
-  job_id: string;
+  job_id?: string | undefined;
+  document_id?: string | undefined;
   document_storage_key: string;
   deleted_by: DocumentDeletedBy;
   reason: DocumentDeletionReason;
@@ -39,7 +40,8 @@ export interface DocumentDeletionLog {
 }
 
 export interface CreateDocumentDeletionLogDto {
-  job_id: string;
+  job_id?: string | undefined;
+  document_id?: string | undefined;
   document_storage_key: string;
   deleted_by: DocumentDeletedBy;
   reason: DocumentDeletionReason;

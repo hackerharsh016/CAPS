@@ -19,6 +19,8 @@ export interface IDocumentsRepository {
   create(dto: CreateDocumentRecordDto): Promise<DocumentMetadata>;
   findById(id: string): Promise<DocumentMetadata | null>;
   findByCustomerId(customerId: string): Promise<DocumentMetadata[]>;
+  findExpiredForPurge?(now?: Date, limit?: number): Promise<DocumentMetadata[]>;
+  purge?(id: string): Promise<DocumentMetadata | null>;
   update(id: string, partial: Partial<DocumentMetadata>): Promise<DocumentMetadata | null>;
   delete(id: string): Promise<boolean>;
   clear(): void;
@@ -58,6 +60,22 @@ export class MockDocumentsRepository implements IDocumentsRepository {
     return Array.from(this.documents.values())
       .filter(d => d.customer_id === customerId)
       .map(d => ({ ...d }));
+  }
+
+  async findExpiredForPurge(
+    now: Date = new Date(),
+    limit: number = 100
+  ): Promise<DocumentMetadata[]> {
+    const currentTime = now.getTime();
+    return Array.from(this.documents.values())
+      .filter(d => d.status !== 'purged' && new Date(d.expires_at).getTime() <= currentTime)
+      .sort((a, b) => new Date(a.expires_at).getTime() - new Date(b.expires_at).getTime())
+      .slice(0, limit)
+      .map(d => ({ ...d }));
+  }
+
+  async purge(id: string): Promise<DocumentMetadata | null> {
+    return this.update(id, { status: 'purged' });
   }
 
   async update(id: string, partial: Partial<DocumentMetadata>): Promise<DocumentMetadata | null> {

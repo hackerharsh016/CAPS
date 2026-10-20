@@ -5,6 +5,12 @@ export interface IPrintJobsRepository {
   findByCustomer(customerId: string): Promise<PrintJob[]>;
   findQueueByShop(shopId: string): Promise<PrintJob[]>;
   findAllByShop?(shopId: string): Promise<PrintJob[]>;
+  findExpiredForCleanup?(
+    terminalRetentionMs?: number,
+    now?: Date,
+    limit?: number
+  ): Promise<PrintJob[]>;
+  purgeDocumentStorage?(id: string): Promise<PrintJob | null>;
   create(dto: CreatePrintJobDto): Promise<PrintJob>;
   update(id: string, dto: UpdatePrintJobDto): Promise<PrintJob | null>;
   delete(id: string): Promise<boolean>;
@@ -115,5 +121,59 @@ export class MockPrintJobsRepository implements IPrintJobsRepository {
 
   async delete(id: string): Promise<boolean> {
     return this.jobs.delete(id);
+  }
+
+  async findExpiredForCleanup(
+    terminalRetentionMs: number = 30 * 60 * 1000,
+    now: Date = new Date(),
+    limit: number = 100
+  ): Promise<PrintJob[]> {
+    const currentTime = now.getTime();
+    const terminalStatuses = ['completed', 'failed', 'cancelled', 'requires_review'];
+
+    const expired = Array.from(this.jobs.values()).filter(j => {
+      // Must not be already purged
+      if (!j.document_storage_key || j.document_storage_key === '[PURGED]') {
+        return false;
+      }
+
+      // Check 1: TTL hard expiry (regardless of status, e.g. failed prints past TTL)
+      const ttlTime = new Date(j.document_expires_at).getTime();
+      if (ttlTime <= currentTime) {
+        return true;
+      }
+
+      // Check 2: Terminal status completion + retention window (default 30 min)
+      if (terminalStatuses.includes(j.status)) {
+        const terminalTimestamp = new Date(j.updated_at ?? j.created_at).getTime();
+        if (currentTime - terminalTimestamp >= terminalRetentionMs) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+
+    expired.sort((a, b) => {
+      const timeA = new Date(a.document_expires_at).getTime();
+      const timeB = new Date(b.document_expires_at).getTime();
+      return timeA - timeB;
+    });
+
+    return expired.slice(0, limit).map(j => ({ ...j }));
+  }
+
+  async purgeDocumentStorage(id: string): Promise<PrintJob | null> {
+    const existing = this.jobs.get(id);
+    if (!existing) return null;
+
+    const updated: PrintJob = {
+      ...existing,
+      document_storage_key: '[PURGED]',
+      updated_at: new Date().toISOString()
+    };
+
+    this.jobs.set(id, updated);
+    return { ...updated };
   }
 }

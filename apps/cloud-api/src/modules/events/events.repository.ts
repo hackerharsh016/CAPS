@@ -14,6 +14,8 @@ export interface IJobEventsRepository {
 export interface IDocumentDeletionLogsRepository {
   findById(id: string): Promise<DocumentDeletionLog | null>;
   findByJobId(jobId: string): Promise<DocumentDeletionLog[]>;
+  findByDocumentId(documentId: string): Promise<DocumentDeletionLog[]>;
+  findAll(limit?: number): Promise<DocumentDeletionLog[]>;
   create(dto: CreateDocumentDeletionLogDto): Promise<DocumentDeletionLog>;
 }
 
@@ -83,15 +85,29 @@ export class MockDocumentDeletionLogsRepository implements IDocumentDeletionLogs
       .map(l => ({ ...l }));
   }
 
+  async findByDocumentId(documentId: string): Promise<DocumentDeletionLog[]> {
+    return Array.from(this.logs.values())
+      .filter(l => l.document_id === documentId)
+      .map(l => ({ ...l }));
+  }
+
+  async findAll(limit: number = 100): Promise<DocumentDeletionLog[]> {
+    return Array.from(this.logs.values())
+      .sort((a, b) => new Date(b.deleted_at).getTime() - new Date(a.deleted_at).getTime())
+      .slice(0, limit)
+      .map(l => ({ ...l }));
+  }
+
   async create(dto: CreateDocumentDeletionLogDto): Promise<DocumentDeletionLog> {
     const id = crypto.randomUUID();
     const log: DocumentDeletionLog = {
       id,
-      job_id: dto.job_id,
       document_storage_key: dto.document_storage_key,
       deleted_by: dto.deleted_by,
       reason: dto.reason,
-      deleted_at: new Date().toISOString()
+      deleted_at: new Date().toISOString(),
+      ...(dto.job_id !== undefined ? { job_id: dto.job_id } : {}),
+      ...(dto.document_id !== undefined ? { document_id: dto.document_id } : {})
     };
 
     this.logs.set(id, log);
