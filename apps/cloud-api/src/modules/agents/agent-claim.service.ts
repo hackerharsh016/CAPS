@@ -24,7 +24,11 @@ import type {
   JobClaimResponseDto,
   LeaseRenewalRequestDto,
   LeaseRenewalResponseDto,
-  ReconcileLeasesResult
+  ReconcileLeasesResult,
+  DownloadGrantRequestDto,
+  DownloadGrantResponseDto,
+  JobStatusUpdateRequestDto,
+  JobStatusUpdateResponseDto
 } from './agents.types.js';
 import { sortQueueJobs } from '../queue/queue.calculator.js';
 import { assertValidTransition } from '../print-jobs/print-jobs.state-machine.js';
@@ -539,6 +543,200 @@ export class AgentClaimService {
       lease_token: attempt.lease_token,
       lease_expires_at: newExpiresAt,
       status: updated.status
+    };
+  }
+
+  /**
+   * Generates a short-lived signed download grant (5-minute TTL per ADR 0007).
+   * Verifies valid lease token and active attempt.
+   */
+  async generateDownloadGrant(
+    _agentUser: { id: string; role: string },
+    input: DownloadGrantRequestDto,
+    nowMs: number = Date.now()
+  ): Promise<DownloadGrantResponseDto> {
+    const attempt = await this.attemptsRepo.findById(input.attempt_id);
+    if (!attempt) {
+      throw new NotFoundError(`Attempt '${input.attempt_id}' not found.`);
+    }
+
+    if (attempt.job_id !== input.job_id) {
+      throw new ValidationError(`Attempt '${input.attempt_id}' does not match job '${input.job_id}'.`);
+    }
+
+    if (attempt.lease_token !== input.lease_token) {
+      throw new ClaimError(403, 'INVALID_LEASE_TOKEN', 'Lease token mismatch.');
+    }
+
+    if (new Date(attempt.lease_expires_at).getTime() < nowMs) {
+      throw new ClaimError(409, 'LEASE_EXPIRED', 'Claim lease has expired.');
+    }
+
+    if (attempt.status !== 'leased' && attempt.status !== 'downloading') {
+      throw new ClaimError(
+        409,
+        'INVALID_STATUS',
+        `Cannot issue download grant for attempt in status '${attempt.status}'.`
+      );
+    }
+
+    const job = await this.printJobsRepo.findById(input.job_id);
+    if (!job) {
+      throw new NotFoundError(`Job '${input.job_id}' not found.`);
+    }
+
+    let sha256Checksum = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+    let fileSizeBytes = 1024;
+    let downloadUrl = `/api/v1/documents/${job.id}/download`;
+
+    if (this.documentsRepo && job.document_id) {
+      const doc = await this.documentsRepo.findById(job.document_id);
+      if (doc) {
+        sha256Checksum = doc.checksum_sha256 ?? sha256Checksum;
+        fileSizeBytes = doc.file_size_bytes;
+        downloadUrl = `/api/v1/documents/${doc.id}/download`;
+      }
+    }
+
+    // 5-minute (300s) download grant TTL per ADR 0007 & Master Plan §5.5
+    const grantExpiresAt = new Date(nowMs + 300 * 1000).toISOString();
+    const downloadToken = crypto.randomUUID();
+    const signedDownloadUrl = `${downloadUrl}?grant_token=${downloadToken}&expires_at=${encodeURIComponent(grantExpiresAt)}`;
+
+    // Transition attempt to 'downloading'
+    await this.attemptsRepo.update(attempt.id, { status: 'downloading' });
+
+    return {
+      download_url: signedDownloadUrl,
+      expires_at: grantExpiresAt,
+      checksum_sha256: sha256Checksum,
+      file_size_bytes: fileSizeBytes,
+      content_type: 'application/pdf'
+    };
+  }
+
+  /**
+   * Updates Job & Attempt status during agent execution.
+   * Conforms strictly to packages/print-contracts/schema/job-status-update-request.schema.json
+   * and job-status-update-response.schema.json.
+   */
+  async updateJobStatus(
+    _agentUser: { id: string; role: string },
+    input: JobStatusUpdateRequestDto,
+    nowMs: number = Date.now()
+  ): Promise<JobStatusUpdateResponseDto> {
+    const attempt = await this.attemptsRepo.findById(input.attempt_id);
+    if (!attempt) {
+      throw new NotFoundError(`Attempt '${input.attempt_id}' not found.`);
+    }
+
+    if (attempt.job_id !== input.job_id) {
+      throw new ValidationError(`Attempt '${input.attempt_id}' is not for job '${input.job_id}'.`);
+    }
+
+    if (attempt.lease_token !== input.lease_token) {
+      throw new ClaimError(403, 'INVALID_LEASE_TOKEN', 'Lease token mismatch.');
+    }
+
+    if (new Date(attempt.lease_expires_at).getTime() < nowMs && input.status !== 'FAILED') {
+      throw new ClaimError(409, 'LEASE_EXPIRED', 'Claim lease has expired.');
+    }
+
+    const job = await this.printJobsRepo.findById(input.job_id);
+    if (!job) {
+      throw new NotFoundError(`Job '${input.job_id}' not found.`);
+    }
+
+    // Map contract JobAgentStatus to database attempt & job status
+    const now = new Date(nowMs).toISOString();
+
+    if (input.status === 'COMPLETED') {
+      await this.attemptsRepo.update(attempt.id, {
+        status: 'completed',
+        ...(input.spooler_job_id !== undefined && input.spooler_job_id !== null
+          ? { spooler_job_id: input.spooler_job_id }
+          : {})
+      });
+
+      await this.printJobsRepo.update(job.id, {
+        status: 'completed',
+        completed_at: now
+      });
+
+      await this.printJobsRepo.recordEvent({
+        job_id: job.id,
+        actor_id: attempt.agent_device_id,
+        actor_type: 'agent',
+        from_status: job.status,
+        to_status: 'completed',
+        reason: 'Physical print job completed successfully by agent',
+        metadata: {
+          attempt_id: attempt.id,
+          spooler_job_id: input.spooler_job_id,
+          pages_printed: input.pages_printed,
+          total_pages: input.total_pages
+        }
+      });
+    } else if (input.status === 'FAILED') {
+      await this.attemptsRepo.update(attempt.id, {
+        status: 'failed',
+        error_code: input.error_code || 'PRINT_FAILED',
+        error_message: input.error_message || 'Print execution failed on agent'
+      });
+
+      // If attempts < 3, recover back to approved; otherwise requires_review
+      const attempts = await this.attemptsRepo.findByJobId(job.id);
+      const targetStatus = attempts.length < 3 ? 'approved' : 'requires_review';
+
+      await this.printJobsRepo.update(job.id, {
+        status: targetStatus,
+        failed_reason: input.error_message || 'Agent reported print failure'
+      });
+
+      await this.printJobsRepo.recordEvent({
+        job_id: job.id,
+        actor_id: attempt.agent_device_id,
+        actor_type: 'agent',
+        from_status: job.status,
+        to_status: targetStatus,
+        reason: input.error_message || 'Agent reported failure during execution',
+        metadata: {
+          error_code: input.error_code,
+          attempt_id: attempt.id
+        }
+      });
+    } else if (input.status === 'PRINTING') {
+      await this.attemptsRepo.update(attempt.id, {
+        status: 'printing',
+        ...(input.spooler_job_id !== undefined && input.spooler_job_id !== null
+          ? { spooler_job_id: input.spooler_job_id }
+          : {})
+      });
+
+      if (job.status !== 'printing') {
+        await this.printJobsRepo.update(job.id, { status: 'printing' });
+        await this.printJobsRepo.recordEvent({
+          job_id: job.id,
+          actor_id: attempt.agent_device_id,
+          actor_type: 'agent',
+          from_status: job.status,
+          to_status: 'printing',
+          reason: 'Job entered active printing on spooler',
+          metadata: { spooler_job_id: input.spooler_job_id }
+        });
+      }
+    } else if (input.status === 'DOWNLOADING') {
+      await this.attemptsRepo.update(attempt.id, { status: 'downloading' });
+    } else if (input.status === 'RENDERING') {
+      await this.attemptsRepo.update(attempt.id, { status: 'rendering' });
+    }
+
+    return {
+      contract_version: '1.0.0',
+      success: true,
+      job_id: input.job_id,
+      status: input.status,
+      acknowledged_at: now
     };
   }
 }

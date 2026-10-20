@@ -1,7 +1,10 @@
 /**
  * Domain types and DTOs for CAPS Agent Management & Claim Protocols.
- * Strictly conforms to frozen packages/print-contracts/schema/job-claim-request.schema.json
- * and packages/print-contracts/schema/job-claim-response.schema.json.
+ * Strictly conforms to frozen packages/print-contracts/schema/
+ * - job-claim-request.schema.json
+ * - job-claim-response.schema.json
+ * - job-status-update-request.schema.json
+ * - job-status-update-response.schema.json
  */
 
 import type { PrintSettings } from '../pricing/pricing.types.js';
@@ -46,6 +49,57 @@ export interface RegisterAgentDeviceDto {
 export interface HeartbeatDto {
   device_id: string;
   agent_version?: string | undefined;
+  metrics?: Record<string, unknown> | undefined;
+}
+
+export interface HeartbeatResponseDto {
+  acknowledged: boolean;
+  server_time: string;
+  is_revoked: boolean;
+  active_jobs_count?: number | undefined;
+}
+
+export interface AgentPairingCode {
+  id: string;
+  shop_id: string;
+  code: string;
+  created_by: string;
+  expires_at: string;
+  is_used: boolean;
+  used_at?: string | undefined;
+  used_by_device_id?: string | undefined;
+  created_at: string;
+}
+
+export interface GeneratePairingCodeDto {
+  shop_id: string;
+  ttl_seconds?: number | undefined;
+}
+
+export interface PairingCodeResponseDto {
+  pairing_code: string;
+  shop_id: string;
+  expires_at: string;
+}
+
+export interface PairAgentDeviceDto {
+  pairing_code: string;
+  device_fingerprint: string;
+  device_name: string;
+  agent_version?: string | undefined;
+}
+
+export interface PairAgentDeviceResponseDto {
+  success: boolean;
+  device_id: string;
+  shop_id: string;
+  device_name: string;
+  device_secret: string; // Scoped device secret, NEVER service-role key!
+  storage_guidance: {
+    recommended_provider: 'windows_dpapi';
+    target_credential_name: string;
+  };
+  paired_at: string;
 }
 
 /**
@@ -108,4 +162,48 @@ export interface ReconcileLeasesResult {
   reconciled_count: number;
   recovered_job_ids: string[];
   requires_review_job_ids: string[];
+}
+
+export interface DownloadGrantRequestDto {
+  job_id: string;
+  attempt_id: string;
+  lease_token: string;
+}
+
+export interface DownloadGrantResponseDto {
+  download_url: string;
+  expires_at: string;
+  checksum_sha256: string;
+  file_size_bytes: number;
+  content_type: 'application/pdf';
+}
+
+export type JobAgentStatus =
+  | 'CLAIMED'
+  | 'DOWNLOADING'
+  | 'RENDERING'
+  | 'PRINTING'
+  | 'COMPLETED'
+  | 'FAILED';
+
+export interface JobStatusUpdateRequestDto {
+  contract_version: string;
+  job_id: string;
+  attempt_id: string;
+  lease_token: string;
+  status: JobAgentStatus;
+  spooler_job_id?: number | null | undefined;
+  pages_printed: number;
+  total_pages: number;
+  error_code?: string | null | undefined;
+  error_message?: string | null | undefined;
+  timestamp: string;
+}
+
+export interface JobStatusUpdateResponseDto {
+  contract_version: string;
+  success: boolean;
+  job_id: string;
+  status: JobAgentStatus;
+  acknowledged_at: string;
 }

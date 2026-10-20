@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import type {
   AgentDevice,
   AgentSession,
+  AgentPairingCode,
   RegisterAgentDeviceDto,
   HeartbeatDto
 } from './agents.types.js';
@@ -14,12 +15,16 @@ export interface IAgentsRepository {
   revokeDevice(deviceId: string, reason: string): Promise<AgentDevice | null>;
   recordHeartbeat(dto: HeartbeatDto): Promise<boolean>;
   createSession(deviceId: string, shopId: string, version: string): Promise<AgentSession>;
+  createPairingCode(shopId: string, createdBy: string, ttlSeconds?: number): Promise<AgentPairingCode>;
+  findPairingCode(code: string): Promise<AgentPairingCode | null>;
+  consumePairingCode(code: string, deviceId: string): Promise<AgentPairingCode | null>;
   clear(): void;
 }
 
 export class MockAgentsRepository implements IAgentsRepository {
   private readonly devices = new Map<string, AgentDevice>();
   private readonly sessions = new Map<string, AgentSession>();
+  private readonly pairingCodes = new Map<string, AgentPairingCode>();
 
   async findDeviceById(id: string): Promise<AgentDevice | null> {
     const device = this.devices.get(id);
@@ -44,7 +49,20 @@ export class MockAgentsRepository implements IAgentsRepository {
   async registerDevice(dto: RegisterAgentDeviceDto): Promise<AgentDevice> {
     const existing = await this.findDeviceByFingerprint(dto.shop_id, dto.device_fingerprint);
     if (existing) {
-      throw new Error(`Device fingerprint '${dto.device_fingerprint}' is already registered for this shop.`);
+      // Re-enroll device with updated credentials
+      const updated: AgentDevice = {
+        ...existing,
+        device_name: dto.device_name,
+        agent_version: dto.agent_version ?? existing.agent_version,
+        auth_token_hash: dto.auth_token_hash,
+        is_revoked: false,
+        revoked_at: undefined,
+        revoked_reason: undefined,
+        last_heartbeat_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      this.devices.set(existing.id, updated);
+      return { ...updated };
     }
 
     const id = crypto.randomUUID();
@@ -127,8 +145,60 @@ export class MockAgentsRepository implements IAgentsRepository {
     return { ...session };
   }
 
+  async createPairingCode(
+    shopId: string,
+    createdBy: string,
+    ttlSeconds: number = 600
+  ): Promise<AgentPairingCode> {
+    const id = crypto.randomUUID();
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = 'CP-';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + ttlSeconds * 1000).toISOString();
+
+    const pairingCode: AgentPairingCode = {
+      id,
+      shop_id: shopId,
+      code,
+      created_by: createdBy,
+      expires_at: expiresAt,
+      is_used: false,
+      created_at: now.toISOString()
+    };
+
+    this.pairingCodes.set(code, pairingCode);
+    return { ...pairingCode };
+  }
+
+  async findPairingCode(code: string): Promise<AgentPairingCode | null> {
+    const cleanCode = code.trim().toUpperCase();
+    const record = this.pairingCodes.get(cleanCode);
+    return record ? { ...record } : null;
+  }
+
+  async consumePairingCode(code: string, deviceId: string): Promise<AgentPairingCode | null> {
+    const cleanCode = code.trim().toUpperCase();
+    const record = this.pairingCodes.get(cleanCode);
+    if (!record) return null;
+
+    const updated: AgentPairingCode = {
+      ...record,
+      is_used: true,
+      used_at: new Date().toISOString(),
+      used_by_device_id: deviceId
+    };
+
+    this.pairingCodes.set(cleanCode, updated);
+    return { ...updated };
+  }
+
   clear(): void {
     this.devices.clear();
     this.sessions.clear();
+    this.pairingCodes.clear();
   }
 }

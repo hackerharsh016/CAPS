@@ -30,6 +30,7 @@ import { queueRoutes } from './modules/queue/queue.routes.js';
 import { MockAgentsRepository, IAgentsRepository } from './modules/agents/agents.repository.js';
 import { MockJobAttemptsRepository, IJobAttemptsRepository } from './modules/agents/attempts.repository.js';
 import { AgentClaimService } from './modules/agents/agent-claim.service.js';
+import { PairingService } from './modules/agents/pairing.service.js';
 import { agentsRoutes } from './modules/agents/agents.routes.js';
 
 export interface ReadinessCheckResult {
@@ -60,6 +61,7 @@ export interface AppOptions {
   agentsRepo?: IAgentsRepository | undefined;
   attemptsRepo?: IJobAttemptsRepository | undefined;
   agentClaimService?: AgentClaimService | undefined;
+  pairingService?: PairingService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -125,6 +127,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const agentClaimService =
     options.agentClaimService ??
     new AgentClaimService(jobsRepo, shopsRepo, printersRepo, agentsRepo, attemptsRepo, documentsRepo);
+  const pairingService =
+    options.pairingService ??
+    new PairingService(agentsRepo, shopsRepo, agentClaimService);
 
   // 7. Register domain routes under API v1 namespace
   app.register(shopsRoutes, {
@@ -144,7 +149,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
 
   app.register(agentsRoutes, {
     prefix: '/api/v1',
-    agentClaimService
+    agentClaimService,
+    pairingService
   });
 
   app.register(documentsRoutes, {
@@ -226,7 +232,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
           queueService &&
           agentsRepo &&
           attemptsRepo &&
-          agentClaimService
+          agentClaimService &&
+          pairingService
       ),
       message: 'Repositories operational'
     }),
