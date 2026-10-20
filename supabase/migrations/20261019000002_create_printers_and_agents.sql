@@ -65,11 +65,12 @@ COMMENT ON TABLE public.agent_sessions IS 'Active and historical connection sess
 CREATE TABLE IF NOT EXISTS public.agent_pairing_codes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
-    code_hash TEXT NOT NULL,
+    code TEXT NOT NULL UNIQUE,
     created_by UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     expires_at TIMESTAMPTZ NOT NULL,
-    redeemed_at TIMESTAMPTZ,
-    redeemed_by_device_id UUID REFERENCES public.agent_devices(id) ON DELETE SET NULL,
+    is_used BOOLEAN NOT NULL DEFAULT false,
+    used_at TIMESTAMPTZ,
+    used_by_device_id UUID REFERENCES public.agent_devices(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
