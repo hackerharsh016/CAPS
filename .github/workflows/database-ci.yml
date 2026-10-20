@@ -27,14 +27,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: latest
 
       - name: Start Supabase Local Containers
         run: |
           if [ -f "supabase/config.toml" ]; then
-            supabase start -x studio,analytics,imgproxy --ignore-health-check
+            supabase start -x studio -x logflare -x imgproxy --ignore-health-check
             supabase db reset
           else
             echo "supabase/config.toml not present yet. Skipping live emulator start."
