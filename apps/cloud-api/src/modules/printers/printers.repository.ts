@@ -1,8 +1,22 @@
-import type { Printer, CreatePrinterDto, UpdatePrinterDto } from './printers.types.js';
+import crypto from 'node:crypto';
+import type {
+  Printer,
+  CreatePrinterDto,
+  UpdatePrinterDto,
+  PrinterRole,
+  PrinterStatus
+} from './printers.types.js';
+
+export interface PrinterQueryFilter {
+  role?: PrinterRole | undefined;
+  status?: PrinterStatus | undefined;
+  offset?: number | undefined;
+  limit?: number | undefined;
+}
 
 export interface IPrintersRepository {
   findById(id: string): Promise<Printer | null>;
-  findByShopId(shopId: string): Promise<Printer[]>;
+  findByShopId(shopId: string, filter?: PrinterQueryFilter): Promise<{ printers: Printer[]; total: number }>;
   findDefaultByShopId(shopId: string): Promise<Printer | null>;
   create(dto: CreatePrinterDto): Promise<Printer>;
   update(id: string, dto: UpdatePrinterDto): Promise<Printer | null>;
@@ -17,10 +31,26 @@ export class MockPrintersRepository implements IPrintersRepository {
     return printer ? { ...printer } : null;
   }
 
-  async findByShopId(shopId: string): Promise<Printer[]> {
-    return Array.from(this.printers.values())
-      .filter(p => p.shop_id === shopId)
-      .map(p => ({ ...p }));
+  async findByShopId(
+    shopId: string,
+    filter: PrinterQueryFilter = {}
+  ): Promise<{ printers: Printer[]; total: number }> {
+    let all = Array.from(this.printers.values()).filter(p => p.shop_id === shopId);
+
+    if (filter.role) {
+      all = all.filter(p => p.role === filter.role);
+    }
+
+    if (filter.status) {
+      all = all.filter(p => p.status === filter.status);
+    }
+
+    const total = all.length;
+    const offset = filter.offset ?? 0;
+    const limit = filter.limit ?? 10;
+
+    const paged = all.slice(offset, offset + limit).map(p => ({ ...p }));
+    return { printers: paged, total };
   }
 
   async findDefaultByShopId(shopId: string): Promise<Printer | null> {
@@ -98,5 +128,9 @@ export class MockPrintersRepository implements IPrintersRepository {
 
   async delete(id: string): Promise<boolean> {
     return this.printers.delete(id);
+  }
+
+  clear(): void {
+    this.printers.clear();
   }
 }

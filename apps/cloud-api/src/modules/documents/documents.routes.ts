@@ -1,21 +1,46 @@
 /**
- * Documents Routes for CAPS Trusted Conversion & Document Management.
+ * Unified Documents Routes for CAPS.
+ * Supports Phase 03 uploads/finalization and Phase 06 trusted PDF conversion.
  */
 
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { DocumentsService, DocumentsError } from './documents.service.js';
+import type { IStorageService } from './storage.service.js';
 import { SecuritySandboxError } from './security-sandbox.js';
 
 export interface DocumentsPluginOptions {
   documentsService: DocumentsService;
+  storageService?: IStorageService | undefined;
 }
 
-const createUploadIntentSchema = z.object({
-  customer_id: z.string().uuid().optional(),
-  file_name: z.string().min(1),
-  mime_type: z.string().min(1),
-  file_size_bytes: z.number().int().positive()
+const createUploadIntentSchema = z
+  .object({
+    customer_id: z.string().uuid().optional(),
+    file_name: z.string().min(1, 'File name cannot be empty').max(255).optional(),
+    fileName: z.string().min(1, 'File name cannot be empty').max(255).optional(),
+    mime_type: z.string().optional(),
+    mimeType: z.string().optional(),
+    file_size_bytes: z.number().int().positive('File size must be positive').optional(),
+    fileSizeBytes: z.number().int().positive('File size must be positive').optional(),
+    page_count: z.number().int().positive().optional(),
+    pageCount: z.number().int().positive().optional()
+  })
+  .refine(data => Boolean(data.file_name || data.fileName), {
+    message: 'File name (file_name or fileName) is required.'
+  })
+  .refine(data => Boolean(data.mime_type || data.mimeType), {
+    message: 'MIME type (mime_type or mimeType) is required.'
+  })
+  .refine(data => Boolean(data.file_size_bytes !== undefined || data.fileSizeBytes !== undefined), {
+    message: 'File size in bytes (file_size_bytes or fileSizeBytes) is required.'
+  });
+
+const finalizeUploadSchema = z.object({
+  checksum_sha256: z.string().optional(),
+  checksumSha256: z.string().optional(),
+  page_count: z.number().int().positive().optional(),
+  pageCount: z.number().int().positive().optional()
 });
 
 const convertDocumentSchema = z.object({
@@ -24,15 +49,11 @@ const convertDocumentSchema = z.object({
   file_base64: z.string().optional()
 });
 
-const documentParamsSchema = z.object({
-  documentId: z.string().uuid()
-});
-
 export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async (
   fastify,
   options
 ) => {
-  const { documentsService } = options;
+  const { documentsService, storageService } = options;
 
   function handleError(err: unknown, reply: FastifyReply) {
     if (err instanceof SecuritySandboxError || err instanceof DocumentsError) {
@@ -45,29 +66,77 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
     }
 
     const message = err instanceof Error ? err.message : 'Internal server error';
-    return reply.status(500).send({
+    const statusCode = (err as any).statusCode || 500;
+    const code = (err as any).code || 'INTERNAL_SERVER_ERROR';
+
+    return reply.status(statusCode).send({
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
+        code,
         message
       }
     });
   }
 
-  // 1. Create upload intent
+  // Support binary buffer content types for direct storage simulation
+  fastify.addContentTypeParser(
+    ['application/octet-stream', 'application/pdf', 'image/png', 'image/jpeg'],
+    { parseAs: 'buffer' },
+    (_req, body, done) => {
+      done(null, body);
+    }
+  );
+
+  // 1. Phase 03: POST /uploads (Authenticated)
+  const authPreHandler = (fastify as any).authenticate
+    ? { preHandler: [(fastify as any).authenticate] }
+    : {};
+
+  fastify.post('/uploads', authPreHandler, async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsed = createUploadIntentSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Invalid document upload payload.',
+          details: parsed.error.errors
+        }
+      });
+    }
+
+    const user = (request as any).user || {
+      id: parsed.data.customer_id || '00000000-0000-0000-0000-000000000001',
+      role: 'customer'
+    };
+
+    try {
+      const intent = await documentsService.createUploadIntent(user, {
+        file_name: (parsed.data.file_name || parsed.data.fileName)!,
+        mime_type: (parsed.data.mime_type || parsed.data.mimeType)!,
+        file_size_bytes: (parsed.data.file_size_bytes ?? parsed.data.fileSizeBytes)!,
+        page_count: parsed.data.page_count ?? parsed.data.pageCount
+      });
+
+      return reply.status(201).send({ data: intent });
+    } catch (err: unknown) {
+      return handleError(err, reply);
+    }
+  });
+
+  // 2. Phase 06: POST /upload-intent
   fastify.post('/upload-intent', async (request: FastifyRequest, reply: FastifyReply) => {
-    const parseResult = createUploadIntentSchema.safeParse(request.body);
-    if (!parseResult.success) {
+    const parsed = createUploadIntentSchema.safeParse(request.body);
+    if (!parsed.success) {
       return reply.status(400).send({
         error: {
           code: 'VALIDATION_ERROR',
           message: 'Invalid upload intent payload.',
-          details: parseResult.error.errors
+          details: parsed.error.errors
         }
       });
     }
 
     const customerId =
-      parseResult.data.customer_id ??
+      parsed.data.customer_id ??
       (request.headers['x-customer-id'] as string | undefined);
 
     if (!customerId) {
@@ -81,32 +150,55 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
 
     try {
       const intent = await documentsService.createUploadIntent(customerId, {
-        file_name: parseResult.data.file_name,
-        mime_type: parseResult.data.mime_type,
-        file_size_bytes: parseResult.data.file_size_bytes
+        file_name: (parsed.data.file_name || parsed.data.fileName)!,
+        mime_type: (parsed.data.mime_type || parsed.data.mimeType)!,
+        file_size_bytes: (parsed.data.file_size_bytes ?? parsed.data.fileSizeBytes)!
       });
 
-      return reply.status(201).send({
-        data: intent
-      });
+      return reply.status(201).send({ data: intent });
     } catch (err: unknown) {
       return handleError(err, reply);
     }
   });
 
-  // 2. Trigger sandboxed conversion
-  fastify.post('/:documentId/convert', async (request: FastifyRequest, reply: FastifyReply) => {
-    const paramsResult = documentParamsSchema.safeParse(request.params);
-    if (!paramsResult.success) {
-      return reply.status(400).send({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid document ID format.',
-          details: paramsResult.error.errors
-        }
-      });
-    }
+  // 3. Phase 03: POST /:id/finalize
+  fastify.post(
+    '/:id/finalize',
+    authPreHandler,
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { id } = request.params as { id: string };
+      const parsed = finalizeUploadSchema.safeParse(request.body || {});
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'INVALID_PAYLOAD',
+            message: 'Invalid finalize upload payload.',
+            details: parsed.error.errors
+          }
+        });
+      }
 
+      const user = (request as any).user || {
+        id: (request.headers['x-customer-id'] as string) || '00000000-0000-0000-0000-000000000001',
+        role: 'customer'
+      };
+
+      try {
+        const finalized = await documentsService.finalizeUpload(user, id, {
+          checksum_sha256: parsed.data.checksum_sha256 || parsed.data.checksumSha256,
+          page_count: parsed.data.page_count ?? parsed.data.pageCount
+        });
+
+        return reply.status(200).send({ data: finalized });
+      } catch (err: unknown) {
+        return handleError(err, reply);
+      }
+    }
+  );
+
+  // 4. Phase 06: POST /:documentId/convert
+  fastify.post('/:documentId/convert', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { documentId } = request.params as { documentId: string };
     const bodyResult = convertDocumentSchema.safeParse(request.body ?? {});
     if (!bodyResult.success) {
       return reply.status(400).send({
@@ -118,7 +210,6 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
       });
     }
 
-    const documentId = paramsResult.data.documentId;
     const customerId =
       bodyResult.data.customer_id ??
       (request.headers['x-customer-id'] as string | undefined);
@@ -151,56 +242,125 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
     }
   });
 
-  // 3. Get document metadata
-  fastify.get('/:documentId', async (request: FastifyRequest, reply: FastifyReply) => {
-    const paramsResult = documentParamsSchema.safeParse(request.params);
-    if (!paramsResult.success) {
-      return reply.status(400).send({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid document ID format.',
-          details: paramsResult.error.errors
-        }
-      });
-    }
-
+  // 5. GET /:id or /:documentId
+  fastify.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
     const customerId = request.headers['x-customer-id'] as string | undefined;
+    const user = (request as any).user;
 
     try {
-      const doc = await documentsService.getDocument(paramsResult.data.documentId, customerId);
-      return reply.status(200).send({
-        data: doc
-      });
+      const doc = await documentsService.getDocument(user || customerId || id, id);
+      return reply.status(200).send({ data: doc });
     } catch (err: unknown) {
       return handleError(err, reply);
     }
   });
 
-  // 4. Get signed download URL
-  fastify.get('/:documentId/download', async (request: FastifyRequest, reply: FastifyReply) => {
-    const paramsResult = documentParamsSchema.safeParse(request.params);
-    if (!paramsResult.success) {
-      return reply.status(400).send({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid document ID format.',
-          details: paramsResult.error.errors
-        }
-      });
-    }
-
+  // 6. GET /:id/download or /:documentId/download
+  fastify.get('/:id/download', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
     const customerId = request.headers['x-customer-id'] as string | undefined;
+    const user = (request as any).user;
 
     try {
-      const download = await documentsService.getDownloadUrl(
-        paramsResult.data.documentId,
-        customerId
-      );
-      return reply.status(200).send({
-        data: download
-      });
+      const download = await documentsService.getDownloadUrl(user || customerId || id, id);
+      return reply.status(200).send({ data: download });
     } catch (err: unknown) {
       return handleError(err, reply);
     }
   });
+
+  // 7. DELETE /:id
+  fastify.delete('/:id', authPreHandler, async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const user = (request as any).user || {
+      id: (request.headers['x-customer-id'] as string) || '00000000-0000-0000-0000-000000000001',
+      role: 'customer'
+    };
+
+    try {
+      const result = await documentsService.deleteDocument(user, id);
+      return reply.status(200).send(result);
+    } catch (err: unknown) {
+      return handleError(err, reply);
+    }
+  });
+
+  // 8. Direct Storage Simulation Endpoints (PUT /storage/upload, GET /storage/download)
+  if (storageService) {
+    fastify.put('/storage/upload', async (request: FastifyRequest, reply: FastifyReply) => {
+      const query = request.query as { token?: string };
+      if (!query.token) {
+        return reply.status(400).send({
+          error: { code: 'INVALID_PAYLOAD', message: 'Missing required storage token parameter.' }
+        });
+      }
+
+      if (storageService.verifyToken) {
+        const tokenResult = storageService.verifyToken(query.token, 'upload');
+        if (!tokenResult.valid) {
+          return reply.status(403).send({
+            error: { code: tokenResult.expired ? 'TOKEN_EXPIRED' : 'FORBIDDEN', message: tokenResult.error }
+          });
+        }
+
+        let buffer: Buffer;
+        const contentType = (request.headers['content-type'] as string) || 'application/octet-stream';
+
+        if (Buffer.isBuffer(request.body)) {
+          buffer = request.body;
+        } else if (typeof request.body === 'object' && request.body !== null && 'fileBase64' in (request.body as any)) {
+          buffer = Buffer.from((request.body as { fileBase64: string }).fileBase64, 'base64');
+        } else if (typeof request.body === 'string') {
+          buffer = Buffer.from(request.body);
+        } else {
+          buffer = Buffer.alloc(0);
+        }
+
+        await storageService.putObject(tokenResult.storageKey!, buffer, contentType);
+        return reply.status(200).send({ success: true, message: 'File successfully uploaded to storage.' });
+      }
+
+      return reply.status(200).send({ success: true });
+    });
+
+    fastify.get('/storage/download', async (request: FastifyRequest, reply: FastifyReply) => {
+      const query = request.query as { token?: string; key?: string };
+      const storageKey = query.key;
+
+      if (query.token && storageService.verifyToken) {
+        const tokenResult = storageService.verifyToken(query.token, 'download');
+        if (!tokenResult.valid) {
+          return reply.status(403).send({
+            error: { code: tokenResult.expired ? 'TOKEN_EXPIRED' : 'FORBIDDEN', message: tokenResult.error }
+          });
+        }
+        const item = await storageService.getObject(tokenResult.storageKey!);
+        if (!item) {
+          return reply.status(404).send({
+            error: { code: 'NOT_FOUND', message: 'Storage object not found or has been purged.' }
+          });
+        }
+        return reply
+          .status(200)
+          .header('Content-Type', item.contentType || (item as any).mimeType || 'application/octet-stream')
+          .send(item.data);
+      }
+
+      if (storageKey) {
+        const item = await storageService.getObject(storageKey);
+        if (!item) {
+          return reply.status(404).send({
+            error: { code: 'NOT_FOUND', message: 'Storage object not found.' }
+          });
+        }
+        return reply
+          .status(200)
+          .header('Content-Type', item.contentType || (item as any).mimeType || 'application/octet-stream')
+          .send(item.data);
+      }
+
+      return reply.status(400).send({ error: { code: 'INVALID_PAYLOAD', message: 'Missing key or token' } });
+    });
+  }
 };

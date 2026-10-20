@@ -39,3 +39,10 @@ export interface UpdatePrinterDto {
   is_default?: boolean | undefined;
   capabilities?: PrinterCapabilities | undefined;
 }
+
+export interface ListPrintersQuery {
+  role?: PrinterRole | undefined;
+  status?: PrinterStatus | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+}

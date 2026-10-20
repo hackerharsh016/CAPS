@@ -68,3 +68,10 @@ export interface UpdateShopDto {
   auto_print_enabled?: boolean | undefined;
   allow_pay_at_counter?: boolean | undefined;
 }
+
+export interface ListShopsQuery {
+  status?: ShopStatus | undefined;
+  page?: number | undefined;
+  limit?: number | undefined;
+  search?: string | undefined;
+}

@@ -1,7 +1,3 @@
-/**
- * Documents Repository Interface & In-Memory Mock Implementation for CAPS.
- */
-
 import crypto from 'node:crypto';
 import type { DocumentMetadata, DocumentStatus, AllowedDocumentMime } from './documents.types.js';
 
@@ -11,6 +7,7 @@ export interface CreateDocumentRecordDto {
   mime_type: AllowedDocumentMime | string;
   file_size_bytes: number;
   storage_key: string;
+  page_count?: number | undefined;
   status?: DocumentStatus | undefined;
   expires_at?: string | undefined;
 }
@@ -41,6 +38,7 @@ export class MockDocumentsRepository implements IDocumentsRepository {
       mime_type: dto.mime_type,
       file_size_bytes: dto.file_size_bytes,
       storage_key: dto.storage_key,
+      page_count: dto.page_count,
       status: dto.status ?? 'upload_pending',
       expires_at: expiresAt,
       created_at: now,

@@ -1,4 +1,11 @@
-import type { PriorityTier, JobStatus } from '../print-jobs/print-jobs.types.js';
+/**
+ * Domain types and DTOs for the CAPS Queue module.
+ * Implements two-tier priority queue (urgent before flexible FIFO within tier),
+ * non-preemption guarantees, dynamic position calculation, and live ETA estimation.
+ */
+
+import type { PriorityTier, PrintSettings, PriceBreakdown } from '../pricing/pricing.types.js';
+import type { JobStatus, PrintJobRecord } from '../print-jobs/print-jobs.types.js';
 
 export interface UrgentCapRejectionDetails {
   cap_type: 'hourly' | 'queue_depth' | 'fairness_guard';
@@ -52,6 +59,7 @@ export interface QueueJobSummary {
   shop_id: string;
   customer_id: string;
   printer_id?: string | undefined;
+  document_storage_key: string;
   priority_tier: PriorityTier;
   status: JobStatus;
   queue_position: number;
@@ -65,6 +73,8 @@ export interface QueueJobSummary {
   estimated_wait_seconds: number;
   projected_completion_time: string;
   price_total_paise: number;
+  price_breakdown?: PriceBreakdown | undefined;
+  settings?: PrintSettings | undefined;
 }
 
 export interface CustomerRedactedQueueJob {
@@ -125,4 +135,13 @@ export interface ReassignPrinterRequest {
   job_id: string;
   new_printer_id: string;
   shop_id: string;
+}
+
+export interface NextEligibleJobRequest {
+  shop_id: string;
+  printer_id?: string | undefined;
+}
+
+export interface NextEligibleJobResponse {
+  job: PrintJobRecord | null;
 }
