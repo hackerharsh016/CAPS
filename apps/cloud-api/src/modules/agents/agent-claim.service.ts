@@ -18,7 +18,7 @@ import type { IDocumentsRepository } from '../documents/documents.repository.js'
 import type { IStorageService } from '../documents/storage.service.js';
 import type { IAgentsRepository } from './agents.repository.js';
 import type { IJobAttemptsRepository } from './attempts.repository.js';
-import type { PrintJobRecord, JobStatus } from '../print-jobs/print-jobs.types.js';
+import type { PrintJobRecord, JobStatus, PrintSettings } from '../print-jobs/print-jobs.types.js';
 import type { Printer } from '../printers/printers.types.js';
 import type { RealtimeSignalsService } from '../queue/realtime-signals.service.js';
 import type {
@@ -98,11 +98,12 @@ export class AgentClaimService {
       );
     }
 
-    if (settings.paper_size && !printer.capabilities.paper_sizes.includes(settings.paper_size)) {
+    const paperSize = typeof settings.paper_size === 'string' ? settings.paper_size : undefined;
+    if (paperSize && !printer.capabilities.paper_sizes.includes(paperSize)) {
       throw new ClaimError(
         422,
         'INCOMPATIBLE_PRINTER',
-        `Printer '${printer.name}' (${printer.id}) does not support paper size '${settings.paper_size}' required by job '${job.id}'.`
+        `Printer '${printer.name}' (${printer.id}) does not support paper size '${paperSize}' required by job '${job.id}'.`
       );
     }
   }
@@ -429,7 +430,7 @@ export class AgentClaimService {
         checksum_sha256: sha256Checksum,
         content_type: 'application/pdf',
         file_size_bytes: fileSizeBytes,
-        settings: job.settings,
+        settings: job.settings as PrintSettings,
         created_at: job.created_at
       }
     };

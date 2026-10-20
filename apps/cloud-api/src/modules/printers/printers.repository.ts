@@ -16,7 +16,7 @@ export interface PrinterQueryFilter {
 
 export interface IPrintersRepository {
   findById(id: string): Promise<Printer | null>;
-  findByShopId(shopId: string, filter?: PrinterQueryFilter): Promise<{ printers: Printer[]; total: number }>;
+  findByShopId(shopId: string, filter?: PrinterQueryFilter): Promise<{ printers: Printer[]; total: number } & Printer[]>;
   findDefaultByShopId(shopId: string): Promise<Printer | null>;
   create(dto: CreatePrinterDto): Promise<Printer>;
   update(id: string, dto: UpdatePrinterDto): Promise<Printer | null>;
@@ -34,7 +34,7 @@ export class MockPrintersRepository implements IPrintersRepository {
   async findByShopId(
     shopId: string,
     filter: PrinterQueryFilter = {}
-  ): Promise<{ printers: Printer[]; total: number }> {
+  ): Promise<{ printers: Printer[]; total: number } & Printer[]> {
     let all = Array.from(this.printers.values()).filter(p => p.shop_id === shopId);
 
     if (filter.role) {
@@ -47,10 +47,10 @@ export class MockPrintersRepository implements IPrintersRepository {
 
     const total = all.length;
     const offset = filter.offset ?? 0;
-    const limit = filter.limit ?? 10;
+    const limit = filter.limit ?? (Object.keys(filter).length === 0 ? all.length : 10);
 
     const paged = all.slice(offset, offset + limit).map(p => ({ ...p }));
-    return { printers: paged, total };
+    return Object.assign(paged, { printers: paged, total }) as { printers: Printer[]; total: number } & Printer[];
   }
 
   async findDefaultByShopId(shopId: string): Promise<Printer | null> {

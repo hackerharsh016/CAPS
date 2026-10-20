@@ -115,7 +115,7 @@ export class QueueService {
   ): Promise<UrgentCapStatus> {
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
-      throw new NotFoundError(`Shop '${shopId}' not found.`);
+      throw new QueueError('SHOP_NOT_FOUND', `Shop '${shopId}' not found`, 404);
     }
 
     const allJobs = await this.fetchAllShopJobs(shopId);
@@ -203,7 +203,7 @@ export class QueueService {
   ): Promise<Shop> {
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
-      throw new NotFoundError(`Shop '${shopId}' not found.`);
+      throw new QueueError('SHOP_NOT_FOUND', `Shop '${shopId}' not found`, 404);
     }
 
     if (dto.type && dto.type !== 'flat' && dto.type !== 'percentage') {
@@ -292,7 +292,7 @@ export class QueueService {
 
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
-      throw new NotFoundError(`Shop '${shopId}' not found.`);
+      throw new QueueError('SHOP_NOT_FOUND', `Shop '${shopId}' not found`, 404);
     }
 
     const surcharge = computeUrgentSurcharge(
@@ -357,7 +357,7 @@ export class QueueService {
   ): Promise<ShopQueueResponse> {
     const shop = await this.shopsRepo.findById(shopId);
     if (!shop) {
-      throw new NotFoundError(`Shop '${shopId}' not found.`);
+      throw new QueueError('SHOP_NOT_FOUND', `Shop '${shopId}' not found`, 404);
     }
 
     const allJobs = await this.fetchAllShopJobs(shopId);

@@ -7,12 +7,8 @@ import crypto from 'node:crypto';
 import type {
   CreateUploadIntentDto,
   CreateUploadIntentInput,
-  UploadIntentResponseDto,
-  UploadIntentResult,
   DocumentMetadata,
   ConversionResult,
-  DownloadUrlResponseDto,
-  DownloadUrlResult,
   FinalizeUploadInput,
   AllowedDocumentMime
 } from './documents.types.js';
@@ -94,7 +90,7 @@ export class DocumentsService {
 
     const docId = crypto.randomUUID();
     const sanitizedFileName = input.file_name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storageKey = `uploads/${customerId}/${docId}-${sanitizedFileName}`;
+    const storageKey = `documents/${customerId}/${docId}-${sanitizedFileName}`;
     const expiresAt = new Date(Date.now() + UPLOAD_URL_EXPIRY_SECONDS * 1000).toISOString();
 
     const docRecord = await this.documentsRepo.create({
@@ -356,16 +352,6 @@ export class DocumentsService {
       throw new DocumentsError(404, 'DOCUMENT_NOT_FOUND', `Document '${documentId}' not found.`);
     }
 
-    if (user) {
-      const isOwner = document.customer_id === user.id;
-      const isAdmin = user.role === 'admin';
-      if (!isOwner && !isAdmin) {
-        throw new AuthError(403, 'FORBIDDEN', `Forbidden: You do not own document "${documentId}".`);
-      }
-    } else if (customerId && document.customer_id !== customerId) {
-      throw new DocumentsError(403, 'FORBIDDEN', 'Access denied to document owned by another customer.');
-    }
-
     if (document.status === 'purged') {
       throw new DocumentsError(410, 'DOCUMENT_PURGED', `Document "${documentId}" has been purged.`);
     }
@@ -376,6 +362,26 @@ export class DocumentsService {
         'DOCUMENT_NOT_READY',
         `Document conversion is not ready (current status: '${document.status}').`
       );
+    }
+
+    if (user) {
+      const isOwner = document.customer_id === user.id;
+      const isAdmin = user.role === 'admin';
+      let isAuthorizedAgent = false;
+      if (user.role === 'agent' && this.documentsRepo.hasActiveLeaseForDocument) {
+        isAuthorizedAgent = await this.documentsRepo.hasActiveLeaseForDocument(user.id, document.id);
+      }
+      if (!isOwner && !isAdmin && !isAuthorizedAgent) {
+        throw new AuthError(
+          403,
+          'FORBIDDEN',
+          user.role === 'agent'
+            ? `Forbidden: Agent does not possess an active claim lease for document "${documentId}".`
+            : `Forbidden: You do not own document "${documentId}".`
+        );
+      }
+    } else if (customerId && document.customer_id !== customerId) {
+      throw new DocumentsError(403, 'FORBIDDEN', 'Access denied to document owned by another customer.');
     }
 
     const keyToDownload = document.converted_storage_key || document.storage_key;

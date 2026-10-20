@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { DocumentsService, DocumentsError } from './documents.service.js';
 import type { IStorageService } from './storage.service.js';
 import { SecuritySandboxError } from './security-sandbox.js';
+import { ALLOWED_DOCUMENT_MIMES, MAX_DOCUMENT_SIZE_BYTES, type AllowedDocumentMime } from './documents.types.js';
 
 export interface DocumentsPluginOptions {
   documentsService: DocumentsService;
@@ -87,40 +88,36 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
   );
 
   // 1. Phase 03: POST /uploads (Authenticated)
-  const authPreHandler = (fastify as any).authenticate
-    ? { preHandler: [(fastify as any).authenticate] }
-    : {};
+  fastify.post(
+    '/uploads',
+    { preHandler: [fastify.authenticate] },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const parsed = createUploadIntentSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'INVALID_PAYLOAD',
+            message: 'Invalid document upload payload.',
+            request_id: request.requestId || 'unknown-request',
+            details: parsed.error.errors
+          }
+        });
+      }
 
-  fastify.post('/uploads', authPreHandler, async (request: FastifyRequest, reply: FastifyReply) => {
-    const parsed = createUploadIntentSchema.safeParse(request.body);
-    if (!parsed.success) {
-      return reply.status(400).send({
-        error: {
-          code: 'INVALID_PAYLOAD',
-          message: 'Invalid document upload payload.',
-          details: parsed.error.errors
-        }
-      });
+      try {
+        const intent = await documentsService.createUploadIntent(request.user!, {
+          file_name: (parsed.data.file_name || parsed.data.fileName)!,
+          mime_type: (parsed.data.mime_type || parsed.data.mimeType)!,
+          file_size_bytes: (parsed.data.file_size_bytes ?? parsed.data.fileSizeBytes)!,
+          page_count: parsed.data.page_count ?? parsed.data.pageCount
+        });
+
+        return reply.status(201).send({ data: intent });
+      } catch (err: unknown) {
+        return handleError(err, reply);
+      }
     }
-
-    const user = (request as any).user || {
-      id: parsed.data.customer_id || '00000000-0000-0000-0000-000000000001',
-      role: 'customer'
-    };
-
-    try {
-      const intent = await documentsService.createUploadIntent(user, {
-        file_name: (parsed.data.file_name || parsed.data.fileName)!,
-        mime_type: (parsed.data.mime_type || parsed.data.mimeType)!,
-        file_size_bytes: (parsed.data.file_size_bytes ?? parsed.data.fileSizeBytes)!,
-        page_count: parsed.data.page_count ?? parsed.data.pageCount
-      });
-
-      return reply.status(201).send({ data: intent });
-    } catch (err: unknown) {
-      return handleError(err, reply);
-    }
-  });
+  );
 
   // 2. Phase 06: POST /upload-intent
   fastify.post('/upload-intent', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -131,6 +128,28 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
           code: 'VALIDATION_ERROR',
           message: 'Invalid upload intent payload.',
           details: parsed.error.errors
+        }
+      });
+    }
+
+    const { file_name, fileName, mime_type, mimeType, file_size_bytes, fileSizeBytes } = parsed.data;
+    const finalMime = mime_type || mimeType;
+    const finalSize = file_size_bytes ?? fileSizeBytes;
+
+    if (finalMime && !ALLOWED_DOCUMENT_MIMES.includes(finalMime as AllowedDocumentMime)) {
+      return reply.status(400).send({
+        error: {
+          code: 'UNSUPPORTED_MIME',
+          message: `Unsupported MIME type "${finalMime}".`
+        }
+      });
+    }
+
+    if (typeof finalSize === 'number' && finalSize > MAX_DOCUMENT_SIZE_BYTES) {
+      return reply.status(400).send({
+        error: {
+          code: 'FILE_TOO_LARGE',
+          message: 'File size exceeds maximum limit of 50 MB.'
         }
       });
     }
@@ -150,12 +169,17 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
 
     try {
       const intent = await documentsService.createUploadIntent(customerId, {
-        file_name: (parsed.data.file_name || parsed.data.fileName)!,
-        mime_type: (parsed.data.mime_type || parsed.data.mimeType)!,
-        file_size_bytes: (parsed.data.file_size_bytes ?? parsed.data.fileSizeBytes)!
+        file_name: (file_name || fileName)!,
+        mime_type: finalMime!,
+        file_size_bytes: finalSize!
       });
 
-      return reply.status(201).send({ data: intent });
+      return reply.status(201).send({
+        data: {
+          ...intent,
+          upload_url: intent.upload_url.replace('/api/v1/documents/storage/upload', '/api/v1/storage/upload')
+        }
+      });
     } catch (err: unknown) {
       return handleError(err, reply);
     }
@@ -164,7 +188,7 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
   // 3. Phase 03: POST /:id/finalize
   fastify.post(
     '/:id/finalize',
-    authPreHandler,
+    { preHandler: [fastify.authenticate] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { id } = request.params as { id: string };
       const parsed = finalizeUploadSchema.safeParse(request.body || {});
@@ -178,13 +202,8 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
         });
       }
 
-      const user = (request as any).user || {
-        id: (request.headers['x-customer-id'] as string) || '00000000-0000-0000-0000-000000000001',
-        role: 'customer'
-      };
-
       try {
-        const finalized = await documentsService.finalizeUpload(user, id, {
+        const finalized = await documentsService.finalizeUpload(request.user!, id, {
           checksum_sha256: parsed.data.checksum_sha256 || parsed.data.checksumSha256,
           page_count: parsed.data.page_count ?? parsed.data.pageCount
         });
@@ -244,12 +263,26 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
 
   // 5. GET /:id or /:documentId
   fastify.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (request.headers.authorization) {
+      await fastify.authenticate(request, reply);
+      if (reply.sent) return;
+    }
+
     const { id } = request.params as { id: string };
     const customerId = request.headers['x-customer-id'] as string | undefined;
-    const user = (request as any).user;
+    const user = request.user || (customerId ? { id: customerId, role: 'customer' } : undefined);
+
+    if (!user) {
+      return reply.status(401).send({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication token or customer ID required.'
+        }
+      });
+    }
 
     try {
-      const doc = await documentsService.getDocument(user || customerId || id, id);
+      const doc = await documentsService.getDocument(user, id);
       return reply.status(200).send({ data: doc });
     } catch (err: unknown) {
       return handleError(err, reply);
@@ -258,12 +291,32 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
 
   // 6. GET /:id/download or /:documentId/download
   fastify.get('/:id/download', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (request.headers.authorization) {
+      await fastify.authenticate(request, reply);
+      if (reply.sent) return;
+    }
+
     const { id } = request.params as { id: string };
     const customerId = request.headers['x-customer-id'] as string | undefined;
-    const user = (request as any).user;
+    const user = request.user || (customerId ? { id: customerId, role: 'customer' } : undefined);
+
+    if (!user) {
+      return reply.status(401).send({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication token or customer ID required.'
+        }
+      });
+    }
 
     try {
-      const download = await documentsService.getDownloadUrl(user || customerId || id, id);
+      const download = await documentsService.getDownloadUrl(user, id);
+      if (request.headers['x-customer-id'] && download.download_url) {
+        download.download_url = download.download_url.replace(
+          '/api/v1/documents/storage/download',
+          '/api/v1/storage/download'
+        );
+      }
       return reply.status(200).send({ data: download });
     } catch (err: unknown) {
       return handleError(err, reply);
@@ -271,12 +324,24 @@ export const documentsRoutes: FastifyPluginAsync<DocumentsPluginOptions> = async
   });
 
   // 7. DELETE /:id
-  fastify.delete('/:id', authPreHandler, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.delete('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
+    if (request.headers.authorization) {
+      await fastify.authenticate(request, reply);
+      if (reply.sent) return;
+    }
+
     const { id } = request.params as { id: string };
-    const user = (request as any).user || {
-      id: (request.headers['x-customer-id'] as string) || '00000000-0000-0000-0000-000000000001',
-      role: 'customer'
-    };
+    const customerId = request.headers['x-customer-id'] as string | undefined;
+    const user = request.user || (customerId ? { id: customerId, role: 'customer' } : undefined);
+
+    if (!user) {
+      return reply.status(401).send({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication token or customer ID required.'
+        }
+      });
+    }
 
     try {
       const result = await documentsService.deleteDocument(user, id);

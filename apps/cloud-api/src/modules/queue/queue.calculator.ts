@@ -8,7 +8,7 @@
  * - Dynamic queue position derivation without sorting on mutable columns.
  */
 
-import type { PrintJobRecord, JobStatus } from '../print-jobs/print-jobs.types.js';
+import type { PrintJobRecord, JobStatus, PriceBreakdown, PrintSettings } from '../print-jobs/print-jobs.types.js';
 import type { PriorityTier } from '../pricing/pricing.types.js';
 import type { UrgentSurchargeConfig } from '../shops/shops.types.js';
 import type {
@@ -191,6 +191,8 @@ export function sortQueueJobs(jobs: PrintJobRecord[]): PrintJobRecord[] {
   return [...jobs].sort(compareQueueJobs);
 }
 
+export const sortQueueTwoTier = sortQueueJobs;
+
 /**
  * Computes urgent surcharge and itemized total in integer paise.
  */
@@ -272,8 +274,8 @@ export function projectQueueSchedule(
       estimated_wait_seconds: 0,
       projected_completion_time: completionTime,
       price_total_paise: currentlyExecuting.price_total_paise,
-      price_breakdown: currentlyExecuting.price_breakdown,
-      settings: currentlyExecuting.settings
+      price_breakdown: currentlyExecuting.price_breakdown as PriceBreakdown | undefined,
+      settings: currentlyExecuting.settings as PrintSettings | undefined
     };
 
     accumulatedWaitSeconds += remainingSeconds;
@@ -311,8 +313,8 @@ export function projectQueueSchedule(
       estimated_wait_seconds: waitSecondsForThisJob,
       projected_completion_time: projectedCompletion,
       price_total_paise: job.price_total_paise,
-      price_breakdown: job.price_breakdown,
-      settings: job.settings
+      price_breakdown: job.price_breakdown as PriceBreakdown | undefined,
+      settings: job.settings as PrintSettings | undefined
     });
 
     accumulatedWaitSeconds += durationSeconds;

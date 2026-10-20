@@ -331,7 +331,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     agentClaimService,
     pairingService,
     realtimeSignalsService,
-    privacyCleanupWorker
+    privacyCleanupWorker,
+    metrics: options.metrics,
+    alertManager: options.alertManager
   });
 
   app.register(documentsRoutes, {

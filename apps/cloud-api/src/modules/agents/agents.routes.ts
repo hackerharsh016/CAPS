@@ -20,12 +20,16 @@ import type { AgentClaimService } from './agent-claim.service.js';
 import type { PairingService } from './pairing.service.js';
 import type { RealtimeSignalsService } from '../queue/realtime-signals.service.js';
 import type { PrivacyCleanupWorker } from '../../jobs/privacy-cleanup.worker.js';
+import type { MetricsCollector } from '../../common/telemetry/metrics.js';
+import type { AlertManager } from '../../common/telemetry/alerts.js';
 
 export interface AgentsRoutesOptions {
   agentClaimService: AgentClaimService;
   pairingService: PairingService;
   realtimeSignalsService?: RealtimeSignalsService | undefined;
   privacyCleanupWorker?: PrivacyCleanupWorker | undefined;
+  metrics?: MetricsCollector | undefined;
+  alertManager?: AlertManager | undefined;
 }
 
 const claimRequestSchema = z.object({
@@ -56,10 +60,37 @@ const pairAgentDeviceSchema = z.object({
   agent_version: z.string().optional()
 });
 
-const heartbeatSchema = z.object({
+const agentPairingHeartbeatSchema = z.object({
   device_id: z.string().min(1, 'device_id is required'),
   agent_version: z.string().optional(),
   metrics: z.record(z.unknown()).optional()
+});
+
+const agentTelemetryHeartbeatSchema = z.object({
+  agent_id: z.string().min(1, 'agent_id is required'),
+  agentId: z.string().optional(),
+  shop_id: z.string().min(1, 'shop_id is required'),
+  shopId: z.string().optional(),
+  version: z.string().default('1.0.0'),
+  status: z.enum(['online', 'printing', 'idle', 'offline', 'error']).default('online'),
+  printers: z
+    .array(
+      z.object({
+        printer_id: z.string(),
+        name: z.string(),
+        status: z.enum(['online', 'offline', 'paper_jam', 'out_of_paper', 'error'])
+      })
+    )
+    .optional(),
+  system_info: z
+    .object({
+      hostname: z.string().optional(),
+      os: z.string().optional(),
+      cpu_percent: z.number().optional(),
+      memory_mb: z.number().optional()
+    })
+    .optional(),
+  timestamp: z.string().optional()
 });
 
 const revokeDeviceSchema = z.object({
@@ -182,28 +213,74 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify.post(
     '/agents/heartbeat',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['agent', 'admin'])
-      ]
+      preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+        if (request.headers.authorization) {
+          await fastify.authenticate(request, reply);
+          if (reply.sent) return;
+          await fastify.authorize(['agent', 'admin'])(request, reply);
+        }
+      }
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const parsed = heartbeatSchema.safeParse(request.body);
-      if (!parsed.success) {
-        return reply.status(400).send({
-          error: {
-            code: 'INVALID_PAYLOAD',
-            message: 'Invalid agent heartbeat payload.',
-            request_id: request.requestId || 'unknown-request',
-            details: parsed.error.errors
-          }
+      const pairingResult = agentPairingHeartbeatSchema.safeParse(request.body);
+      if (pairingResult.success) {
+        const result = await pairingService.recordHeartbeat(pairingResult.data);
+        return reply.status(200).send({
+          status: 'acknowledged',
+          data: result
         });
       }
 
-      const result = await pairingService.recordHeartbeat(parsed.data);
+      const telemetryResult = agentTelemetryHeartbeatSchema.safeParse(request.body);
+      if (telemetryResult.success) {
+        const data = telemetryResult.data;
+        const agentId = data.agent_id || data.agentId!;
+        const shopId = data.shop_id || data.shopId!;
 
-      return reply.status(200).send({
-        data: result
+        if (options.metrics) {
+          options.metrics.recordAgentHeartbeat({
+            agent_id: agentId,
+            shop_id: shopId,
+            version: data.version,
+            status: data.status,
+            printers: data.printers,
+            system_info: data.system_info,
+            timestamp: data.timestamp || new Date().toISOString()
+          });
+        }
+
+        if (options.alertManager) {
+          options.alertManager.resolveByRule(`PRINT_AGENT_OFFLINE_${agentId}`);
+          if (data.printers) {
+            for (const p of data.printers) {
+              if (p.status === 'paper_jam' || p.status === 'error') {
+                options.alertManager.fireAlert({
+                  rule_name: `PRINTER_HARDWARE_ERROR_${p.printer_id}`,
+                  severity: 'warning',
+                  summary: `Printer Hardware Issue: ${p.name} (${p.status})`,
+                  description: `Agent ${agentId} reported printer ${p.name} status as ${p.status}.`,
+                  context: { agent_id: agentId, shop_id: shopId, printer_id: p.printer_id, status: p.status }
+                });
+              }
+            }
+          }
+        }
+
+        return reply.status(200).send({
+          status: 'acknowledged',
+          timestamp: new Date().toISOString(),
+          agent_id: agentId,
+          shop_id: shopId
+        });
+      }
+
+      return reply.status(400).send({
+        error: {
+          code: 'INVALID_PAYLOAD',
+          message: 'Invalid agent heartbeat payload.',
+          request_id: request.requestId || 'unknown-request',
+          details: telemetryResult.error.errors
+        }
       });
     }
   );

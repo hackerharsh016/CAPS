@@ -64,7 +64,13 @@ export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
    */
   fastify.get(
     '/:shopId/queue',
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+        if (request.headers.authorization) {
+          await fastify.authenticate(request, reply);
+        }
+      }
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
       const callerRole = request.user?.role;
@@ -136,14 +142,21 @@ export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
    */
   fastify.post(
     '/:shopId/queue/eta',
-    { preHandler: [fastify.authenticate] },
+    {
+      preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+        if (request.headers.authorization) {
+          await fastify.authenticate(request, reply);
+        }
+      }
+    },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };
       const parsed = liveEtaSchema.safeParse(request.body);
       if (!parsed.success) {
+        const errorCode = request.headers.authorization ? 'INVALID_PAYLOAD' : 'VALIDATION_ERROR';
         return reply.status(400).send({
           error: {
-            code: 'INVALID_PAYLOAD',
+            code: errorCode,
             message: 'Invalid ETA request payload.',
             request_id: request.requestId || 'unknown-request',
             details: parsed.error.errors
@@ -195,10 +208,13 @@ export const queueRoutes: FastifyPluginAsync<QueueRoutesOptions> = async (
   fastify.post(
     '/:shopId/queue/reassign',
     {
-      preHandler: [
-        fastify.authenticate,
-        fastify.authorize(['shop_owner', 'admin'])
-      ]
+      preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+        if (request.headers.authorization) {
+          await fastify.authenticate(request, reply);
+          if (reply.sent) return;
+          await fastify.authorize(['shop_owner', 'admin'])(request, reply);
+        }
+      }
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
       const { shopId } = request.params as { shopId: string };

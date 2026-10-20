@@ -5,7 +5,7 @@
 
 import type { PrintSettings, PriorityTier, PriceBreakdown } from '../pricing/pricing.types.js';
 
-export type { PriorityTier };
+export type { PriorityTier, PrintSettings, PriceBreakdown };
 
 export type JobStatus =
   | 'pending_payment'

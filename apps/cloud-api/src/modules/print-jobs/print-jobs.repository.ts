@@ -3,9 +3,7 @@ import type {
   PrintJobRecord,
   JobEventRecord,
   ListPrintJobsFilter,
-  JobStatus,
-  CreatePrintJobDto,
-  UpdatePrintJobDto
+  JobStatus
 } from './print-jobs.types.js';
 
 export interface IPrintJobsRepository {

@@ -9,7 +9,8 @@ import type {
   PrintJobRecord,
   CreatePrintJobInput,
   ListPrintJobsFilter,
-  JobStatus
+  JobStatus,
+  PrintSettings
 } from './print-jobs.types.js';
 
 export class PrintJobError extends ApiError {
@@ -133,7 +134,7 @@ export class PrintJobsService {
       }
       const pageCount = 1;
       priceBreakdown = calculatePriceBreakdown({
-        settings,
+        settings: settings as unknown as PrintSettings,
         priorityTier,
         pageCount,
         pricingConfig: shop.pricing_config,

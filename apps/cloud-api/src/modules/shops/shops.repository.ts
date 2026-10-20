@@ -12,6 +12,7 @@ export interface IShopsRepository {
   findById(id: string): Promise<Shop | null>;
   findByOwnerId(ownerId: string): Promise<Shop[]>;
   findAll(filter?: ShopQueryFilter): Promise<{ shops: Shop[]; total: number }>;
+  findAllOpen?(): Promise<Shop[]>;
   create(dto: CreateShopDto): Promise<Shop>;
   update(id: string, dto: UpdateShopDto): Promise<Shop | null>;
   delete(id: string): Promise<boolean>;
@@ -19,6 +20,12 @@ export interface IShopsRepository {
 
 export class MockShopsRepository implements IShopsRepository {
   private shops: Map<string, Shop> = new Map();
+
+  async findAllOpen(): Promise<Shop[]> {
+    return Array.from(this.shops.values())
+      .filter(s => s.status === 'open')
+      .map(s => ({ ...s }));
+  }
 
   async findById(id: string): Promise<Shop | null> {
     const shop = this.shops.get(id);
