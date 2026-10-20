@@ -15,6 +15,10 @@ import { shopsRoutes } from './modules/shops/shops.routes.js';
 import { MockPrintersRepository, IPrintersRepository } from './modules/printers/printers.repository.js';
 import { PrintersService } from './modules/printers/printers.service.js';
 import { printersRoutes } from './modules/printers/printers.routes.js';
+import { MockDocumentsRepository, IDocumentsRepository } from './modules/documents/documents.repository.js';
+import { MockStorageService, IStorageService } from './modules/documents/storage.service.js';
+import { DocumentsService } from './modules/documents/documents.service.js';
+import { documentsRoutes } from './modules/documents/documents.routes.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -31,8 +35,11 @@ export interface AppOptions {
   readinessChecks?: ReadinessCheck[] | undefined;
   shopsRepo?: IShopsRepository | undefined;
   printersRepo?: IPrintersRepository | undefined;
+  documentsRepo?: IDocumentsRepository | undefined;
+  storageService?: IStorageService | undefined;
   shopsService?: ShopsService | undefined;
   printersService?: PrintersService | undefined;
+  documentsService?: DocumentsService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -71,14 +78,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     credentials: true
   });
 
-  // 6. Initialize shop and printer domain repositories and services
+  // 6. Initialize shop, printer, and document domain repositories and services
   const shopsRepo = options.shopsRepo ?? new MockShopsRepository();
   const printersRepo = options.printersRepo ?? new MockPrintersRepository();
+  const documentsRepo = options.documentsRepo ?? new MockDocumentsRepository();
+  const storageService = options.storageService ?? new MockStorageService();
 
   const shopsService =
     options.shopsService ?? new ShopsService(shopsRepo);
   const printersService =
     options.printersService ?? new PrintersService(printersRepo, shopsRepo);
+  const documentsService =
+    options.documentsService ?? new DocumentsService(documentsRepo, storageService);
 
   // 7. Register domain routes under API v1 namespace
   app.register(shopsRoutes, {
@@ -89,6 +100,12 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(printersRoutes, {
     prefix: '/api/v1/shops',
     printersService
+  });
+
+  app.register(documentsRoutes, {
+    prefix: '/api/v1/documents',
+    documentsService,
+    storageService
   });
 
   // 8. Auth verification & role testing routes
@@ -145,8 +162,13 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const defaultReadinessChecks: ReadinessCheck[] = [
     () => ({
       name: 'database',
-      ok: Boolean(shopsRepo && printersRepo),
+      ok: Boolean(shopsRepo && printersRepo && documentsRepo),
       message: 'Repositories operational'
+    }),
+    () => ({
+      name: 'storage',
+      ok: Boolean(storageService),
+      message: 'Document storage operational'
     }),
     () => {
       const memoryUsage = process.memoryUsage();
