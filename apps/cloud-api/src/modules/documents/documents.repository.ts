@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import type { DocumentMetadata, DocumentStatus } from './documents.types.js';
+import type { DocumentMetadata, DocumentStatus, DocumentDeletionLog } from './documents.types.js';
 
 export interface ActiveJobLease {
   agent_id: string;
@@ -29,11 +29,14 @@ export interface IDocumentsRepository {
   hasActiveLeaseForDocument(agentId: string, documentIdOrStorageKey: string): Promise<boolean>;
   addJobLease(agentId: string, documentId: string, storageKey: string, leaseExpiresAt: string): void;
   removeJobLease(agentId: string, documentId: string): void;
+  recordDeletionLog(log: Omit<DocumentDeletionLog, 'id' | 'deleted_at'>): Promise<DocumentDeletionLog>;
+  getDeletionLogs(jobId?: string): Promise<DocumentDeletionLog[]>;
 }
 
 export class MockDocumentsRepository implements IDocumentsRepository {
   private readonly documents = new Map<string, DocumentMetadata>();
   private readonly activeLeases: ActiveJobLease[] = [];
+  private readonly deletionLogs: DocumentDeletionLog[] = [];
 
   async create(doc: {
     customer_id: string;
@@ -126,8 +129,29 @@ export class MockDocumentsRepository implements IDocumentsRepository {
     }
   }
 
+  async recordDeletionLog(log: Omit<DocumentDeletionLog, 'id' | 'deleted_at'>): Promise<DocumentDeletionLog> {
+    const entry: DocumentDeletionLog = {
+      id: crypto.randomUUID(),
+      job_id: log.job_id,
+      document_storage_key: log.document_storage_key,
+      deleted_by: log.deleted_by,
+      reason: log.reason,
+      deleted_at: new Date().toISOString()
+    };
+    this.deletionLogs.push(entry);
+    return { ...entry };
+  }
+
+  async getDeletionLogs(jobId?: string): Promise<DocumentDeletionLog[]> {
+    if (!jobId) {
+      return [...this.deletionLogs];
+    }
+    return this.deletionLogs.filter(l => l.job_id === jobId).map(l => ({ ...l }));
+  }
+
   clear(): void {
     this.documents.clear();
     this.activeLeases.length = 0;
+    this.deletionLogs.length = 0;
   }
 }

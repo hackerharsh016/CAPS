@@ -19,11 +19,13 @@ import { z } from 'zod';
 import type { AgentClaimService } from './agent-claim.service.js';
 import type { PairingService } from './pairing.service.js';
 import type { RealtimeSignalsService } from '../queue/realtime-signals.service.js';
+import type { PrivacyCleanupWorker } from '../../jobs/privacy-cleanup.worker.js';
 
 export interface AgentsRoutesOptions {
   agentClaimService: AgentClaimService;
   pairingService: PairingService;
   realtimeSignalsService?: RealtimeSignalsService | undefined;
+  privacyCleanupWorker?: PrivacyCleanupWorker | undefined;
 }
 
 const claimRequestSchema = z.object({
@@ -99,11 +101,21 @@ const reconcileRequestSchema = z.object({
   in_flight_lease_token: z.string().optional()
 });
 
+const resolveUnresolvedSchema = z.object({
+  resolution: z.enum(['retry', 'cancel', 'mark_completed']),
+  notes: z.string().max(1000).optional()
+});
+
 export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
   fastify,
   options
 ) => {
-  const { agentClaimService, pairingService, realtimeSignalsService } = options;
+  const {
+    agentClaimService,
+    pairingService,
+    realtimeSignalsService,
+    privacyCleanupWorker
+  } = options;
 
   /**
    * POST /api/v1/shops/:shopId/agents/pairing-code
@@ -499,5 +511,90 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (
         data: result
       });
     }
+  );
+
+  /**
+   * POST /api/v1/shops/:shopId/jobs/:jobId/resolve-unresolved
+   * Shop Owner or Admin manually resolves a job stuck in 'requires_review'.
+   * Prevents uncontrolled duplicate physical printing on uncertain spooler outcomes.
+   */
+  fastify.post(
+    '/shops/:shopId/jobs/:jobId/resolve-unresolved',
+    {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize(['shop_owner', 'admin'])
+      ]
+    },
+    async (request: FastifyRequest, reply: FastifyReply) => {
+      const { jobId } = request.params as { shopId: string; jobId: string };
+      const parsed = resolveUnresolvedSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: {
+            code: 'INVALID_PAYLOAD',
+            message: 'Invalid unresolved job resolution payload.',
+            request_id: request.requestId || 'unknown-request',
+            details: parsed.error.errors
+          }
+        });
+      }
+
+      const result = await agentClaimService.resolveUnresolvedJob(
+        request.user!,
+        jobId,
+        parsed.data.resolution,
+        parsed.data.notes
+      );
+
+      return reply.status(200).send({
+        data: result
+      });
+    }
+  );
+
+  /**
+   * POST /api/v1/admin/privacy-cleanup
+   * On-demand privacy retention sweeper. Purges expired documents and completed jobs.
+   */
+  const handlePrivacyCleanup = async (request: FastifyRequest, reply: FastifyReply) => {
+    if (!privacyCleanupWorker) {
+      return reply.status(503).send({
+        error: {
+          code: 'PRIVACY_WORKER_UNAVAILABLE',
+          message: 'Privacy cleanup worker is not configured.',
+          request_id: request.requestId || 'unknown-request'
+        }
+      });
+    }
+
+    const { now_ms } = (request.body as { now_ms?: number } | undefined) || {};
+    const result = await privacyCleanupWorker.runCleanup(now_ms);
+
+    return reply.status(200).send({
+      data: result
+    });
+  };
+
+  fastify.post(
+    '/admin/privacy-cleanup',
+    {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize(['admin'])
+      ]
+    },
+    handlePrivacyCleanup
+  );
+
+  fastify.post(
+    '/shops/:shopId/privacy-cleanup',
+    {
+      preHandler: [
+        fastify.authenticate,
+        fastify.authorize(['shop_owner', 'admin'])
+      ]
+    },
+    handlePrivacyCleanup
   );
 };

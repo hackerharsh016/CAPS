@@ -69,3 +69,32 @@ export interface DownloadUrlResult {
   expires_at: string;
   expires_in_seconds: number;
 }
+
+export type DeletionReason =
+  | 'print_completed'
+  | 'retention_expired'
+  | 'job_cancelled'
+  | 'manual_purge';
+
+export type DeletedByType =
+  | 'agent_post_spool'
+  | 'cloud_ttl_sweeper'
+  | 'admin_intervention';
+
+export interface DocumentDeletionLog {
+  id: string;
+  job_id: string;
+  document_storage_key: string;
+  deleted_by: DeletedByType;
+  reason: DeletionReason;
+  deleted_at: string;
+}
+
+export interface PrivacyCleanupResult {
+  swept_at: string;
+  processed_jobs_count: number;
+  deleted_objects_count: number;
+  deleted_keys: string[];
+  deletion_logs: DocumentDeletionLog[];
+  errors: Array<{ job_id: string; storage_key: string; error: string }>;
+}

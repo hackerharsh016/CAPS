@@ -15,9 +15,10 @@ import type { IPrintJobsRepository } from '../print-jobs/print-jobs.repository.j
 import type { IShopsRepository } from '../shops/shops.repository.js';
 import type { IPrintersRepository } from '../printers/printers.repository.js';
 import type { IDocumentsRepository } from '../documents/documents.repository.js';
+import type { IStorageService } from '../documents/storage.service.js';
 import type { IAgentsRepository } from './agents.repository.js';
 import type { IJobAttemptsRepository } from './attempts.repository.js';
-import type { PrintJobRecord } from '../print-jobs/print-jobs.types.js';
+import type { PrintJobRecord, JobStatus } from '../print-jobs/print-jobs.types.js';
 import type { Printer } from '../printers/printers.types.js';
 import type { RealtimeSignalsService } from '../queue/realtime-signals.service.js';
 import type {
@@ -51,7 +52,8 @@ export class AgentClaimService {
     private readonly agentsRepo: IAgentsRepository,
     private readonly attemptsRepo: IJobAttemptsRepository,
     private readonly documentsRepo?: IDocumentsRepository,
-    private readonly realtimeSignalsService?: RealtimeSignalsService
+    private readonly realtimeSignalsService?: RealtimeSignalsService,
+    private readonly storageService?: IStorageService
   ) {}
 
   /**
@@ -670,6 +672,17 @@ export class AgentClaimService {
       throw new NotFoundError(`Job '${input.job_id}' not found.`);
     }
 
+    // 1. Idempotency safeguard: repeated/replayed status updates from agent
+    if (input.status.toLowerCase() === attempt.status) {
+      return {
+        contract_version: '1.0.0',
+        success: true,
+        job_id: input.job_id,
+        status: input.status,
+        acknowledged_at: attempt.updated_at ?? new Date(nowMs).toISOString()
+      };
+    }
+
     // Map contract JobAgentStatus to database attempt & job status
     const now = new Date(nowMs).toISOString();
 
@@ -700,6 +713,29 @@ export class AgentClaimService {
           total_pages: input.total_pages
         }
       });
+
+      // Post-print immediate privacy cleanup of object storage source file
+      if (this.storageService && job.document_storage_key) {
+        try {
+          await this.storageService.deleteObject(job.document_storage_key);
+          if (this.documentsRepo) {
+            await this.documentsRepo.recordDeletionLog({
+              job_id: job.id,
+              document_storage_key: job.document_storage_key,
+              deleted_by: 'agent_post_spool',
+              reason: 'print_completed'
+            });
+            if (job.document_id) {
+              await this.documentsRepo.update(job.document_id, {
+                status: 'purged',
+                purged_at: now
+              });
+            }
+          }
+        } catch {
+          // Non-fatal: background privacy retention worker sweeps on schedule
+        }
+      }
     } else if (input.status === 'FAILED') {
       await this.attemptsRepo.update(attempt.id, {
         status: 'failed',
@@ -707,9 +743,20 @@ export class AgentClaimService {
         error_message: input.error_message || 'Print execution failed on agent'
       });
 
-      // If attempts < 3, recover back to approved; otherwise requires_review
+      // Uncertain spooler outcomes or repeated crash threshold:
+      // Spooler job ID does not prove physical completion; an unknown outcome must NOT auto-reprint.
+      const uncertainErrorCodes = [
+        'UNCERTAIN_OUTCOME',
+        'SPOOLER_CRASH',
+        'PAPER_JAM_UNKNOWN',
+        'COMMUNICATION_LOST',
+        'UNKNOWN'
+      ];
+      const isUncertain = Boolean(
+        input.error_code && uncertainErrorCodes.includes(input.error_code.toUpperCase())
+      );
       const attempts = await this.attemptsRepo.findByJobId(job.id);
-      const targetStatus = attempts.length < 3 ? 'approved' : 'requires_review';
+      const targetStatus: JobStatus = isUncertain || attempts.length >= 3 ? 'requires_review' : 'approved';
 
       await this.printJobsRepo.update(job.id, {
         status: targetStatus,
@@ -722,10 +769,13 @@ export class AgentClaimService {
         actor_type: 'agent',
         from_status: job.status,
         to_status: targetStatus,
-        reason: input.error_message || 'Agent reported failure during execution',
+        reason: isUncertain
+          ? 'Uncertain spooler outcome; routed to requires_review to prevent auto-reprint'
+          : input.error_message || 'Agent reported failure during execution',
         metadata: {
           error_code: input.error_code,
-          attempt_id: attempt.id
+          attempt_id: attempt.id,
+          is_uncertain: isUncertain
         }
       });
     } else if (input.status === 'PRINTING') {
@@ -767,6 +817,116 @@ export class AgentClaimService {
       job_id: input.job_id,
       status: input.status,
       acknowledged_at: now
+    };
+  }
+
+  /**
+   * Reconciles unresolved jobs stuck in 'requires_review' due to uncertain spooler outcomes.
+   * Authorized strictly for shop owners and admins.
+   */
+  async resolveUnresolvedJob(
+    user: { id: string; role: string },
+    jobId: string,
+    resolution: 'retry' | 'cancel' | 'mark_completed',
+    notes?: string
+  ): Promise<{ job: PrintJobRecord; previous_status: JobStatus; new_status: JobStatus }> {
+    const job = await this.printJobsRepo.findById(jobId);
+    if (!job) {
+      throw new NotFoundError(`Print job '${jobId}' not found.`);
+    }
+
+    if (user.role !== 'admin') {
+      const shop = await this.shopsRepo.findById(job.shop_id);
+      if (!shop || shop.owner_id !== user.id) {
+        throw new AuthError(
+          403,
+          'FORBIDDEN',
+          `Forbidden: You do not own shop '${job.shop_id}' associated with job '${jobId}'.`
+        );
+      }
+    }
+
+    if (job.status !== 'requires_review') {
+      throw new ClaimError(
+        400,
+        'INVALID_STATUS',
+        `Job '${jobId}' is in status '${job.status}'. Only jobs in 'requires_review' can be resolved.`
+      );
+    }
+
+    let targetStatus: JobStatus;
+    const now = new Date().toISOString();
+
+    if (resolution === 'retry') {
+      targetStatus = 'approved';
+    } else if (resolution === 'cancel') {
+      targetStatus = 'cancelled';
+    } else if (resolution === 'mark_completed') {
+      targetStatus = 'completed';
+    } else {
+      throw new ValidationError(`Invalid resolution '${resolution}'. Must be retry, cancel, or mark_completed.`);
+    }
+
+    const updated = await this.printJobsRepo.update(job.id, {
+      status: targetStatus,
+      ...(targetStatus === 'completed' ? { completed_at: now } : {})
+    });
+
+    if (!updated) {
+      throw new ClaimError(500, 'UPDATE_FAILED', `Failed to update job '${jobId}' to '${targetStatus}'.`);
+    }
+
+    await this.printJobsRepo.recordEvent({
+      job_id: job.id,
+      actor_id: user.id,
+      actor_type: user.role === 'admin' ? 'system' : 'owner',
+      from_status: job.status,
+      to_status: targetStatus,
+      reason: notes || `Unresolved job manually resolved via ${resolution}`,
+      metadata: {
+        resolution,
+        notes
+      }
+    });
+
+    if (this.realtimeSignalsService) {
+      if (targetStatus === 'approved') {
+        await this.realtimeSignalsService.emitAgentWake(job.shop_id, updated);
+      }
+      await this.realtimeSignalsService.emitJobStatusChanged(job.shop_id, updated, job.status);
+    }
+
+    // Post-print / cancellation privacy cleanup if storageService is present
+    if (
+      (targetStatus === 'completed' || targetStatus === 'cancelled') &&
+      this.storageService &&
+      job.document_storage_key
+    ) {
+      try {
+        await this.storageService.deleteObject(job.document_storage_key);
+        if (this.documentsRepo) {
+          await this.documentsRepo.recordDeletionLog({
+            job_id: job.id,
+            document_storage_key: job.document_storage_key,
+            deleted_by: 'admin_intervention',
+            reason: targetStatus === 'completed' ? 'print_completed' : 'job_cancelled'
+          });
+          if (job.document_id) {
+            await this.documentsRepo.update(job.document_id, {
+              status: 'purged',
+              purged_at: now
+            });
+          }
+        }
+      } catch {
+        // Ignored; sweeper will handle
+      }
+    }
+
+    return {
+      job: updated,
+      previous_status: job.status,
+      new_status: targetStatus
     };
   }
 }

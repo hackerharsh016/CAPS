@@ -37,6 +37,7 @@ import { MockJobAttemptsRepository, IJobAttemptsRepository } from './modules/age
 import { AgentClaimService } from './modules/agents/agent-claim.service.js';
 import { PairingService } from './modules/agents/pairing.service.js';
 import { agentsRoutes } from './modules/agents/agents.routes.js';
+import { PrivacyCleanupWorker } from './jobs/privacy-cleanup.worker.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -69,6 +70,7 @@ export interface AppOptions {
   pairingService?: PairingService | undefined;
   realtimeBroadcaster?: IRealtimeBroadcaster | undefined;
   realtimeSignalsService?: RealtimeSignalsService | undefined;
+  privacyCleanupWorker?: PrivacyCleanupWorker | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -152,11 +154,19 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       agentsRepo,
       attemptsRepo,
       documentsRepo,
-      realtimeSignalsService
+      realtimeSignalsService,
+      storageService
     );
   const pairingService =
     options.pairingService ??
     new PairingService(agentsRepo, shopsRepo, agentClaimService);
+  const privacyCleanupWorker =
+    options.privacyCleanupWorker ??
+    new PrivacyCleanupWorker({
+      printJobsRepo: jobsRepo,
+      documentsRepo,
+      storageService
+    });
 
   // 7. Register domain routes under API v1 namespace
   app.register(shopsRoutes, {
@@ -179,7 +189,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     prefix: '/api/v1',
     agentClaimService,
     pairingService,
-    realtimeSignalsService
+    realtimeSignalsService,
+    privacyCleanupWorker
   });
 
   app.register(documentsRoutes, {
