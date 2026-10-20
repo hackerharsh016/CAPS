@@ -9,6 +9,12 @@ import {
   ITokenVerifier,
   SupabaseJwtVerifier
 } from './plugins/auth.js';
+import { MockShopsRepository, IShopsRepository } from './modules/shops/shops.repository.js';
+import { ShopsService } from './modules/shops/shops.service.js';
+import { shopsRoutes } from './modules/shops/shops.routes.js';
+import { MockPrintersRepository, IPrintersRepository } from './modules/printers/printers.repository.js';
+import { PrintersService } from './modules/printers/printers.service.js';
+import { printersRoutes } from './modules/printers/printers.routes.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -23,6 +29,10 @@ export interface AppOptions {
   tokenVerifier?: ITokenVerifier | undefined;
   rateLimitOptions?: Partial<RateLimiterOptions> | undefined;
   readinessChecks?: ReadinessCheck[] | undefined;
+  shopsRepo?: IShopsRepository | undefined;
+  printersRepo?: IPrintersRepository | undefined;
+  shopsService?: ShopsService | undefined;
+  printersService?: PrintersService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -61,7 +71,27 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     credentials: true
   });
 
-  // 6. Auth verification & role testing routes
+  // 6. Initialize shop and printer domain repositories and services
+  const shopsRepo = options.shopsRepo ?? new MockShopsRepository();
+  const printersRepo = options.printersRepo ?? new MockPrintersRepository();
+
+  const shopsService =
+    options.shopsService ?? new ShopsService(shopsRepo);
+  const printersService =
+    options.printersService ?? new PrintersService(printersRepo, shopsRepo);
+
+  // 7. Register domain routes under API v1 namespace
+  app.register(shopsRoutes, {
+    prefix: '/api/v1/shops',
+    shopsService
+  });
+
+  app.register(printersRoutes, {
+    prefix: '/api/v1/shops',
+    printersService
+  });
+
+  // 8. Auth verification & role testing routes
   app.get(
     '/api/v1/auth/me',
     { preHandler: [app.authenticate] },
@@ -100,7 +130,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     }
   );
 
-  // 7. Liveness check endpoint
+  // 9. Liveness check endpoint
   app.get('/health', async (_request, reply) => {
     return reply.status(200).send({
       status: 'ok',
@@ -111,11 +141,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
     });
   });
 
-  // 8. Readiness check endpoint with dependency checks
+  // 10. Readiness check endpoint with dependency checks
   const defaultReadinessChecks: ReadinessCheck[] = [
     () => ({
       name: 'database',
-      ok: true,
+      ok: Boolean(shopsRepo && printersRepo),
       message: 'Repositories operational'
     }),
     () => {
