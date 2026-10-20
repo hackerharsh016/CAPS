@@ -25,6 +25,8 @@ import { quotesRoutes } from './modules/pricing/quotes.routes.js';
 import { MockPrintJobsRepository, IPrintJobsRepository } from './modules/print-jobs/print-jobs.repository.js';
 import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
+import { QueueService } from './modules/queue/queue.service.js';
+import { queueRoutes } from './modules/queue/queue.routes.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -50,6 +52,7 @@ export interface AppOptions {
   documentsService?: DocumentsService | undefined;
   quotesService?: QuotesService | undefined;
   printJobsService?: PrintJobsService | undefined;
+  queueService?: QueueService | undefined;
 }
 
 export function buildApp(options: AppOptions = {}): FastifyInstance {
@@ -107,6 +110,9 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const printJobsService =
     options.printJobsService ??
     new PrintJobsService(jobsRepo, shopsRepo, quotesRepo, documentsRepo);
+  const queueService =
+    options.queueService ??
+    new QueueService(jobsRepo, shopsRepo, printersRepo);
 
   // 7. Register domain routes under API v1 namespace
   app.register(shopsRoutes, {
@@ -117,6 +123,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(printersRoutes, {
     prefix: '/api/v1/shops',
     printersService
+  });
+
+  app.register(queueRoutes, {
+    prefix: '/api/v1/shops',
+    queueService
   });
 
   app.register(documentsRoutes, {
@@ -189,7 +200,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const defaultReadinessChecks: ReadinessCheck[] = [
     () => ({
       name: 'database',
-      ok: Boolean(shopsRepo && printersRepo && documentsRepo && quotesRepo && jobsRepo),
+      ok: Boolean(shopsRepo && printersRepo && documentsRepo && quotesRepo && jobsRepo && queueService),
       message: 'Repositories operational'
     }),
     () => ({
