@@ -17,6 +17,10 @@ class TestPackageImport(unittest.TestCase):
         self.assertTrue(hasattr(caps_agent, "StandardPrintEngine"))
         self.assertTrue(hasattr(caps_agent, "PrintEngineError"))
         self.assertTrue(hasattr(caps_agent, "FakePrintEngine"))
+        self.assertTrue(hasattr(caps_agent, "JobDispatcher"))
+        self.assertTrue(hasattr(caps_agent, "JobItem"))
+        self.assertTrue(hasattr(caps_agent, "JobState"))
+        self.assertTrue(hasattr(caps_agent, "JobStateMachine"))
         self.assertTrue(hasattr(caps_agent, "setup_logging"))
         self.assertTrue(hasattr(caps_agent, "redact_sensitive_data"))
 

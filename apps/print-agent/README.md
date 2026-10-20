@@ -58,6 +58,25 @@ All exceptions inherit from `PrintEngineError` and carry a structured `error_cod
 - `DuplicateJobError`: Attempt ID already in flight or submitted (`DUPLICATE_JOB_ATTEMPT`)
 - `ShopAuthorizationError`: Unauthorized printer or shop mismatch (`FORBIDDEN_SHOP`)
 
+## Jobs & Execution Subsystem (`caps_agent.jobs`)
+
+### Per-Printer Dispatcher (`JobDispatcher`)
+
+The `JobDispatcher` manages execution across connected printers:
+- **Per-Printer Serialization:** Concurrency is strictly 1 per printer name. Parallel execution occurs simultaneously across distinct physical printers.
+- **Queue Backpressure:** Bounded capacity per printer (`max_queue_per_printer`). Attempts exceeding queue depth trigger `QueueBackpressureError`.
+- **Cancellation:** Pending jobs in queue can be aborted via `cancel_job(job_id)` without reaching the Windows spooler.
+- **Clean Worker Termination:** `shutdown(wait=True)` sends poison pills and safely drains or terminates worker threads.
+
+### Formal State Machine (`JobStateMachine`)
+
+Lifecycle states strictly follow the CAPS architecture baseline:
+`QUEUED` -> `CLAIMED` -> `DOWNLOADING` -> `VALIDATING` -> `RENDERING` -> `PRINTING` -> `COMPLETED` / `FAILED` / `CANCELLED` / `UNKNOWN_REQUIRES_REVIEW`
+
+- **Terminal States:** `COMPLETED`, `FAILED`, `CANCELLED`, `UNKNOWN_REQUIRES_REVIEW`. Transitioning out of terminal states raises `TerminalStateError`.
+- **Ambiguous Outcomes (Policy #5):** Disappearing spooler jobs or unconfirmed outcomes transition to `UNKNOWN_REQUIRES_REVIEW` with `can_auto_reprint=False`.
+- **Audit History:** Every transition records an immutable `StateTransitionRecord` timestamped in UTC with reasons and structured details.
+
 ## Development Setup
 
 1. **Create and activate a virtual environment:**
