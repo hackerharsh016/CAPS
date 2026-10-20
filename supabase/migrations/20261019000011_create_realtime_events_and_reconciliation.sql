@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.queue_signals (
     channel TEXT NOT NULL CHECK (char_length(trim(channel)) >= 1),
     event_type TEXT NOT NULL CHECK (char_length(trim(event_type)) >= 1),
     job_id UUID REFERENCES public.print_jobs(id) ON DELETE SET NULL,
-    customer_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+    customer_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     payload JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     CONSTRAINT chk_queue_signals_no_raw_doc CHECK (
