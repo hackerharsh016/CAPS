@@ -121,31 +121,43 @@ GRANT EXECUTE ON FUNCTION public.recalculate_shop_queue_positions(UUID) TO servi
 -- ------------------------------------------------------------------------------
 -- C. Dashboard / Client RPC Functions
 --    (Callable by authenticated shop owners / operators, blocked for anonymous users)
+--    Converted to SECURITY INVOKER so execution respects caller RLS policies
+--    and eliminates lint 0029 (authenticated_security_definer_function_executable)
 -- ------------------------------------------------------------------------------
+ALTER FUNCTION public.generate_agent_pairing_code(UUID, UUID, INTEGER) SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.generate_agent_pairing_code(UUID, UUID, INTEGER) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.generate_agent_pairing_code(UUID, UUID, INTEGER) TO authenticated, service_role;
 
+ALTER FUNCTION public.resolve_unresolved_job(UUID, TEXT, UUID, TEXT) SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.resolve_unresolved_job(UUID, TEXT, UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.resolve_unresolved_job(UUID, TEXT, UUID, TEXT) TO authenticated, service_role;
 
+ALTER FUNCTION public.get_shop_queue(UUID) SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.get_shop_queue(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_shop_queue(UUID) TO authenticated, service_role;
 
+ALTER FUNCTION public.get_shop_priority_queue(UUID) SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.get_shop_priority_queue(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_shop_priority_queue(UUID) TO authenticated, service_role;
 
 -- ------------------------------------------------------------------------------
 -- D. RLS Predicate Security Functions
 --    (Evaluated within row-level security expressions, blocked for anonymous RPC)
+--    Converted to SECURITY INVOKER so evaluation runs with invoking session
+--    and eliminates lint 0029 (authenticated_security_definer_function_executable)
 -- ------------------------------------------------------------------------------
+ALTER FUNCTION public.current_user_role() SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.current_user_role() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.current_user_role() TO authenticated, service_role;
 
+ALTER FUNCTION public.is_admin() SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.is_admin() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, service_role;
 
+ALTER FUNCTION public.is_shop_owner_or_member(UUID) SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.is_shop_owner_or_member(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_shop_owner_or_member(UUID) TO authenticated, service_role;
 
+ALTER FUNCTION public.is_device_unrevoked(UUID) SECURITY INVOKER;
 REVOKE EXECUTE ON FUNCTION public.is_device_unrevoked(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_device_unrevoked(UUID) TO authenticated, service_role;
