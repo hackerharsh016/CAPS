@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { AuthError } from './error-handler.js';
 
-export type UserRole = 'customer' | 'shop_owner' | 'admin' | 'agent';
+export type UserRole = 'customer' | 'shop_owner' | 'admin' | 'agent' | 'PRINT_AGENT';
 
 export interface AuthUser {
   id: string; // UUID
@@ -14,23 +14,44 @@ export interface AuthUser {
   token_claims?: Record<string, unknown> | undefined;
 }
 
+export interface AgentAuth {
+  device_id: string;
+  shop_id: string;
+  role: 'PRINT_AGENT';
+  status?: string;
+  [key: string]: unknown;
+}
+
 export interface ITokenVerifier {
   verifyToken(token: string): Promise<AuthUser>;
+  verifyAgentToken?(token: string, targetShopId?: string): Promise<AgentAuth>;
 }
 
 export interface AuthPluginOptions {
   jwtSecret?: string | undefined;
   tokenVerifier?: ITokenVerifier | undefined;
+  agentsRepoProvider?: () => {
+    findDeviceByTokenHash(tokenHash: string): Promise<{
+      id: string;
+      shop_id: string;
+      device_name?: string;
+      is_revoked?: boolean;
+      status?: string;
+      auth_token_hash?: string;
+      device_token_hash?: string;
+    } | null>;
+  } | undefined;
 }
 
 declare module 'fastify' {
   interface FastifyRequest {
     user: AuthUser | null;
+    agent: AgentAuth | null;
   }
   interface FastifyInstance {
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     authorize: (
-      allowedRoles: UserRole[]
+      allowedRoles: (UserRole | 'PRINT_AGENT')[]
     ) => (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     tokenVerifier: ITokenVerifier;
   }
@@ -161,7 +182,8 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
       candidateRole === 'customer' ||
       candidateRole === 'shop_owner' ||
       candidateRole === 'admin' ||
-      candidateRole === 'agent'
+      candidateRole === 'agent' ||
+      candidateRole === 'PRINT_AGENT'
     ) {
       resolvedRole = candidateRole;
     }
@@ -188,25 +210,73 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
 export class CompositeAuthVerifier implements ITokenVerifier {
   constructor(
     private readonly jwtVerifier: ITokenVerifier,
-    private readonly agentsRepoProvider?: () => { findDeviceByTokenHash(tokenHash: string): Promise<{ id: string; shop_id: string; device_name?: string; is_revoked?: boolean } | null> } | undefined
+    private readonly agentsRepoProvider?: () => {
+      findDeviceByTokenHash(tokenHash: string): Promise<{
+        id: string;
+        shop_id: string;
+        device_name?: string;
+        is_revoked?: boolean;
+        status?: string;
+        auth_token_hash?: string;
+        device_token_hash?: string;
+      } | null>;
+    } | undefined
   ) {}
+
+  /**
+   * Verifies an agent secret (caps_agent_sec_*), checking hash, status ACTIVE, and optional target shop ID.
+   */
+  async verifyAgentToken(token: string, targetShopId?: string): Promise<AgentAuth> {
+    if (!token || !token.startsWith('caps_agent_sec_')) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Invalid agent device secret scheme.');
+    }
+
+    const secretPayload = token.slice('caps_agent_sec_'.length);
+    if (!secretPayload || secretPayload.trim().length === 0) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Malformed agent device secret.');
+    }
+
+    const repo = this.agentsRepoProvider?.();
+    if (!repo) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent token verification unavailable.');
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const device = await repo.findDeviceByTokenHash(tokenHash);
+
+    if (!device) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is invalid or not registered.');
+    }
+
+    const status = (device.status as string | undefined)?.toUpperCase();
+    if (device.is_revoked === true || (status !== undefined && status !== 'ACTIVE')) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is revoked or inactive.');
+    }
+
+    if (targetShopId && device.shop_id !== targetShopId) {
+      throw new AuthError(
+        401,
+        'UNAUTHORIZED',
+        `Agent device does not belong to shop '${targetShopId}'.`
+      );
+    }
+
+    return {
+      device_id: device.id,
+      shop_id: device.shop_id,
+      role: 'PRINT_AGENT',
+      status: status || 'ACTIVE'
+    };
+  }
 
   async verifyToken(token: string): Promise<AuthUser> {
     if (token.startsWith('caps_agent_sec_')) {
-      const repo = this.agentsRepoProvider?.();
-      if (!repo) {
-        throw new AuthError(401, 'INVALID_TOKEN', 'Agent token verification unavailable.');
-      }
-      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-      const device = await repo.findDeviceByTokenHash(tokenHash);
-      if (!device || device.is_revoked) {
-        throw new AuthError(401, 'INVALID_TOKEN', 'Agent device token is invalid or revoked.');
-      }
+      const agent = await this.verifyAgentToken(token);
       return {
-        id: device.id,
+        id: agent.device_id,
         role: 'agent',
-        shop_id: device.shop_id,
-        user_metadata: { device_name: device.device_name }
+        shop_id: agent.shop_id,
+        user_metadata: { role: 'PRINT_AGENT' }
       };
     }
     return this.jwtVerifier.verifyToken(token);
@@ -218,17 +288,73 @@ export class CompositeAuthVerifier implements ITokenVerifier {
  */
 export class MockTokenVerifier implements ITokenVerifier {
   private usersByToken = new Map<string, AuthUser>();
+  private agentsByToken = new Map<string, AgentAuth>();
   private expiredTokens = new Set<string>();
+  private revokedTokens = new Set<string>();
 
   registerUser(token: string, user: AuthUser): void {
     this.usersByToken.set(token, user);
+    if (user.role === 'agent' || (user.role as any) === 'PRINT_AGENT') {
+      this.agentsByToken.set(token, {
+        device_id: user.id,
+        shop_id: user.shop_id || '',
+        role: 'PRINT_AGENT',
+        status: 'ACTIVE'
+      });
+    }
+  }
+
+  registerAgent(
+    token: string,
+    agent: { device_id: string; shop_id: string; role?: 'PRINT_AGENT'; status?: string }
+  ): void {
+    const agentAuth: AgentAuth = {
+      device_id: agent.device_id,
+      shop_id: agent.shop_id,
+      role: 'PRINT_AGENT',
+      status: agent.status ?? 'ACTIVE'
+    };
+    this.agentsByToken.set(token, agentAuth);
+    this.usersByToken.set(token, {
+      id: agent.device_id,
+      role: 'agent',
+      shop_id: agent.shop_id,
+      user_metadata: { role: 'PRINT_AGENT' }
+    });
   }
 
   registerExpiredToken(token: string): void {
     this.expiredTokens.add(token);
   }
 
+  registerRevokedToken(token: string): void {
+    this.revokedTokens.add(token);
+  }
+
+  async verifyAgentToken(token: string, targetShopId?: string): Promise<AgentAuth> {
+    if (this.revokedTokens.has(token)) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is revoked.');
+    }
+    if (this.expiredTokens.has(token)) {
+      throw new AuthError(401, 'TOKEN_EXPIRED', 'Token has expired.');
+    }
+    const agent = this.agentsByToken.get(token);
+    if (!agent) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is invalid or not registered.');
+    }
+    if (agent.status && agent.status.toUpperCase() !== 'ACTIVE') {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device is revoked or inactive.');
+    }
+    if (targetShopId && agent.shop_id !== targetShopId) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device does not belong to the requested shop.');
+    }
+    return agent;
+  }
+
   async verifyToken(token: string): Promise<AuthUser> {
+    if (this.revokedTokens.has(token)) {
+      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is revoked.');
+    }
     if (this.expiredTokens.has(token)) {
       throw new AuthError(401, 'TOKEN_EXPIRED', 'Token has expired.');
     }
@@ -240,8 +366,50 @@ export class MockTokenVerifier implements ITokenVerifier {
   }
 }
 
-export function createAuthHooks(verifier: ITokenVerifier) {
+/**
+ * Helper to inspect and extract target shop ID from request params, query, headers, or body.
+ */
+function extractTargetShopId(request: FastifyRequest): string | undefined {
+  const params = request.params as Record<string, string> | undefined;
+  if (params?.shopId) return params.shopId;
+  if (params?.shop_id) return params.shop_id;
+
+  const headers = request.headers;
+  if (typeof headers?.['x-shop-id'] === 'string' && headers['x-shop-id'].trim()) {
+    return headers['x-shop-id'].trim();
+  }
+
+  const query = request.query as Record<string, string> | undefined;
+  if (query?.shopId) return query.shopId;
+  if (query?.shop_id) return query.shop_id;
+
+  const body = request.body as Record<string, string> | undefined;
+  if (body && typeof body === 'object') {
+    if (typeof body.shop_id === 'string' && body.shop_id.trim()) return body.shop_id.trim();
+    if (typeof body.shopId === 'string' && body.shopId.trim()) return body.shopId.trim();
+  }
+
+  return undefined;
+}
+
+export function createAuthHooks(
+  verifier: ITokenVerifier,
+  agentsRepoProvider?: () => {
+    findDeviceByTokenHash(tokenHash: string): Promise<{
+      id: string;
+      shop_id: string;
+      device_name?: string;
+      is_revoked?: boolean;
+      status?: string;
+      auth_token_hash?: string;
+      device_token_hash?: string;
+    } | null>;
+  } | undefined
+) {
   const authenticate = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
+    request.user = null;
+    request.agent = null;
+
     const authHeader = request.headers.authorization;
     if (!authHeader) {
       throw new AuthError(401, 'UNAUTHORIZED', 'Missing Authorization header.');
@@ -257,13 +425,85 @@ export function createAuthHooks(verifier: ITokenVerifier) {
     }
 
     const token = parts[1];
+    const targetShopId = extractTargetShopId(request);
+
+    // Step 2: If token starts with caps_agent_sec_:
+    if (token.startsWith('caps_agent_sec_')) {
+      const secretPayload = token.slice('caps_agent_sec_'.length);
+      if (!secretPayload || secretPayload.trim().length === 0) {
+        throw new AuthError(401, 'UNAUTHORIZED', 'Malformed agent device secret.');
+      }
+
+      let agentAuth: AgentAuth;
+
+      if (typeof verifier.verifyAgentToken === 'function') {
+        agentAuth = await verifier.verifyAgentToken(token, targetShopId);
+      } else if (agentsRepoProvider) {
+        const repo = agentsRepoProvider();
+        if (!repo) {
+          throw new AuthError(401, 'UNAUTHORIZED', 'Agent token verification unavailable.');
+        }
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const device = await repo.findDeviceByTokenHash(tokenHash);
+        if (!device) {
+          throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is invalid or not registered.');
+        }
+        const status = (device.status as string | undefined)?.toUpperCase();
+        if (device.is_revoked === true || (status !== undefined && status !== 'ACTIVE')) {
+          throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is revoked or inactive.');
+        }
+        if (targetShopId && device.shop_id !== targetShopId) {
+          throw new AuthError(
+            401,
+            'UNAUTHORIZED',
+            `Agent device does not belong to shop '${targetShopId}'.`
+          );
+        }
+        agentAuth = {
+          device_id: device.id,
+          shop_id: device.shop_id,
+          role: 'PRINT_AGENT',
+          status: status || 'ACTIVE'
+        };
+      } else {
+        const user = await verifier.verifyToken(token);
+        agentAuth = {
+          device_id: user.id,
+          shop_id: user.shop_id || '',
+          role: 'PRINT_AGENT',
+          status: 'ACTIVE'
+        };
+      }
+
+      request.agent = agentAuth;
+      request.user = {
+        id: agentAuth.device_id,
+        role: 'agent',
+        shop_id: agentAuth.shop_id,
+        user_metadata: { role: 'PRINT_AGENT' }
+      };
+      return;
+    }
+
+    // Step 3: If token does not start with caps_agent_sec_:
+    // Pass to SupabaseJwtVerifier using SUPABASE_JWT_SECRET (symmetric HS256)
     const user = await verifier.verifyToken(token);
     request.user = user;
+    request.agent = null;
+
+    if (user.role === 'agent' || (user.role as any) === 'PRINT_AGENT') {
+      request.agent = {
+        device_id: user.id,
+        shop_id: user.shop_id || '',
+        role: 'PRINT_AGENT',
+        status: 'ACTIVE'
+      };
+    }
   };
 
-  const authorize = (allowedRoles: UserRole[]) => {
+  const authorize = (allowedRoles: (UserRole | 'PRINT_AGENT')[]) => {
     return async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
-      if (!request.user) {
+      if (!request.user && !request.agent) {
         throw new AuthError(
           401,
           'UNAUTHORIZED',
@@ -271,7 +511,25 @@ export function createAuthHooks(verifier: ITokenVerifier) {
         );
       }
 
-      if (!allowedRoles.includes(request.user.role)) {
+      if (request.agent) {
+        if (
+          allowedRoles.includes('PRINT_AGENT') ||
+          allowedRoles.includes('agent' as any) ||
+          (request.user && request.user.role === 'admin')
+        ) {
+          return;
+        }
+        throw new AuthError(
+          403,
+          'FORBIDDEN_ROLE',
+          `Forbidden: agent role "PRINT_AGENT" does not have required permissions [${allowedRoles.join(', ')}].`
+        );
+      }
+
+      if (request.user) {
+        if (request.user.role === 'admin' || allowedRoles.includes(request.user.role)) {
+          return;
+        }
         throw new AuthError(
           403,
           'FORBIDDEN_ROLE',
@@ -286,11 +544,18 @@ export function createAuthHooks(verifier: ITokenVerifier) {
 
 export const authPlugin: FastifyPluginAsync<AuthPluginOptions> = async (fastify, options) => {
   const secret = options.jwtSecret || 'caps-jwt-secret-dev-and-testing-default-at-least-32-chars';
-  const verifier = options.tokenVerifier ?? new SupabaseJwtVerifier(secret);
-  const { authenticate, authorize } = createAuthHooks(verifier);
+  const verifier =
+    options.tokenVerifier ??
+    (options.agentsRepoProvider
+      ? new CompositeAuthVerifier(new SupabaseJwtVerifier(secret), options.agentsRepoProvider)
+      : new CompositeAuthVerifier(new SupabaseJwtVerifier(secret)));
+  const { authenticate, authorize } = createAuthHooks(verifier, options.agentsRepoProvider);
 
   if (!fastify.hasRequestDecorator('user')) {
     fastify.decorateRequest('user', null);
+  }
+  if (!fastify.hasRequestDecorator('agent')) {
+    fastify.decorateRequest('agent', null);
   }
   if (!fastify.hasDecorator('tokenVerifier')) {
     fastify.decorate('tokenVerifier', verifier);
