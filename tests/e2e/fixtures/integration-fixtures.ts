@@ -19,6 +19,7 @@ export const PRINTER_HP_COLOR_ID = '44444444-4444-4444-4444-444444444402';
 export const PRINTER_UNREGISTERED_ID = '44444444-4444-4444-4444-444444444499';
 
 export const RAZORPAY_WEBHOOK_SECRET = 'whsec_caps_test_secret_key_mock_001';
+export const PILOT_PAIRING_CODE = 'PAIR-CP-789012';
 
 export interface PrinterCapabilities {
   id: string;
@@ -316,6 +317,81 @@ export function createE2EFixtures() {
     attempt_count: 0
   };
 
+  // Additional fixtures for P07-M04-F01: Single-Shop Supervised Pilot
+  const consentedCustomerJob: E2EPrintJob = {
+    id: 'pilot-job-201-consented',
+    shop_id: SHOP_ALPHA_ID,
+    customer_id: CUSTOMER_USER_ID,
+    printer_id: PRINTER_CANON_BW_ID,
+    document_storage_key: 'shops/0001/jobs/pilot-job-201/blueprint.pdf',
+    document_name: 'Consented_Architectural_Plan.pdf',
+    settings: {
+      paper_size: 'A4',
+      color_mode: 'bw',
+      sides: 'double',
+      orientation: 'landscape',
+      copies: 2,
+      page_range: '1-6'
+    },
+    priority_tier: 'flexible',
+    price_total_paise: 1800,
+    status: 'pending_payment',
+    payment_status: 'initiated',
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+    attempt_count: 0
+  };
+
+  const refundTargetJob: E2EPrintJob = {
+    id: 'pilot-job-202-refund-target',
+    shop_id: SHOP_ALPHA_ID,
+    customer_id: CUSTOMER_USER_ID,
+    printer_id: PRINTER_CANON_BW_ID,
+    document_storage_key: 'shops/0001/jobs/pilot-job-202/handout.pdf',
+    document_name: 'Workshop_Handout_Fault.pdf',
+    settings: {
+      paper_size: 'A4',
+      color_mode: 'bw',
+      sides: 'single',
+      orientation: 'portrait',
+      copies: 5,
+      page_range: '1-2'
+    },
+    priority_tier: 'flexible',
+    price_total_paise: 1500,
+    status: 'requires_review',
+    payment_status: 'paid',
+    enqueued_at: new Date(now.getTime() - 1000 * 60 * 20).toISOString(),
+    created_at: new Date(now.getTime() - 1000 * 60 * 22).toISOString(),
+    updated_at: new Date(now.getTime() - 1000 * 60 * 20).toISOString(),
+    attempt_count: 1
+  };
+
+  const printerTestPageJob: E2EPrintJob = {
+    id: 'pilot-job-203-diagnostic-test-page',
+    shop_id: SHOP_ALPHA_ID,
+    customer_id: OWNER_ALPHA_USER_ID, // Operator-originated
+    printer_id: PRINTER_CANON_BW_ID,
+    document_storage_key: 'system/diagnostics/test_page_calibration.pdf',
+    document_name: 'CAPS_Printer_Diagnostic_Calibration.pdf',
+    settings: {
+      paper_size: 'A4',
+      color_mode: 'bw',
+      sides: 'single',
+      orientation: 'portrait',
+      copies: 1,
+      page_range: '1-1'
+    },
+    priority_tier: 'urgent',
+    price_total_paise: 0, // Free diagnostic
+    status: 'queued',
+    payment_status: 'paid',
+    enqueued_at: now.toISOString(),
+    created_at: now.toISOString(),
+    updated_at: now.toISOString(),
+    attempt_count: 0
+  };
+
   return {
     printers,
     urgentPaidJob,
@@ -326,6 +402,9 @@ export function createE2EFixtures() {
     urgentNewJob,
     colorJobOnBwPrinter,
     missingPrinterJob,
-    crashRecoveryJob
+    crashRecoveryJob,
+    consentedCustomerJob,
+    refundTargetJob,
+    printerTestPageJob
   };
 }
