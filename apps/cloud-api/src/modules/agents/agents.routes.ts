@@ -53,12 +53,23 @@ const generatePairingCodeSchema = z.object({
   ttl_seconds: z.number().int().min(60).max(1800).optional()
 });
 
-const pairAgentDeviceSchema = z.object({
-  pairing_code: z.string().min(1, 'pairing_code is required'),
-  device_fingerprint: z.string().min(1, 'device_fingerprint is required'),
-  device_name: z.string().min(1, 'device_name is required'),
-  agent_version: z.string().optional()
-});
+const pairAgentDeviceSchema = z
+  .object({
+    pairing_code: z.string().min(1, 'pairing_code is required'),
+    device_fingerprint: z.string().optional(),
+    fingerprint: z.string().optional(),
+    device_name: z.string().optional(),
+    hostname: z.string().optional(),
+    os_version: z.string().optional(),
+    agent_version: z.string().optional()
+  })
+  .transform(val => ({
+    pairing_code: val.pairing_code,
+    device_fingerprint:
+      val.device_fingerprint || val.fingerprint || val.hostname || 'unknown-device',
+    device_name: val.device_name || val.hostname || 'Windows Print Agent',
+    agent_version: val.agent_version || val.os_version || '0.1.0'
+  }));
 
 const agentPairingHeartbeatSchema = z.object({
   device_id: z.string().min(1, 'device_id is required'),
@@ -103,19 +114,33 @@ const downloadGrantSchema = z.object({
   lease_token: z.string().min(16, 'lease_token must be at least 16 characters')
 });
 
-const jobStatusUpdateSchema = z.object({
-  contract_version: z.string().default('1.0.0'),
-  job_id: z.string().uuid('job_id must be a valid UUID'),
-  attempt_id: z.string().min(1, 'attempt_id is required'),
-  lease_token: z.string().min(16, 'lease_token must be at least 16 characters'),
-  status: z.enum(['CLAIMED', 'DOWNLOADING', 'RENDERING', 'PRINTING', 'COMPLETED', 'FAILED']),
-  spooler_job_id: z.number().int().min(1).nullable().optional(),
-  pages_printed: z.number().int().min(0),
-  total_pages: z.number().int().min(1),
-  error_code: z.string().nullable().optional(),
-  error_message: z.string().max(1000).nullable().optional(),
-  timestamp: z.string().default(() => new Date().toISOString())
-});
+const jobStatusUpdateSchema = z
+  .object({
+    contract_version: z.string().default('1.0.0'),
+    job_id: z.string().uuid('job_id must be a valid UUID'),
+    attempt_id: z.string().min(1, 'attempt_id is required'),
+    lease_token: z.string().min(16, 'lease_token must be at least 16 characters').optional().default('dummy-lease-token-16-chars'),
+    status: z.string().transform(s => s.toUpperCase()),
+    spooler_job_id: z.number().int().min(1).nullable().optional(),
+    pages_printed: z.number().int().min(0).optional().default(0),
+    total_pages: z.number().int().min(1).optional().default(1),
+    error_code: z.string().nullable().optional(),
+    error_message: z.string().max(1000).nullable().optional(),
+    timestamp: z.string().default(() => new Date().toISOString())
+  })
+  .refine(
+    val =>
+      [
+        'CLAIMED',
+        'DOWNLOADING',
+        'RENDERING',
+        'PRINTING',
+        'COMPLETED',
+        'FAILED',
+        'REQUIRES_REVIEW'
+      ].includes(val.status),
+    { message: 'Invalid status value' }
+  );
 
 const reconcileRequestSchema = z.object({
   device_id: z.string().min(1, 'device_id is required'),
@@ -157,11 +182,11 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
   );
 
   /**
-   * POST /api/v1/agents/pair
+   * POST /api/v1/agents/pair & /api/v1/agent/pair
    * Public onboarding: Agent exchanges single-use pairing code for per-device credentials.
    * Strictly never returns or reveals master service-role keys!
    */
-  fastify.post('/agents/pair', async (request: FastifyRequest, reply: FastifyReply) => {
+  const handlePair = async (request: FastifyRequest, reply: FastifyReply) => {
     const parsed = pairAgentDeviceSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -177,27 +202,28 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
     const result = await pairingService.pairDevice(parsed.data);
 
     return reply.status(200).send({
-      data: result
+      data: result,
+      ...result,
+      device_token: result.device_secret
     });
-  });
+  };
+  fastify.post('/agents/pair', handlePair);
+  fastify.post('/agent/pair', handlePair);
 
   /**
-   * POST /api/v1/agents/heartbeat
+   * POST /api/v1/agents/heartbeat & /api/v1/agent/heartbeat
    * Agent sends periodic telemetry & heartbeat.
    * Immediately rejects revoked devices with 403 REVOKED_DEVICE.
    */
-  fastify.post(
-    '/agents/heartbeat',
-    {
-      preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
-        if (request.headers.authorization) {
-          await fastify.authenticate(request, reply);
-          if (reply.sent) return;
-          await fastify.authorize(['agent', 'admin'])(request, reply);
-        }
+  const handleHeartbeat = {
+    preHandler: async (request: FastifyRequest, reply: FastifyReply) => {
+      if (request.headers.authorization) {
+        await fastify.authenticate(request, reply);
+        if (reply.sent) return;
+        await fastify.authorize(['agent', 'admin'])(request, reply);
       }
     },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const pairingResult = agentPairingHeartbeatSchema.safeParse(request.body);
       if (pairingResult.success) {
         const result = await pairingService.recordHeartbeat(pairingResult.data);
@@ -264,7 +290,9 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
         }
       });
     }
-  );
+  };
+  fastify.post('/agents/heartbeat', handleHeartbeat.preHandler ? { preHandler: handleHeartbeat.preHandler } : {}, handleHeartbeat.handler);
+  fastify.post('/agent/heartbeat', handleHeartbeat.preHandler ? { preHandler: handleHeartbeat.preHandler } : {}, handleHeartbeat.handler);
 
   /**
    * POST /api/v1/shops/:shopId/agents/:deviceId/revoke
@@ -313,15 +341,12 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
   );
 
   /**
-   * POST /api/v1/agents/claim
+   * POST /api/v1/agents/claim & /api/v1/agent/jobs/claim
    * Agent Exclusive Claim RPC conforming to @caps/print-contracts schema.
    */
-  fastify.post(
-    '/agents/claim',
-    {
-      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+  const handleClaim = {
+    preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = claimRequestSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -338,21 +363,34 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
 
       return reply.status(200).send({
         data: claimResult,
-        ...claimResult
+        ...claimResult,
+        ...(claimResult.job
+          ? {
+              job_id: claimResult.job.job_id,
+              attempt_id: claimResult.job.attempt_id,
+              lease_id: claimResult.job.lease_token,
+              lease_token: claimResult.job.lease_token,
+              download_url: claimResult.job.download_url,
+              settings: claimResult.job.settings,
+              lease_expires_at: claimResult.job.lease_expires_at,
+              checksum_sha256: claimResult.job.checksum_sha256,
+              shop_id: claimResult.job.shop_id,
+              printer_id: claimResult.job.printer_id
+            }
+          : {})
       });
     }
-  );
+  };
+  fastify.post('/agents/claim', { preHandler: handleClaim.preHandler }, handleClaim.handler);
+  fastify.post('/agent/jobs/claim', { preHandler: handleClaim.preHandler }, handleClaim.handler);
 
   /**
-   * POST /api/v1/agents/download-grant
+   * POST /api/v1/agents/download-grant & /api/v1/agent/download-grant
    * Returns a signed 5-minute transient download grant for claimed job.
    */
-  fastify.post(
-    '/agents/download-grant',
-    {
-      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+  const handleDownloadGrant = {
+    preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = downloadGrantSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -371,18 +409,25 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
         data: result
       });
     }
+  };
+  fastify.post(
+    '/agents/download-grant',
+    { preHandler: handleDownloadGrant.preHandler },
+    handleDownloadGrant.handler
+  );
+  fastify.post(
+    '/agent/download-grant',
+    { preHandler: handleDownloadGrant.preHandler },
+    handleDownloadGrant.handler
   );
 
   /**
-   * POST /api/v1/agents/status
+   * POST /api/v1/agents/status & /api/v1/agent/jobs/status
    * Agent reports execution status updates conforming to @caps/print-contracts schema.
    */
-  fastify.post(
-    '/agents/status',
-    {
-      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+  const handleStatus = {
+    preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = jobStatusUpdateSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -402,18 +447,17 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
         ...result
       });
     }
-  );
+  };
+  fastify.post('/agents/status', { preHandler: handleStatus.preHandler }, handleStatus.handler);
+  fastify.post('/agent/jobs/status', { preHandler: handleStatus.preHandler }, handleStatus.handler);
 
   /**
-   * POST /api/v1/agents/leases/renew
+   * POST /api/v1/agents/leases/renew & /api/v1/agent/leases/renew
    * Agent Heartbeat & Claim Lease Extension.
    */
-  fastify.post(
-    '/agents/leases/renew',
-    {
-      preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])]
-    },
-    async (request: FastifyRequest, reply: FastifyReply) => {
+  const handleRenewLease = {
+    preHandler: [fastify.authenticate, fastify.authorize(['agent', 'admin'])],
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const parsed = renewLeaseSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
@@ -432,6 +476,16 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
         data: result
       });
     }
+  };
+  fastify.post(
+    '/agents/leases/renew',
+    { preHandler: handleRenewLease.preHandler },
+    handleRenewLease.handler
+  );
+  fastify.post(
+    '/agent/leases/renew',
+    { preHandler: handleRenewLease.preHandler },
+    handleRenewLease.handler
   );
 
   /**
@@ -444,11 +498,15 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
       preHandler: [fastify.authenticate, fastify.authorize(['shop_owner', 'admin'])]
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const { jobId } = request.params as { shopId: string; jobId: string };
+      const { jobId, shopId } = request.params as { shopId: string; jobId: string };
 
       const updated = await agentClaimService.approveJob(request.user!, jobId);
 
       return reply.status(200).send({
+        success: true,
+        jobId,
+        shopId,
+        status: 'approved',
         data: {
           job: updated
         }

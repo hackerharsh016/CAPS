@@ -160,9 +160,49 @@ export class CheckoutService {
       }
 
       // 6. Generate order identifiers & 24h strict privacy expiration deadline
-      const orderId = crypto.randomUUID
+      let orderId = crypto.randomUUID
         ? crypto.randomUUID()
         : `order-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+      const apiUrl =
+        typeof process !== 'undefined'
+          ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+          : 'http://localhost:4000';
+
+      // Submit print job to live Cloud API if available
+      try {
+        const jobRes = await fetch(`${apiUrl}/api/v1/print-jobs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Idempotency-Key': idempotency_key
+          },
+          body: JSON.stringify({
+            shop_id: shop.id,
+            quote_id: input.quote.quote_id,
+            priority_tier: input.priority_tier,
+            settings: {
+              paper_size: input.settings.paper_size,
+              color_mode: input.settings.color_mode,
+              sides: input.settings.sides,
+              orientation: input.settings.orientation,
+              copies: input.settings.copies,
+              page_range: input.settings.page_range,
+              binding: input.settings.binding
+            }
+          })
+        });
+
+        if (jobRes.ok) {
+          const jobJson = await jobRes.json();
+          const liveJob = jobJson.data?.job || jobJson.data || jobJson;
+          if (liveJob?.id) {
+            orderId = liveJob.id;
+          }
+        }
+      } catch {
+        // Offline / dev fallback to generated orderId
+      }
 
       this.tokenCounter++;
       const tokenNumber = `T-${this.tokenCounter.toString().padStart(3, '0')}`;

@@ -7,6 +7,44 @@ import type { Shop, ShopDiscoveryResponse, ShopFilterOptions } from './types';
 import { MOCK_SHOPS } from './fixtures';
 import { calculateHaversineDistance } from './geo-utils';
 
+export function mapCloudShopToCustomerShop(raw: Record<string, any>): Shop {
+  const pricing = raw['pricing_config'] || {};
+  const a4 = pricing['A4'] || { bw_single_paise: 200, color_single_paise: 1000, bw_double_paise: 350 };
+  const binding = pricing['binding_prices_paise'] || { spiral: 3500 };
+  const urgent = raw['urgent_surcharge_config'] || { amount: 2000 };
+
+  return {
+    id: raw['id'],
+    name: raw['name'],
+    address: raw['address'],
+    landmark: raw['landmark'] || '',
+    coordinates: {
+      latitude: raw['geo_lat'] ?? 12.9716,
+      longitude: raw['geo_lng'] ?? 77.5946
+    },
+    phone: raw['phone'] || '+91 98765 43210',
+    is_open: raw['status'] === 'open' || raw['is_open'] === true,
+    opening_time: raw['opening_time'] || '08:30',
+    closing_time: raw['closing_time'] || '21:30',
+    rating: raw['rating'] ?? 4.8,
+    review_count: raw['review_count'] ?? 124,
+    capabilities: {
+      color: Boolean(a4['color_single_paise'] && a4['color_single_paise'] > 0),
+      duplex: Boolean(a4['bw_double_paise'] && a4['bw_double_paise'] > 0),
+      paper_sizes: ['A4', ...(pricing['A3'] ? (['A3'] as const) : [])],
+      spiral_binding: Boolean(binding['spiral'] && binding['spiral'] > 0),
+      urgent_queue: Boolean(urgent['amount'] && urgent['amount'] > 0)
+    },
+    pricing: {
+      bw_per_page_paise: a4['bw_single_paise'] ?? 200,
+      color_per_page_paise: a4['color_single_paise'] ?? 1000,
+      duplex_discount_paise: 25,
+      spiral_binding_paise: binding['spiral'] ?? 3500,
+      urgent_surcharge_paise: urgent['amount'] ?? 2000
+    }
+  };
+}
+
 export class ShopsService {
   private shopsStore: Shop[];
 
@@ -18,6 +56,24 @@ export class ShopsService {
    * Retrieves shops matching the given search and capability filters.
    */
   public async getShops(options: ShopFilterOptions = {}): Promise<ShopDiscoveryResponse> {
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/shops`, { method: 'GET' });
+      if (res.ok) {
+        const json = await res.json();
+        const rawShops = json.data || json;
+        if (Array.isArray(rawShops) && rawShops.length > 0) {
+          this.shopsStore = rawShops.map(mapCloudShopToCustomerShop);
+        }
+      }
+    } catch {
+      // Offline / dev fallback to fixture store
+    }
+
     const {
       searchQuery,
       openOnly = false,
@@ -106,6 +162,24 @@ export class ShopsService {
    * Retrieves single shop by ID.
    */
   public async getShopById(shopId: string): Promise<Shop | null> {
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/shops/${shopId}`, { method: 'GET' });
+      if (res.ok) {
+        const json = await res.json();
+        const rawShop = json.data || json;
+        if (rawShop && rawShop.id) {
+          return mapCloudShopToCustomerShop(rawShop);
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+
     return this.shopsStore.find(s => s.id === shopId) ?? null;
   }
 }

@@ -4,7 +4,12 @@ import { Env, validateEnv } from './config/env.js';
 import { registerLogger } from './plugins/logger.js';
 import { registerErrorHandlers } from './plugins/error-handler.js';
 import { registerRateLimiter, RateLimiterOptions } from './plugins/rate-limiter.js';
-import { createAuthHooks, ITokenVerifier, SupabaseJwtVerifier } from './plugins/auth.js';
+import {
+  createAuthHooks,
+  ITokenVerifier,
+  SupabaseJwtVerifier,
+  CompositeAuthVerifier
+} from './plugins/auth.js';
 
 // Domain Repositories & Services
 import { MockShopsRepository, IShopsRepository } from './modules/shops/shops.repository.js';
@@ -155,7 +160,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const env = options.env ?? validateEnv(process.env);
 
   const app = Fastify({
-    logger: env.NODE_ENV !== 'test'
+    logger: env.NODE_ENV !== 'test',
+    ignoreTrailingSlash: true
   });
 
   // Preserve raw body buffer for secure HMAC-SHA256 webhook signature validation
@@ -190,8 +196,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   };
   registerRateLimiter(app, rateLimitOpts);
 
-  // 4. Supabase JWT authentication and role authorization decorators
-  const tokenVerifier = options.tokenVerifier ?? new SupabaseJwtVerifier(env.SUPABASE_JWT_SECRET);
+  // 4. Supabase JWT & Agent Device Secret authentication and role authorization decorators
+  const agentsRepo = options.agentsRepo ?? new MockAgentsRepository();
+  const tokenVerifier =
+    options.tokenVerifier ??
+    new CompositeAuthVerifier(new SupabaseJwtVerifier(env.SUPABASE_JWT_SECRET), () => agentsRepo);
   const { authenticate, authorize } = createAuthHooks(tokenVerifier);
   app.decorateRequest('user', null);
   app.decorate('tokenVerifier', tokenVerifier);
@@ -227,7 +236,6 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const storageService = options.storageService ?? new MockStorageService();
   const documentConverter = options.documentConverter ?? new TrustedDocumentConverter();
   const quotesRepo = options.quotesRepo ?? new MockQuotesRepository();
-  const agentsRepo = options.agentsRepo ?? new MockAgentsRepository();
   const attemptsRepo = options.attemptsRepo ?? new MockJobAttemptsRepository();
 
   // 7. Initialize domain services

@@ -183,6 +183,37 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
 }
 
 /**
+ * Composite Token Verifier that verifies both Supabase JWTs and Agent device tokens (caps_agent_sec_*).
+ */
+export class CompositeAuthVerifier implements ITokenVerifier {
+  constructor(
+    private readonly jwtVerifier: ITokenVerifier,
+    private readonly agentsRepoProvider?: () => { findDeviceByTokenHash(tokenHash: string): Promise<{ id: string; shop_id: string; device_name?: string; is_revoked?: boolean } | null> } | undefined
+  ) {}
+
+  async verifyToken(token: string): Promise<AuthUser> {
+    if (token.startsWith('caps_agent_sec_')) {
+      const repo = this.agentsRepoProvider?.();
+      if (!repo) {
+        throw new AuthError(401, 'INVALID_TOKEN', 'Agent token verification unavailable.');
+      }
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const device = await repo.findDeviceByTokenHash(tokenHash);
+      if (!device || device.is_revoked) {
+        throw new AuthError(401, 'INVALID_TOKEN', 'Agent device token is invalid or revoked.');
+      }
+      return {
+        id: device.id,
+        role: 'agent',
+        shop_id: device.shop_id,
+        user_metadata: { device_name: device.device_name }
+      };
+    }
+    return this.jwtVerifier.verifyToken(token);
+  }
+}
+
+/**
  * In-memory Mock Token Verifier for tests and offline development.
  */
 export class MockTokenVerifier implements ITokenVerifier {

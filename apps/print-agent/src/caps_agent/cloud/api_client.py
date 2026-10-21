@@ -375,17 +375,27 @@ class CloudApiClient:
         }
 
         resp = self.post("/api/v1/agent/jobs/claim", payload)
-        if not resp or not resp.get("job_id"):
+        if not resp:
+            return None
+
+        # Support both nested OpenAPI contract {"claimed": True, "job": {...}} and flat root {"job_id": ...}
+        job_data = resp.get("job") if isinstance(resp.get("job"), dict) else resp
+        job_id = job_data.get("job_id") or resp.get("job_id")
+        if not job_id:
             return None
 
         # Validate required response fields per JobClaimResponseSchema
-        job_id = resp.get("job_id")
-        attempt_id = resp.get("attempt_id")
-        lease_id = resp.get("lease_id")
-        download_url = resp.get("download_url")
-        settings = resp.get("settings")
-        lease_expires_at = resp.get("lease_expires_at")
-        checksum = resp.get("checksum_sha256")
+        attempt_id = job_data.get("attempt_id") or resp.get("attempt_id")
+        lease_id = (
+            job_data.get("lease_token")
+            or job_data.get("lease_id")
+            or resp.get("lease_token")
+            or resp.get("lease_id")
+        )
+        download_url = job_data.get("download_url") or resp.get("download_url")
+        settings = job_data.get("settings") or resp.get("settings")
+        lease_expires_at = job_data.get("lease_expires_at") or resp.get("lease_expires_at")
+        checksum = job_data.get("checksum_sha256") or resp.get("checksum_sha256")
 
         if not (job_id and attempt_id and lease_id and download_url and settings and lease_expires_at):
             raise ContractValidationError(
