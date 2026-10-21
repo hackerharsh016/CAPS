@@ -528,3 +528,26 @@ VALUES (
     now() - INTERVAL '2 hours'
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- 13. Ensure Private Document Storage Buckets Exist
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+    (
+        'caps-private-documents',
+        'caps-private-documents',
+        false,
+        52428800,
+        ARRAY['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.ms-powerpoint', 'image/jpeg', 'image/png']::text[]
+    ),
+    (
+        'caps-documents',
+        'caps-documents',
+        false,
+        52428800,
+        ARRAY['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.ms-powerpoint', 'image/jpeg', 'image/png']::text[]
+    )
+ON CONFLICT (id) DO UPDATE SET
+    public = EXCLUDED.public,
+    file_size_limit = EXCLUDED.file_size_limit,
+    allowed_mime_types = EXCLUDED.allowed_mime_types;
+
