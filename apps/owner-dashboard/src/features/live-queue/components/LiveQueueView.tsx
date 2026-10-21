@@ -3,7 +3,8 @@
 /**
  * Live Queue View Component for CAPS Owner Dashboard.
  * Master live queue container with two-tier prioritization, metrics,
- * realtime connection indicators, one-tap print confirmation, and accessible controls.
+ * realtime connection indicators, one-tap print confirmation,
+ * hardware incident banners, and operator recovery for ambiguous outcomes.
  */
 
 import React, { useState } from 'react';
@@ -14,6 +15,9 @@ import { QueueItemCard } from './QueueItemCard';
 import { ConnectionStateBadge } from './ConnectionStateBadge';
 import { usePrintConfirmation } from '../../print-confirmation/hooks/use-print-confirmation';
 import { PrintConfirmationModal } from '../../print-confirmation/components/PrintConfirmationModal';
+import { useOperatorRecovery } from '../../agent-monitoring/hooks/use-operator-recovery';
+import { HardwareIncidentBanner } from '../../agent-monitoring/components/HardwareIncidentBanner';
+import { OperatorRecoveryModal } from '../../agent-monitoring/components/OperatorRecoveryModal';
 import type { QueueItem } from '../types';
 
 export interface LiveQueueViewProps {
@@ -34,6 +38,7 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
   } = useLiveQueue();
 
   const [selectedItemForModal, setSelectedItemForModal] = useState<QueueItem | null>(null);
+  const [recoveringItem, setRecoveringItem] = useState<QueueItem | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   const {
@@ -52,6 +57,24 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
     }
   });
 
+  const {
+    incidents,
+    agentStatus,
+    isResolving,
+    error: recoveryError,
+    dismissIncident,
+    resolveJob,
+    clearError: clearRecoveryError
+  } = useOperatorRecovery({
+    shopId,
+    onSuccess: response => {
+      setSuccessBanner(`Incident resolved: Job ${response.jobId} marked as '${response.newStatus}'.`);
+      setRecoveringItem(null);
+      void refreshQueue();
+      setTimeout(() => setSuccessBanner(null), 5000);
+    }
+  });
+
   const handleConfirm = async (jobId: string) => {
     if (onConfirmPrint) {
       await onConfirmPrint(jobId);
@@ -61,19 +84,62 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
     await confirmJob(jobId, queue);
   };
 
+  const handleOperatorResolution = async (
+    jobId: string,
+    resolution: 'retry' | 'cancel' | 'mark_completed',
+    evidenceConfirmed: boolean,
+    notes?: string
+  ) => {
+    await resolveJob(jobId, resolution, evidenceConfirmed, notes);
+  };
+
+  // Filter items based on active filter tab
+  const displayedItems = queue.filter(item => {
+    if (filter === 'all') return true;
+    if (filter === 'urgent') return item.priority_tier === 'urgent';
+    if (filter === 'flexible') return item.priority_tier === 'flexible';
+    if (filter === 'executing') return item.is_currently_executing;
+    if (filter === 'requires_review') {
+      return item.status === 'requires_review' || item.status === 'failed';
+    }
+    return true;
+  });
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      {/* Hardware / Desktop Agent Incident Notifications */}
+      <HardwareIncidentBanner incidents={incidents} onDismiss={dismissIncident} />
+
       {/* Top Metrics Cards */}
       <QueueMetricsHeader metrics={metrics} />
 
       {/* Main Queue Container */}
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        {/* Queue Header with Title & Realtime Badge */}
+        {/* Queue Header with Title, Realtime Badge, and Agent Status */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 px-6 py-4 gap-3 bg-white">
           <div>
             <div className="flex items-center space-x-3">
               <h2 className="text-lg font-bold text-slate-900">Live FIFO Print Queue</h2>
               <ConnectionStateBadge state={connectionState} />
+              {agentStatus && (
+                <span
+                  className={`inline-flex items-center space-x-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    agentStatus.isOnline
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-700 border border-rose-200'
+                  }`}
+                  title={`Agent device: ${agentStatus.deviceName} (v${agentStatus.agentVersion})`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      agentStatus.isOnline ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                  />
+                  <span>
+                    Agent: {agentStatus.deviceName} ({agentStatus.isOnline ? 'Active' : 'Offline'})
+                  </span>
+                </span>
+              )}
             </div>
             <p className="mt-1 text-xs text-slate-500">
               Orders ordered by Urgent priority first, then submission timestamp. Single-click
@@ -85,7 +151,7 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
             <button
               type="button"
               onClick={() => refreshQueue()}
-              disabled={isLoading || isConfirming}
+              disabled={isLoading || isConfirming || isResolving}
               className="inline-flex items-center space-x-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
             >
               <svg
@@ -155,6 +221,25 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
             </div>
           )}
 
+          {recoveryError && (
+            <div
+              role="alert"
+              className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-800"
+            >
+              <div className="flex items-center space-x-2">
+                <span>⚠️</span>
+                <span>{recoveryError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={clearRecoveryError}
+                className="text-rose-600 hover:text-rose-900"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {queueError && (
             <div
               role="alert"
@@ -180,29 +265,32 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
                 />
               ))}
             </div>
-          ) : queue.length === 0 ? (
+          ) : displayedItems.length === 0 ? (
             <div className="py-12 text-center" role="status">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
                 📄
               </div>
               <h3 className="mt-3 text-sm font-bold text-slate-900">
-                No jobs currently waiting in queue
+                No jobs currently waiting in this view
               </h3>
               <p className="mt-1 text-xs text-slate-500">
                 {filter === 'all'
                   ? 'Incoming paid and pay-at-counter orders will appear here automatically in real time.'
-                  : `No jobs matching filter "${filter}". Try selecting "All Jobs".`}
+                  : filter === 'requires_review'
+                    ? 'All print outcomes are clear. No jobs require operator inspection.'
+                    : `No jobs matching filter "${filter}". Try selecting "All Jobs".`}
               </p>
             </div>
           ) : (
             <div className="space-y-4" role="list" aria-label="Print queue jobs list">
-              {queue.map(item => (
+              {displayedItems.map(item => (
                 <div key={item.id} role="listitem">
                   <QueueItemCard
                     item={item}
                     onConfirmPrint={handleConfirm}
+                    onReviewJob={setRecoveringItem}
                     isConfirming={isConfirming && confirmingJobId === item.id}
-                    disabled={isConfirming}
+                    disabled={isConfirming || isResolving}
                   />
                 </div>
               ))}
@@ -218,6 +306,15 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
         isConfirming={isConfirming}
         onClose={() => setSelectedItemForModal(null)}
         onConfirm={handleConfirm}
+      />
+
+      {/* Operator Review & Recovery Modal for Ambiguous Outcomes */}
+      <OperatorRecoveryModal
+        isOpen={recoveringItem !== null}
+        item={recoveringItem}
+        isResolving={isResolving}
+        onClose={() => setRecoveringItem(null)}
+        onResolve={handleOperatorResolution}
       />
     </div>
   );

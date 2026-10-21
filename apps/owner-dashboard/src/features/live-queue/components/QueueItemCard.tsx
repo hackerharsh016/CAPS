@@ -3,7 +3,7 @@
 /**
  * Queue Item Card Component for CAPS Owner Dashboard.
  * Displays validated print specifications, dynamic priority position,
- * payment verification, ETA, and 1-click confirmation trigger.
+ * payment verification, ETA, 1-click confirmation trigger, and operator recovery actions.
  */
 
 import React from 'react';
@@ -13,6 +13,7 @@ import { ConfirmPrintButton } from '../../print-confirmation/components/ConfirmP
 export interface QueueItemCardProps {
   item: QueueItem;
   onConfirmPrint?: ((jobId: string) => Promise<void> | void) | undefined;
+  onReviewJob?: ((item: QueueItem) => void) | undefined;
   disabled?: boolean | undefined;
   isConfirming?: boolean | undefined;
 }
@@ -20,11 +21,13 @@ export interface QueueItemCardProps {
 export function QueueItemCard({
   item,
   onConfirmPrint,
+  onReviewJob,
   disabled = false,
   isConfirming = false
 }: QueueItemCardProps) {
   const isUrgent = item.priority_tier === 'urgent';
   const isExecuting = item.is_currently_executing;
+  const isRequiresReview = item.status === 'requires_review' || item.status === 'failed';
   const isNextInQueue = item.queue_position === 1 && !isExecuting && item.status === 'queued';
 
   const formattedPrice = (item.price_total_paise / 100).toLocaleString('en-IN', {
@@ -37,11 +40,13 @@ export function QueueItemCard({
   return (
     <div
       className={`rounded-xl border transition-all ${
-        isExecuting
-          ? 'border-2 border-emerald-500 bg-emerald-50/30 shadow-md'
-          : isUrgent
-            ? 'border-rose-200 bg-white hover:border-rose-300 shadow-sm'
-            : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
+        isRequiresReview
+          ? 'border-2 border-amber-400 bg-amber-50/40 shadow-sm'
+          : isExecuting
+            ? 'border-2 border-emerald-500 bg-emerald-50/30 shadow-md'
+            : isUrgent
+              ? 'border-rose-200 bg-white hover:border-rose-300 shadow-sm'
+              : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
       } p-5`}
     >
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -59,8 +64,12 @@ export function QueueItemCard({
               </span>
             )}
 
-            {/* Queue Position */}
-            {isExecuting ? (
+            {/* Queue / Execution / Review Status */}
+            {isRequiresReview ? (
+              <span className="flex items-center space-x-1 rounded bg-amber-200 px-2 py-0.5 text-[11px] font-bold text-amber-900 animate-pulse">
+                <span>⚠️ Ambiguous Outcome</span>
+              </span>
+            ) : isExecuting ? (
               <span className="flex items-center space-x-1 rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
                 <span className="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-600" />
                 <span>Printing Now</span>
@@ -122,7 +131,7 @@ export function QueueItemCard({
           </div>
         </div>
 
-        {/* Right Section: Price Badge and Confirmation Button */}
+        {/* Right Section: Price Badge and Action Button */}
         <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
           <div className="text-right">
             <span
@@ -137,7 +146,16 @@ export function QueueItemCard({
           </div>
 
           {/* Action button */}
-          {onConfirmPrint ? (
+          {isRequiresReview ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onReviewJob?.(item)}
+              className="inline-flex items-center space-x-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <span>⚠️ Review & Recover</span>
+            </button>
+          ) : onConfirmPrint ? (
             <ConfirmPrintButton
               jobId={item.id}
               isNextInQueue={isNextInQueue}

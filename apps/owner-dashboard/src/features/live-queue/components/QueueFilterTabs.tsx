@@ -2,7 +2,7 @@
 
 /**
  * Queue Filter Tabs Component for CAPS Owner Dashboard.
- * Accessible tablist for filtering jobs by priority tier or execution state.
+ * Accessible tablist for filtering jobs by priority tier, execution state, or issues/requires_review.
  */
 
 import React from 'react';
@@ -19,11 +19,17 @@ export function QueueFilterTabs({
   onFilterChange,
   metrics
 }: QueueFilterTabsProps) {
-  const tabs: Array<{ id: QueueFilter; label: string; count: number }> = [
+  const tabs: Array<{ id: QueueFilter; label: string; count: number; alert?: boolean }> = [
     { id: 'all', label: 'All Jobs', count: metrics.pendingCount + metrics.executingCount },
     { id: 'urgent', label: 'Urgent Priority', count: metrics.urgentCount },
     { id: 'flexible', label: 'Flexible FIFO', count: metrics.flexibleCount },
-    { id: 'executing', label: 'Currently Printing', count: metrics.executingCount }
+    { id: 'executing', label: 'Currently Printing', count: metrics.executingCount },
+    {
+      id: 'requires_review',
+      label: 'Needs Review / Issues',
+      count: metrics.requiresReviewCount ?? 0,
+      alert: (metrics.requiresReviewCount ?? 0) > 0
+    }
   ];
 
   return (
@@ -45,7 +51,11 @@ export function QueueFilterTabs({
             <span>{tab.label}</span>
             <span
               className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                tab.alert
+                  ? 'bg-rose-100 text-rose-800 animate-pulse'
+                  : isActive
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-100 text-slate-600'
               }`}
             >
               {tab.count}

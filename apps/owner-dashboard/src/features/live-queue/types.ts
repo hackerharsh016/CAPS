@@ -82,7 +82,7 @@ export interface QueueItem {
   updated_at: string;
 }
 
-export type QueueFilter = 'all' | 'urgent' | 'flexible' | 'executing';
+export type QueueFilter = 'all' | 'urgent' | 'flexible' | 'executing' | 'requires_review';
 
 export type RealtimeConnectionState =
   | 'connecting'
@@ -96,6 +96,7 @@ export interface QueueSummaryMetrics {
   urgentCount: number;
   flexibleCount: number;
   executingCount: number;
+  requiresReviewCount?: number | undefined;
   totalEstimatedWaitMinutes: number;
   todayCompletedCount: number;
   todayRevenuePaise: number;
