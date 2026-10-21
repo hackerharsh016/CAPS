@@ -22,6 +22,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_config JSONB;

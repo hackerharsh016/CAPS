@@ -27,6 +27,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
+SET search_path = public
 AS $$
     SELECT
         pj.id,
@@ -74,6 +75,7 @@ CREATE OR REPLACE FUNCTION public.recalculate_shop_queue_positions(p_shop_id UUI
 RETURNS INTEGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     v_updated_count INTEGER := 0;

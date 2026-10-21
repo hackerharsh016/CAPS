@@ -71,6 +71,7 @@ CREATE OR REPLACE FUNCTION public.handle_job_enqueue()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
     IF NEW.status = 'queued'::public.job_status AND OLD.status != 'queued'::public.job_status AND NEW.enqueued_at IS NULL THEN

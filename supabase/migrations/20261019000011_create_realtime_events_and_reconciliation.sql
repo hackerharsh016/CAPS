@@ -50,6 +50,8 @@ CREATE INDEX IF NOT EXISTS idx_queue_signals_job_id
 CREATE OR REPLACE FUNCTION public.prevent_queue_signals_mutation()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
     RAISE EXCEPTION 'Table queue_signals is an immutable ledger; updates and deletions are forbidden.'
@@ -129,4 +131,5 @@ CREATE POLICY p_queue_signals_select_customer ON public.queue_signals
 DROP POLICY IF EXISTS p_queue_signals_insert_service ON public.queue_signals;
 CREATE POLICY p_queue_signals_insert_service ON public.queue_signals
     FOR INSERT
+    TO service_role
     WITH CHECK (true);

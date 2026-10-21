@@ -95,5 +95,6 @@ CREATE POLICY p_documents_update_customer ON public.documents
 DROP POLICY IF EXISTS p_documents_service_all ON public.documents;
 CREATE POLICY p_documents_service_all ON public.documents
     FOR ALL
+    TO service_role
     USING (true)
     WITH CHECK (true);

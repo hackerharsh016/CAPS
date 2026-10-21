@@ -12,6 +12,8 @@
 CREATE OR REPLACE FUNCTION public.enforce_enqueued_at_immutability()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
     -- Once enqueued_at is set, it cannot be modified or cleared
@@ -63,6 +65,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
     RETURN QUERY
@@ -114,6 +117,7 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
+SET search_path = public
 AS $$
     SELECT
         pj.id,

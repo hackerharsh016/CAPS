@@ -124,6 +124,8 @@ CREATE INDEX IF NOT EXISTS idx_document_deletion_logs_deleted_at ON public.docum
 CREATE OR REPLACE FUNCTION public.prevent_modification_of_immutable_ledger()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
     RAISE EXCEPTION 'Table % is an immutable append-only ledger; modifications and deletions are forbidden.', TG_TABLE_NAME;
