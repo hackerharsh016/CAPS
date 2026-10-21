@@ -9,15 +9,8 @@
  */
 
 import { getSupabaseEnv } from '../../lib/supabase';
-import type {
-  ReportFilter,
-  OwnerReportsData,
-  PaidVsCompletedJobRecord
-} from './types';
-import {
-  aggregateReportsData,
-  computeFilterDateRange
-} from './analytics-utils';
+import type { ReportFilter, OwnerReportsData, PaidVsCompletedJobRecord } from './types';
+import { aggregateReportsData, computeFilterDateRange } from './analytics-utils';
 import { generateMockJobRecords } from './fixtures';
 
 export interface AnalyticsServiceConfig {
@@ -37,7 +30,9 @@ export class OwnerAnalyticsService {
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
     this.fetchFn =
       config?.customFetch ??
-      (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   /**
@@ -61,7 +56,8 @@ export class OwnerAnalyticsService {
       const params = new URLSearchParams({
         shop_id: `eq.${shopId}`,
         created_at: `gte.${dateRange.start.toISOString()}`,
-        select: 'id,shop_id,customer_id,priority_tier,price_total_paise,status,enqueued_at,created_at,updated_at,settings,payments(id,amount_paise,currency,method,status)'
+        select:
+          'id,shop_id,customer_id,priority_tier,price_total_paise,status,enqueued_at,created_at,updated_at,settings,payments(id,amount_paise,currency,method,status)'
       });
 
       const endpoint = `${this.supabaseUrl}/rest/v1/print_jobs?${params.toString()}`;
@@ -116,17 +112,14 @@ export class OwnerAnalyticsService {
 
       // Map raw DB rows to PaidVsCompletedJobRecord
       const records: PaidVsCompletedJobRecord[] = rawJobs.map((row, index) => {
-        const latestPayment = row.payments && row.payments.length > 0
-          ? row.payments[row.payments.length - 1]
-          : undefined;
+        const latestPayment =
+          row.payments && row.payments.length > 0
+            ? row.payments[row.payments.length - 1]
+            : undefined;
 
         const isPaid = latestPayment?.status === 'success';
         const isRefunded = latestPayment?.status === 'refunded';
-        const paymentStatus = isPaid
-          ? 'paid'
-          : isRefunded
-          ? 'refunded'
-          : 'pay_at_counter_pending';
+        const paymentStatus = isPaid ? 'paid' : isRefunded ? 'refunded' : 'pay_at_counter_pending';
 
         const isCompleted = row.status === 'completed';
         let waitMinutes: number | undefined = undefined;

@@ -33,7 +33,9 @@ export function DailyTrendsChart({ trends }: DailyTrendsChartProps) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-base font-bold text-slate-900">Revenue & Demand Velocity</h3>
-          <p className="text-xs text-slate-500">Daily breakdown of collected payments vs physically fulfilled prints.</p>
+          <p className="text-xs text-slate-500">
+            Daily breakdown of collected payments vs physically fulfilled prints.
+          </p>
         </div>
 
         {/* Legend */}
@@ -52,13 +54,18 @@ export function DailyTrendsChart({ trends }: DailyTrendsChartProps) {
       {/* Chart Bars */}
       <div className="mt-8 space-y-4" role="region" aria-label="Daily revenue trend chart">
         {trends.map(point => {
-          const completedPct = Math.min(100, Math.round((point.completedRevenuePaise / maxRevenue) * 100));
+          const completedPct = Math.min(
+            100,
+            Math.round((point.completedRevenuePaise / maxRevenue) * 100)
+          );
           const paidPct = Math.min(100, Math.round((point.paidRevenuePaise / maxRevenue) * 100));
 
           return (
             <div key={point.date} className="group relative">
               <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
-                <span className="font-semibold text-slate-800">{point.label} ({point.date})</span>
+                <span className="font-semibold text-slate-800">
+                  {point.label} ({point.date})
+                </span>
                 <span className="font-mono text-slate-500">
                   {point.completedCount} fulfilled / {point.orderCount} orders
                 </span>

@@ -25,7 +25,10 @@ export interface UsePrintConfirmationReturn {
   confirmingJobId: string | null;
   error: string | null;
   lastConfirmedJob: PrintConfirmationResponse | null;
-  confirmJob: (jobId: string, currentQueue?: QueueItem[]) => Promise<PrintConfirmationResponse | null>;
+  confirmJob: (
+    jobId: string,
+    currentQueue?: QueueItem[]
+  ) => Promise<PrintConfirmationResponse | null>;
   clearError: () => void;
 }
 

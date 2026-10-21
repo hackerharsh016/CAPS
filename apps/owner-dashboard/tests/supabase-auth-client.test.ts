@@ -1,8 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import {
-  SupabaseAuthClient,
-  RoleGuardError
-} from '../src/features/auth/supabase-auth-client';
+import { SupabaseAuthClient, RoleGuardError } from '../src/features/auth/supabase-auth-client';
 import { MemoryStorageAdapter } from '../src/features/auth/storage';
 
 describe('SupabaseAuthClient — Security & Role Guards', () => {

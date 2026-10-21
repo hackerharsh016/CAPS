@@ -72,7 +72,11 @@ export class SupabaseAuthClient {
     this.supabaseUrl = config.supabaseUrl.replace(/\/$/, '');
     this.supabaseAnonKey = config.supabaseAnonKey;
     this.storage = config.storage ?? new MemoryStorageAdapter();
-    this.fetchFn = config.customFetch ?? (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+    this.fetchFn =
+      config.customFetch ??
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
 
     // Restore session from storage
     this.currentSession = this.storage.getSession();
@@ -101,7 +105,8 @@ export class SupabaseAuthClient {
   private deriveProfileFromSession(session: AuthSession): UserProfile {
     const meta = session.user.user_metadata ?? {};
     const appMeta = session.user.app_metadata ?? {};
-    const role: UserRole = (appMeta['role'] as UserRole) || (meta['role'] as UserRole) || 'shop_owner';
+    const role: UserRole =
+      (appMeta['role'] as UserRole) || (meta['role'] as UserRole) || 'shop_owner';
     const name = (meta['name'] as string) || (meta['full_name'] as string) || 'Shop Owner';
     const phone = (meta['phone'] as string) || '';
 

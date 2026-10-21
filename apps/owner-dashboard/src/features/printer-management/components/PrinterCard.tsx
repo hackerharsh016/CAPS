@@ -15,11 +15,7 @@ export interface PrinterCardProps {
   disabled?: boolean | undefined;
 }
 
-export function PrinterCard({
-  printer,
-  onEditAssignment,
-  disabled = false
-}: PrinterCardProps) {
+export function PrinterCard({ printer, onEditAssignment, disabled = false }: PrinterCardProps) {
   const isOnline = printer.status === 'online';
   const isBusy = printer.status === 'busy';
   const isError = printer.status === 'error';
@@ -56,7 +52,10 @@ export function PrinterCard({
             </div>
 
             <p className="mt-1 text-xs text-slate-500">
-              Role: <span className="font-semibold text-slate-700">{roleLabels[printer.role] || printer.role}</span>
+              Role:{' '}
+              <span className="font-semibold text-slate-700">
+                {roleLabels[printer.role] || printer.role}
+              </span>
             </p>
           </div>
 
@@ -71,9 +70,7 @@ export function PrinterCard({
             {printer.device && (
               <div className="flex items-center justify-between text-[11px] text-slate-400">
                 <span>Agent v{printer.device.agent_version}</span>
-                <span>
-                  {printer.device.is_revoked ? '🔴 Revoked' : '🟢 Paired'}
-                </span>
+                <span>{printer.device.is_revoked ? '🔴 Revoked' : '🟢 Paired'}</span>
               </div>
             )}
           </div>

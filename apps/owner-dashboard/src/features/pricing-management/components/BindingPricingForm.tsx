@@ -45,7 +45,10 @@ export function BindingPricingForm({
 
           return (
             <div key={b.type} className="rounded-lg border border-slate-100 bg-slate-50/50 p-4">
-              <label htmlFor={`binding-${b.type}`} className="block text-xs font-bold text-slate-900">
+              <label
+                htmlFor={`binding-${b.type}`}
+                className="block text-xs font-bold text-slate-900"
+              >
                 {b.label}
               </label>
               <p className="mt-0.5 text-[11px] text-slate-500">{b.desc}</p>
@@ -70,7 +73,11 @@ export function BindingPricingForm({
                 />
               </div>
               {err && (
-                <p id={`binding-${b.type}-err`} role="alert" className="mt-1 text-[11px] text-rose-600">
+                <p
+                  id={`binding-${b.type}-err`}
+                  role="alert"
+                  className="mt-1 text-[11px] text-rose-600"
+                >
                   {err}
                 </p>
               )}

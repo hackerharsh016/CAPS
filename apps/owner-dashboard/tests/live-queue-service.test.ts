@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { LiveQueueService, DEMO_QUEUE_FIXTURES } from '../src/features/live-queue/live-queue-service';
+import {
+  LiveQueueService,
+  DEMO_QUEUE_FIXTURES
+} from '../src/features/live-queue/live-queue-service';
 
 describe('LiveQueueService — Authoritative Queue Queries', () => {
   const shopId = '00000000-0000-0000-0000-000000000001';

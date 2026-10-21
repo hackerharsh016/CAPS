@@ -40,7 +40,9 @@ export interface UseOwnerNotificationsReturn {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
-  addNotification: (notif: Omit<InAppNotification, 'id' | 'timestamp' | 'read'>) => InAppNotification;
+  addNotification: (
+    notif: Omit<InAppNotification, 'id' | 'timestamp' | 'read'>
+  ) => InAppNotification;
 }
 
 export function useOwnerNotifications({
@@ -143,13 +145,10 @@ export function useOwnerNotifications({
     }
   }, [ownerUserId]);
 
-  const updatePreferences = useCallback(
-    (prefs: Partial<OwnerNotificationPreferences>) => {
-      const updated = defaultOwnerPushService.savePreferences(prefs);
-      setPreferences(updated);
-    },
-    []
-  );
+  const updatePreferences = useCallback((prefs: Partial<OwnerNotificationPreferences>) => {
+    const updated = defaultOwnerPushService.savePreferences(prefs);
+    setPreferences(updated);
+  }, []);
 
   const markAsRead = useCallback((id: string) => {
     defaultOwnerPushService.markNotificationAsRead(id);

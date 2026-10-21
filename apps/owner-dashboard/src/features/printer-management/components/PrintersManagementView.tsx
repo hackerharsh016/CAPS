@@ -23,7 +23,9 @@ export interface PrintersManagementViewProps {
   shopId?: string | undefined;
 }
 
-export function PrintersManagementView({ shopId = '00000000-0000-0000-0000-000000000001' }: PrintersManagementViewProps) {
+export function PrintersManagementView({
+  shopId = '00000000-0000-0000-0000-000000000001'
+}: PrintersManagementViewProps) {
   const {
     printers,
     devices: printerAgentDevices,
@@ -99,7 +101,8 @@ export function PrintersManagementView({ shopId = '00000000-0000-0000-0000-00000
         <div>
           <h1 className="text-xl font-bold text-slate-900">Physical Printers & Desktop Agents</h1>
           <p className="mt-1 text-xs text-slate-500">
-            Discovered local Windows printers, driver capabilities, and paired Windows print agent PCs.
+            Discovered local Windows printers, driver capabilities, and paired Windows print agent
+            PCs.
           </p>
         </div>
 
@@ -184,11 +187,7 @@ export function PrintersManagementView({ shopId = '00000000-0000-0000-0000-00000
         const diff = detectCapabilityDifferences(baselineCapabilities, p.capabilities);
         if (diff.hasDifferences) {
           return (
-            <CapabilityChangeAlert
-              key={`alert-${p.id}`}
-              difference={diff}
-              printerName={p.name}
-            />
+            <CapabilityChangeAlert key={`alert-${p.id}`} difference={diff} printerName={p.name} />
           );
         }
         return null;
@@ -211,7 +210,8 @@ export function PrintersManagementView({ shopId = '00000000-0000-0000-0000-00000
             <span className="text-3xl block mb-2">🖨️</span>
             <h3 className="text-sm font-bold text-slate-900">No physical printers discovered</h3>
             <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-              Pair a Windows PC running the CAPS Desktop Agent above to auto-discover installed printers.
+              Pair a Windows PC running the CAPS Desktop Agent above to auto-discover installed
+              printers.
             </p>
           </div>
         ) : (

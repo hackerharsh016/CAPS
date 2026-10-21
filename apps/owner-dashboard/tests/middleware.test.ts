@@ -23,7 +23,9 @@ describe('Next.js Edge Middleware — Owner Guards', () => {
     const res = middleware(req);
 
     expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toBe('http://localhost:3001/login?error=customer_not_allowed');
+    expect(res.headers.get('location')).toBe(
+      'http://localhost:3001/login?error=customer_not_allowed'
+    );
   });
 
   it('redirects authenticated owner on /login to dashboard root /', () => {

@@ -11,10 +11,7 @@
  */
 
 import React from 'react';
-import type {
-  PushPermissionStatus,
-  OwnerNotificationPreferences
-} from '../types';
+import type { PushPermissionStatus, OwnerNotificationPreferences } from '../types';
 
 export interface NotificationSettingsCardProps {
   permission: PushPermissionStatus;
@@ -54,7 +51,8 @@ export function NotificationSettingsCard({
           Owner Push Notifications & Alert Settings
         </h3>
         <p className="mt-1 text-xs text-slate-500">
-          Configure real-time browser notifications for incoming orders and physical hardware errors.
+          Configure real-time browser notifications for incoming orders and physical hardware
+          errors.
         </p>
       </div>
 
@@ -68,9 +66,7 @@ export function NotificationSettingsCard({
             <div>
               <p className="text-xs font-bold text-slate-900">
                 Browser Permission:{' '}
-                <span className="capitalize">
-                  {!isSupported ? 'Unsupported' : permission}
-                </span>
+                <span className="capitalize">{!isSupported ? 'Unsupported' : permission}</span>
               </p>
               <p className="text-[11px] text-slate-500">
                 {!isSupported

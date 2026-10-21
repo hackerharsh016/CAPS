@@ -63,7 +63,10 @@ export function formatWaitMinutes(minutes: number): string {
 /**
  * Returns the calendar date string (YYYY-MM-DD) for a date in a given timezone.
  */
-export function getShopTimezoneDateString(date: Date | string | number, timezone = DEFAULT_SHOP_TIMEZONE): string {
+export function getShopTimezoneDateString(
+  date: Date | string | number,
+  timezone = DEFAULT_SHOP_TIMEZONE
+): string {
   const d = typeof date === 'object' ? date : new Date(date);
   if (isNaN(d.getTime())) {
     return '1970-01-01';
@@ -82,7 +85,10 @@ export function getShopTimezoneDateString(date: Date | string | number, timezone
 /**
  * Returns the hour of day (0-23) for a date in the given timezone.
  */
-export function getHourInShopTimezone(date: Date | string | number, timezone = DEFAULT_SHOP_TIMEZONE): number {
+export function getHourInShopTimezone(
+  date: Date | string | number,
+  timezone = DEFAULT_SHOP_TIMEZONE
+): number {
   const d = typeof date === 'object' ? date : new Date(date);
   if (isNaN(d.getTime())) {
     return 0;
@@ -110,7 +116,10 @@ export function formatHourLabel(hour: number): string {
 /**
  * Computes exact start and end UTC timestamps for a report filter relative to reference date.
  */
-export function computeFilterDateRange(filter: ReportFilter, referenceDate = new Date()): { start: Date; end: Date } {
+export function computeFilterDateRange(
+  filter: ReportFilter,
+  referenceDate = new Date()
+): { start: Date; end: Date } {
   const tz = filter.timezone || DEFAULT_SHOP_TIMEZONE;
 
   if (filter.period === 'custom' && filter.customStartDate && filter.customEndDate) {
@@ -223,14 +232,17 @@ export function aggregateReportsData(
   let totalPrintedSheets = 0;
 
   // Daily Trend aggregation map: dateString -> { paid, completed, totalOrders, completedCount }
-  const dailyMap = new Map<string, {
-    date: string;
-    label: string;
-    paidRevenuePaise: number;
-    completedRevenuePaise: number;
-    orderCount: number;
-    completedCount: number;
-  }>();
+  const dailyMap = new Map<
+    string,
+    {
+      date: string;
+      label: string;
+      paidRevenuePaise: number;
+      completedRevenuePaise: number;
+      orderCount: number;
+      completedCount: number;
+    }
+  >();
 
   for (const job of inRangeRecords) {
     const isPaid = job.paymentStatus === 'paid';
@@ -334,9 +346,8 @@ export function aggregateReportsData(
   }
 
   // 2. Average Order Value
-  const averageOrderValuePaise = paidOrdersCount > 0
-    ? Math.round(paidRevenuePaise / paidOrdersCount)
-    : 0;
+  const averageOrderValuePaise =
+    paidOrdersCount > 0 ? Math.round(paidRevenuePaise / paidOrdersCount) : 0;
 
   // 3. Wait Times (Average & Median)
   let averageWaitMinutes = 0;
@@ -349,9 +360,14 @@ export function aggregateReportsData(
     const mid = Math.floor(waitMinutesList.length / 2);
     const midVal = waitMinutesList[mid];
     const prevVal = waitMinutesList[mid - 1];
-    medianWaitMinutes = waitMinutesList.length % 2 !== 0
-      ? (midVal !== undefined ? Math.round(midVal * 10) / 10 : 0)
-      : (midVal !== undefined && prevVal !== undefined ? Math.round(((prevVal + midVal) / 2) * 10) / 10 : 0);
+    medianWaitMinutes =
+      waitMinutesList.length % 2 !== 0
+        ? midVal !== undefined
+          ? Math.round(midVal * 10) / 10
+          : 0
+        : midVal !== undefined && prevVal !== undefined
+          ? Math.round(((prevVal + midVal) / 2) * 10) / 10
+          : 0;
   }
 
   // 4. Peak Demand Hour
@@ -378,7 +394,9 @@ export function aggregateReportsData(
   }));
 
   // Sort daily trends chronologically
-  const dailyTrends: DailyTrendPoint[] = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+  const dailyTrends: DailyTrendPoint[] = Array.from(dailyMap.values()).sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
 
   const revenue: RevenueSummary = {
     completedRevenuePaise,

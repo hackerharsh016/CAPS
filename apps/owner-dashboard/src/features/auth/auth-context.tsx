@@ -7,11 +7,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import type { AuthError, AuthSession, AuthStatus, AuthUser, UserProfile } from './types';
-import {
-  SupabaseAuthClient,
-  type SignInCredentials,
-  RoleGuardError
-} from './supabase-auth-client';
+import { SupabaseAuthClient, type SignInCredentials, RoleGuardError } from './supabase-auth-client';
 import { getSupabaseBrowserClient } from '../../lib/supabase';
 
 export interface AuthContextValue {
@@ -36,10 +32,7 @@ export interface AuthProviderProps {
 }
 
 export function AuthProvider({ children, authClient: customAuthClient }: AuthProviderProps) {
-  const client = useMemo(
-    () => customAuthClient ?? getSupabaseBrowserClient(),
-    [customAuthClient]
-  );
+  const client = useMemo(() => customAuthClient ?? getSupabaseBrowserClient(), [customAuthClient]);
 
   const [session, setSession] = useState<AuthSession | null>(() => client.getSession());
   const [profile, setProfile] = useState<UserProfile | null>(() => client.getProfile());

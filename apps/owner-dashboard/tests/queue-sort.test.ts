@@ -124,6 +124,8 @@ describe('Queue Sorting & Two-Tier Priority Discipline', () => {
 
     expect(withETAs[0]?.estimated_wait_minutes).toBe(0); // currently executing
     expect(withETAs[1]?.estimated_wait_minutes).toBeGreaterThan(0);
-    expect(withETAs[2]?.estimated_wait_minutes).toBeGreaterThan(withETAs[1]?.estimated_wait_minutes || 0);
+    expect(withETAs[2]?.estimated_wait_minutes).toBeGreaterThan(
+      withETAs[1]?.estimated_wait_minutes || 0
+    );
   });
 });

@@ -126,7 +126,10 @@ export function QueueItemCard({
             </span>
             <span>•</span>
             <span>
-              ⏱️ {isExecuting ? 'Estimated completion: ~1 min' : `Estimated wait: ~${item.estimated_wait_minutes} mins`}
+              ⏱️{' '}
+              {isExecuting
+                ? 'Estimated completion: ~1 min'
+                : `Estimated wait: ~${item.estimated_wait_minutes} mins`}
             </span>
           </div>
         </div>

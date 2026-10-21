@@ -18,7 +18,8 @@ interface OperationsBreakdownProps {
 export function OperationsBreakdown({ operations, payments }: OperationsBreakdownProps) {
   const { peakDemandHour, priorityBreakdown, colorBreakdown } = operations;
   const totalTierOrders = priorityBreakdown.urgent.count + priorityBreakdown.flexible.count;
-  const urgentPct = totalTierOrders > 0 ? Math.round((priorityBreakdown.urgent.count / totalTierOrders) * 100) : 0;
+  const urgentPct =
+    totalTierOrders > 0 ? Math.round((priorityBreakdown.urgent.count / totalTierOrders) * 100) : 0;
   const flexiblePct = 100 - urgentPct;
 
   const totalColorOrders = colorBreakdown.bw + colorBreakdown.color;
@@ -30,7 +31,9 @@ export function OperationsBreakdown({ operations, payments }: OperationsBreakdow
       {/* 1. Peak Demand & Operational Capacity */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h4 className="text-sm font-bold text-slate-900">Peak Demand Window</h4>
-        <p className="mt-1 text-xs text-slate-500">Busiest operational rush hour detected during this period.</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Busiest operational rush hour detected during this period.
+        </p>
 
         {peakDemandHour ? (
           <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4">
@@ -43,7 +46,8 @@ export function OperationsBreakdown({ operations, payments }: OperationsBreakdow
               </span>
             </div>
             <p className="mt-2 text-xs text-amber-800">
-              Highest order influx concentration. Ensure sufficient paper trays are pre-loaded prior to this window.
+              Highest order influx concentration. Ensure sufficient paper trays are pre-loaded prior
+              to this window.
             </p>
           </div>
         ) : (
@@ -56,7 +60,9 @@ export function OperationsBreakdown({ operations, payments }: OperationsBreakdow
         <div className="mt-5 border-t border-slate-100 pt-4">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
             <span>Priority Queue Tiers</span>
-            <span>{urgentPct}% Urgent / {flexiblePct}% Flexible</span>
+            <span>
+              {urgentPct}% Urgent / {flexiblePct}% Flexible
+            </span>
           </div>
           <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-slate-100">
             <div
@@ -71,8 +77,12 @@ export function OperationsBreakdown({ operations, payments }: OperationsBreakdow
             />
           </div>
           <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-            <span className="text-amber-700 font-medium">Urgent: {formatPaiseToINR(priorityBreakdown.urgent.revenuePaise)}</span>
-            <span className="text-blue-700 font-medium">Flexible: {formatPaiseToINR(priorityBreakdown.flexible.revenuePaise)}</span>
+            <span className="text-amber-700 font-medium">
+              Urgent: {formatPaiseToINR(priorityBreakdown.urgent.revenuePaise)}
+            </span>
+            <span className="text-blue-700 font-medium">
+              Flexible: {formatPaiseToINR(priorityBreakdown.flexible.revenuePaise)}
+            </span>
           </div>
         </div>
       </div>
@@ -101,14 +111,17 @@ export function OperationsBreakdown({ operations, payments }: OperationsBreakdow
         </div>
 
         <div className="mt-6 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
-          <span className="font-semibold text-slate-800">Operational Note:</span> Double-sided duplex discounts and bulk color settings are automatically reconciled on driver profiles.
+          <span className="font-semibold text-slate-800">Operational Note:</span> Double-sided
+          duplex discounts and bulk color settings are automatically reconciled on driver profiles.
         </div>
       </div>
 
       {/* 3. Payment Methods Breakdown */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <h4 className="text-sm font-bold text-slate-900">Payment Breakdown</h4>
-        <p className="mt-1 text-xs text-slate-500">Collected revenue by customer payment channel.</p>
+        <p className="mt-1 text-xs text-slate-500">
+          Collected revenue by customer payment channel.
+        </p>
 
         <div className="mt-4 space-y-3">
           {(['upi', 'card', 'wallet', 'pay_at_counter'] as const).map(method => {
@@ -121,7 +134,10 @@ export function OperationsBreakdown({ operations, payments }: OperationsBreakdow
             };
 
             return (
-              <div key={method} className="flex items-center justify-between text-xs border-b border-slate-50 pb-2">
+              <div
+                key={method}
+                className="flex items-center justify-between text-xs border-b border-slate-50 pb-2"
+              >
                 <div>
                   <span className="font-semibold text-slate-800">{labels[method]}</span>
                   <span className="ml-2 text-[11px] text-slate-400">({data.count} txns)</span>

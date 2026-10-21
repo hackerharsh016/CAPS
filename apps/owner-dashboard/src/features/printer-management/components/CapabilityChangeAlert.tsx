@@ -14,10 +14,7 @@ export interface CapabilityChangeAlertProps {
   printerName: string;
 }
 
-export function CapabilityChangeAlert({
-  difference,
-  printerName
-}: CapabilityChangeAlertProps) {
+export function CapabilityChangeAlert({ difference, printerName }: CapabilityChangeAlertProps) {
   if (!difference.hasDifferences || difference.changes.length === 0) {
     return null;
   }

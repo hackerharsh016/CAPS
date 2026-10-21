@@ -14,11 +14,7 @@ export interface QueueFilterTabsProps {
   metrics: QueueSummaryMetrics;
 }
 
-export function QueueFilterTabs({
-  currentFilter,
-  onFilterChange,
-  metrics
-}: QueueFilterTabsProps) {
+export function QueueFilterTabs({ currentFilter, onFilterChange, metrics }: QueueFilterTabsProps) {
   const tabs: Array<{ id: QueueFilter; label: string; count: number; alert?: boolean }> = [
     { id: 'all', label: 'All Jobs', count: metrics.pendingCount + metrics.executingCount },
     { id: 'urgent', label: 'Urgent Priority', count: metrics.urgentCount },
@@ -33,7 +29,11 @@ export function QueueFilterTabs({
   ];
 
   return (
-    <div className="flex border-b border-slate-200" role="tablist" aria-label="Queue priority filters">
+    <div
+      className="flex border-b border-slate-200"
+      role="tablist"
+      aria-label="Queue priority filters"
+    >
       {tabs.map(tab => {
         const isActive = currentFilter === tab.id;
         return (

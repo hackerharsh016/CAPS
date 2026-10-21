@@ -99,7 +99,8 @@ export function PrinterAssignmentModal({
               ))}
             </select>
             <p className="mt-1 text-[11px] text-slate-500">
-              Only Windows PCs running the paired CAPS Desktop Agent for this shop can claim and print jobs.
+              Only Windows PCs running the paired CAPS Desktop Agent for this shop can claim and
+              print jobs.
             </p>
           </div>
 
@@ -132,7 +133,8 @@ export function PrinterAssignmentModal({
               <div className="ml-2.5">
                 <span className="font-bold text-slate-900">Make Default Shop Printer</span>
                 <p className="mt-0.5 text-[11px] text-slate-500">
-                  New queue orders with standard specifications will automatically route to this printer.
+                  New queue orders with standard specifications will automatically route to this
+                  printer.
                 </p>
               </div>
             </label>

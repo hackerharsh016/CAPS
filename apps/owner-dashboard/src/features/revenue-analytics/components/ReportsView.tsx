@@ -19,15 +19,8 @@ export function ReportsView() {
   const { activeShop } = useShop();
   const shopId = activeShop?.id ?? '00000000-0000-0000-0000-000000000001';
 
-  const {
-    reportsData,
-    isLoading,
-    error,
-    filter,
-    setPeriod,
-    setCustomDateRange,
-    refresh
-  } = useOwnerReports({ shopId });
+  const { reportsData, isLoading, error, filter, setPeriod, setCustomDateRange, refresh } =
+    useOwnerReports({ shopId });
 
   if (error) {
     return (
@@ -50,9 +43,12 @@ export function ReportsView() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sales & Operations Reports</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Sales & Operations Reports
+          </h1>
           <p className="text-sm text-slate-500">
-            Authoritative revenue analytics, physical fulfillment velocity, and customer demand metrics.
+            Authoritative revenue analytics, physical fulfillment velocity, and customer demand
+            metrics.
           </p>
         </div>
 

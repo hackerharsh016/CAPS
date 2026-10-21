@@ -428,7 +428,9 @@ describe('Print Confirmation Service', () => {
           shopId,
           idempotencyKey: 'idem-cancelled'
         })
-      ).rejects.toThrow("Print job job-cancelled is in status 'cancelled' and cannot be confirmed.");
+      ).rejects.toThrow(
+        "Print job job-cancelled is in status 'cancelled' and cannot be confirmed."
+      );
     });
   });
 });

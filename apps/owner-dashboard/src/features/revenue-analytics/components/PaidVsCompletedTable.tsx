@@ -23,7 +23,11 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
     return jobs.filter(job => {
       // Tab filter
       if (activeTab === 'completed' && job.jobStatus !== 'completed') return false;
-      if (activeTab === 'paid_pending' && (job.paymentStatus !== 'paid' || job.jobStatus === 'completed')) return false;
+      if (
+        activeTab === 'paid_pending' &&
+        (job.paymentStatus !== 'paid' || job.jobStatus === 'completed')
+      )
+        return false;
       if (activeTab === 'refunded' && job.paymentStatus !== 'refunded') return false;
 
       // Search filter
@@ -42,7 +46,8 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
     return {
       all: jobs.length,
       completed: jobs.filter(j => j.jobStatus === 'completed').length,
-      paid_pending: jobs.filter(j => j.paymentStatus === 'paid' && j.jobStatus !== 'completed').length,
+      paid_pending: jobs.filter(j => j.paymentStatus === 'paid' && j.jobStatus !== 'completed')
+        .length,
       refunded: jobs.filter(j => j.paymentStatus === 'refunded').length
     };
   }, [jobs]);
@@ -55,7 +60,8 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
           <div>
             <h3 className="text-base font-bold text-slate-900">Job Records: Paid vs Completed</h3>
             <p className="text-xs text-slate-500">
-              Auditable log distinguishing payment authorization status from physical hardware completion.
+              Auditable log distinguishing payment authorization status from physical hardware
+              completion.
             </p>
           </div>
 
@@ -124,13 +130,27 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
         <table className="w-full text-left text-xs text-slate-600">
           <thead className="border-b border-slate-100 bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
             <tr>
-              <th scope="col" className="px-5 py-3">Job ID & Customer</th>
-              <th scope="col" className="px-5 py-3">Document & Settings</th>
-              <th scope="col" className="px-5 py-3">Priority Tier</th>
-              <th scope="col" className="px-5 py-3">Payment Record</th>
-              <th scope="col" className="px-5 py-3">Physical Print Status</th>
-              <th scope="col" className="px-5 py-3">Wait Duration</th>
-              <th scope="col" className="px-5 py-3 text-right">Amount (INR)</th>
+              <th scope="col" className="px-5 py-3">
+                Job ID & Customer
+              </th>
+              <th scope="col" className="px-5 py-3">
+                Document & Settings
+              </th>
+              <th scope="col" className="px-5 py-3">
+                Priority Tier
+              </th>
+              <th scope="col" className="px-5 py-3">
+                Payment Record
+              </th>
+              <th scope="col" className="px-5 py-3">
+                Physical Print Status
+              </th>
+              <th scope="col" className="px-5 py-3">
+                Wait Duration
+              </th>
+              <th scope="col" className="px-5 py-3 text-right">
+                Amount (INR)
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -150,14 +170,19 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
                     {/* Job ID & Customer */}
                     <td className="px-5 py-3.5">
                       <div className="font-semibold text-slate-900">{job.customerName}</div>
-                      <div className="font-mono text-[11px] text-slate-400">{job.jobId.slice(0, 8)}...</div>
+                      <div className="font-mono text-[11px] text-slate-400">
+                        {job.jobId.slice(0, 8)}...
+                      </div>
                     </td>
 
                     {/* Document & Settings */}
                     <td className="px-5 py-3.5">
-                      <div className="font-medium text-slate-800 truncate max-w-[180px]">{job.documentName}</div>
+                      <div className="font-medium text-slate-800 truncate max-w-[180px]">
+                        {job.documentName}
+                      </div>
                       <div className="text-[11px] text-slate-500">
-                        {job.pages}p • {job.copies}x • {job.colorMode === 'color' ? 'Color' : 'B&W'} • {job.sides}
+                        {job.pages}p • {job.copies}x • {job.colorMode === 'color' ? 'Color' : 'B&W'}{' '}
+                        • {job.sides}
                       </div>
                     </td>
 
@@ -182,11 +207,15 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
                             isPaid
                               ? 'bg-emerald-50 text-emerald-700'
                               : job.paymentStatus === 'refunded'
-                              ? 'bg-rose-50 text-rose-700'
-                              : 'bg-amber-50 text-amber-700'
+                                ? 'bg-rose-50 text-rose-700'
+                                : 'bg-amber-50 text-amber-700'
                           }`}
                         >
-                          {job.paymentStatus === 'paid' ? 'Paid' : job.paymentStatus === 'refunded' ? 'Refunded' : 'Counter Pending'}
+                          {job.paymentStatus === 'paid'
+                            ? 'Paid'
+                            : job.paymentStatus === 'refunded'
+                              ? 'Refunded'
+                              : 'Counter Pending'}
                         </span>
                         {job.paymentMethod && (
                           <span className="font-mono text-[11px] text-slate-400">
@@ -203,8 +232,8 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
                           isCompleted
                             ? 'bg-emerald-100 text-emerald-800'
                             : job.jobStatus === 'cancelled' || job.jobStatus === 'failed'
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-blue-100 text-blue-800'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-blue-100 text-blue-800'
                         }`}
                       >
                         {isCompleted ? '✓ Completed' : job.jobStatus}
@@ -213,7 +242,9 @@ export function PaidVsCompletedTable({ jobs }: PaidVsCompletedTableProps) {
 
                     {/* Wait Duration */}
                     <td className="px-5 py-3.5 font-mono text-slate-600">
-                      {typeof job.waitMinutes === 'number' ? formatWaitMinutes(job.waitMinutes) : '—'}
+                      {typeof job.waitMinutes === 'number'
+                        ? formatWaitMinutes(job.waitMinutes)
+                        : '—'}
                     </td>
 
                     {/* Amount */}

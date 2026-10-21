@@ -3,7 +3,12 @@
  * Interacts with backend API and guarantees tenant isolation.
  */
 
-import type { Shop, PricingConfig, UrgentSurchargeConfig, ShopUpdateInput } from '../shop-management/types';
+import type {
+  Shop,
+  PricingConfig,
+  UrgentSurchargeConfig,
+  ShopUpdateInput
+} from '../shop-management/types';
 import { ShopService } from '../shop-management/shop-service';
 import { validatePricingConfig, validateUrgentConfig, validateShopProfile } from './validation';
 

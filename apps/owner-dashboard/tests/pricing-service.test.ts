@@ -16,9 +16,24 @@ describe('PricingService — API Updates & Tenant Isolation', () => {
     geo_lng: 77.1,
     status: 'open',
     pricing_config: {
-      A4: { bw_single_paise: 200, bw_double_paise: 300, color_single_paise: 1000, color_double_paise: 1800 },
-      A3: { bw_single_paise: 400, bw_double_paise: 600, color_single_paise: 2000, color_double_paise: 3600 },
-      Legal: { bw_single_paise: 250, bw_double_paise: 350, color_single_paise: 1200, color_double_paise: 2000 },
+      A4: {
+        bw_single_paise: 200,
+        bw_double_paise: 300,
+        color_single_paise: 1000,
+        color_double_paise: 1800
+      },
+      A3: {
+        bw_single_paise: 400,
+        bw_double_paise: 600,
+        color_single_paise: 2000,
+        color_double_paise: 3600
+      },
+      Legal: {
+        bw_single_paise: 250,
+        bw_double_paise: 350,
+        color_single_paise: 1200,
+        color_double_paise: 2000
+      },
       binding_prices_paise: { none: 0, spiral: 4000, staple: 500, lamination: 2000 },
       gst_percentage: 18
     },

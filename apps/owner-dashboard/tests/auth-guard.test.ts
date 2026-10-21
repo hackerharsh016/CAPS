@@ -9,7 +9,10 @@ import {
 import type { AuthSession, UserProfile } from '../src/features/auth/types';
 
 describe('Owner Auth & Role Route Guards', () => {
-  const createMockSession = (role: 'customer' | 'shop_owner' | 'admin', expired = false): AuthSession => {
+  const createMockSession = (
+    role: 'customer' | 'shop_owner' | 'admin',
+    expired = false
+  ): AuthSession => {
     const now = Math.floor(Date.now() / 1000);
     return {
       access_token: 'test-token',

@@ -39,7 +39,9 @@ export function useAgentDevices({ shopId }: UseAgentDevicesOptions): UseAgentDev
   const [isLoading, setIsLoading] = useState(false);
   const [isPairing, setIsPairing] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
-  const [activePairingCode, setActivePairingCode] = useState<GeneratePairingCodeResponse | null>(null);
+  const [activePairingCode, setActivePairingCode] = useState<GeneratePairingCodeResponse | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const clearError = useCallback(() => setError(null), []);

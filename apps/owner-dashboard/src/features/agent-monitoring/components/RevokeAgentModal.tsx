@@ -77,7 +77,9 @@ export function RevokeAgentModal({
           <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-[11px] text-rose-900 space-y-1 font-medium">
             <p className="font-bold">Permanent Security Revocation:</p>
             <p>
-              Once revoked, this Windows PC will be immediately disconnected. Any print job leases currently held will be aborted, and this device will never be permitted to claim jobs or send heartbeats.
+              Once revoked, this Windows PC will be immediately disconnected. Any print job leases
+              currently held will be aborted, and this device will never be permitted to claim jobs
+              or send heartbeats.
             </p>
           </div>
         </div>

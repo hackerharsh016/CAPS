@@ -21,7 +21,10 @@ import {
 } from '../src/features/revenue-analytics/analytics-utils';
 import { OwnerAnalyticsService } from '../src/features/revenue-analytics/analytics-service';
 import { generateMockJobRecords, DEMO_SHOP_ID } from '../src/features/revenue-analytics/fixtures';
-import type { PaidVsCompletedJobRecord, ReportFilter } from '../src/features/revenue-analytics/types';
+import type {
+  PaidVsCompletedJobRecord,
+  ReportFilter
+} from '../src/features/revenue-analytics/types';
 
 describe('P05-M05-F01: Owner Sales and Operations Reports', () => {
   const OTHER_SHOP_ID = '00000000-0000-0000-0000-000000000099';
@@ -137,9 +140,7 @@ describe('P05-M05-F01: Owner Sales and Operations Reports', () => {
       const service = new OwnerAnalyticsService();
       const filter: ReportFilter = { period: 'today', timezone: 'Asia/Kolkata' };
 
-      await expect(service.fetchOwnerReports('', filter)).rejects.toThrow(
-        /TENANT_ISOLATION_ERROR/
-      );
+      await expect(service.fetchOwnerReports('', filter)).rejects.toThrow(/TENANT_ISOLATION_ERROR/);
     });
   });
 
@@ -392,7 +393,9 @@ describe('P05-M05-F01: Owner Sales and Operations Reports', () => {
       expect(fixtures.length).toBeGreaterThanOrEqual(9);
       expect(fixtures.every(f => f.shopId === DEMO_SHOP_ID)).toBe(true);
       expect(fixtures.some(f => f.jobStatus === 'completed')).toBe(true);
-      expect(fixtures.some(f => f.paymentStatus === 'paid' && f.jobStatus !== 'completed')).toBe(true);
+      expect(fixtures.some(f => f.paymentStatus === 'paid' && f.jobStatus !== 'completed')).toBe(
+        true
+      );
     });
 
     it('returns contract-compliant report data using fallback fixtures when fetch fails', async () => {

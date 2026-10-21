@@ -4,7 +4,12 @@
  * and Master Plan §5.4.
  */
 
-import type { PricingConfig, UrgentSurchargeConfig, PricingFormErrors, PaperPriceTable } from './types';
+import type {
+  PricingConfig,
+  UrgentSurchargeConfig,
+  PricingFormErrors,
+  PaperPriceTable
+} from './types';
 
 export const MAX_PAGE_PRICE_PAISE = 50000; // ₹500 max per page
 export const MAX_BINDING_PRICE_PAISE = 50000; // ₹500 max per binding
@@ -130,7 +135,10 @@ export function validateUrgentConfig(config: UrgentSurchargeConfig): {
   };
 }
 
-export function validateShopProfile(name: string, address: string): {
+export function validateShopProfile(
+  name: string,
+  address: string
+): {
   isValid: boolean;
   errors: PricingFormErrors;
 } {

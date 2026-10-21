@@ -102,7 +102,8 @@ export function AgentPairingModal({
                 {isExpired ? 'Pairing Code Expired' : 'Generate Ephemeral Pairing Code'}
               </h4>
               <p className="mt-1 text-xs text-slate-500 max-w-sm mx-auto">
-                Pairing codes are valid for 10 minutes and can only be consumed once by a single Windows agent.
+                Pairing codes are valid for 10 minutes and can only be consumed once by a single
+                Windows agent.
               </p>
             </div>
 
@@ -171,9 +172,17 @@ export function AgentPairingModal({
                 Setup Instructions on Windows PC:
               </span>
               <ol className="list-decimal list-inside space-y-1 text-slate-600 font-medium pl-1">
-                <li>Launch the <strong>CAPS Desktop Print Agent</strong> installer or executable.</li>
-                <li>When prompted during first run, enter the code above: <code className="font-bold text-slate-800">{activeCode.code}</code></li>
-                <li>The agent will automatically authenticate, discover connected printers, and register securely via Windows DPAPI.</li>
+                <li>
+                  Launch the <strong>CAPS Desktop Print Agent</strong> installer or executable.
+                </li>
+                <li>
+                  When prompted during first run, enter the code above:{' '}
+                  <code className="font-bold text-slate-800">{activeCode.code}</code>
+                </li>
+                <li>
+                  The agent will automatically authenticate, discover connected printers, and
+                  register securely via Windows DPAPI.
+                </li>
               </ol>
             </div>
           </div>
@@ -181,7 +190,8 @@ export function AgentPairingModal({
 
         {/* Security Notice */}
         <p className="text-[11px] text-slate-400 italic">
-          Security invariant: Pairing uses ephemeral tokens. Supabase master service role keys and database passwords are never exposed to local PC operators.
+          Security invariant: Pairing uses ephemeral tokens. Supabase master service role keys and
+          database passwords are never exposed to local PC operators.
         </p>
 
         {/* Footer */}

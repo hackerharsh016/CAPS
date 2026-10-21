@@ -10,11 +10,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { defaultPrinterService, PrinterManagementError } from '../printer-service';
-import type {
-  Printer,
-  AgentDevice,
-  UpdatePrinterAssignmentInput
-} from '../types';
+import type { Printer, AgentDevice, UpdatePrinterAssignmentInput } from '../types';
 
 export interface UsePrintersOptions {
   shopId: string;

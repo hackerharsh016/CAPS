@@ -18,20 +18,13 @@ export interface HardwareIncidentBannerProps {
   onDismiss?: ((incidentId: string) => void) | undefined;
 }
 
-export function HardwareIncidentBanner({
-  incidents,
-  onDismiss
-}: HardwareIncidentBannerProps) {
+export function HardwareIncidentBanner({ incidents, onDismiss }: HardwareIncidentBannerProps) {
   if (!incidents || incidents.length === 0) {
     return null;
   }
 
   return (
-    <aside
-      className="space-y-3"
-      role="region"
-      aria-label="Hardware & Agent Incidents"
-    >
+    <aside className="space-y-3" role="region" aria-label="Hardware & Agent Incidents">
       {incidents.map(inc => {
         const isCritical = inc.severity === 'critical' || inc.incidentType === 'jam';
 
@@ -64,17 +57,13 @@ export function HardwareIncidentBanner({
                   </h4>
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${
-                      isCritical
-                        ? 'bg-rose-200 text-rose-800'
-                        : 'bg-amber-200 text-amber-800'
+                      isCritical ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'
                     }`}
                   >
                     {inc.printerName}
                   </span>
                 </div>
-                <p className="mt-1 text-xs leading-relaxed font-medium">
-                  {inc.message}
-                </p>
+                <p className="mt-1 text-xs leading-relaxed font-medium">{inc.message}</p>
                 <p className="mt-1 text-[11px] opacity-75">
                   Spooling automatically paused to prevent wasted stock and corrupt print batches.
                 </p>

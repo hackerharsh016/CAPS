@@ -17,13 +17,8 @@ import { useOwnerNotifications } from '../features/notifications/hooks/use-owner
 export function OwnerHeader() {
   const pathname = usePathname();
   const { isAuthenticated, profile, signOut } = useAuth();
-  const {
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    clearNotifications
-  } = useOwnerNotifications({ ownerUserId: profile?.id });
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } =
+    useOwnerNotifications({ ownerUserId: profile?.id });
 
   // Hide dashboard navigation on auth routes
   if (isAuthPath(pathname)) {
@@ -50,7 +45,10 @@ export function OwnerHeader() {
 
         {isAuthenticated && (
           <div className="flex items-center space-x-6 text-sm font-medium text-slate-600">
-            <nav className="hidden md:flex items-center space-x-4" aria-label="Dashboard navigation">
+            <nav
+              className="hidden md:flex items-center space-x-4"
+              aria-label="Dashboard navigation"
+            >
               <Link
                 href="/"
                 className={`transition-colors ${

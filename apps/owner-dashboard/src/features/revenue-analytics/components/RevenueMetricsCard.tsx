@@ -22,7 +22,9 @@ export function RevenueMetricsCard({ revenue, operations, timezone }: RevenueMet
       {/* 1. Completed vs Paid Revenue */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Fulfilled Revenue</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Fulfilled Revenue
+          </span>
           <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
             Completed Prints
           </span>
@@ -32,7 +34,9 @@ export function RevenueMetricsCard({ revenue, operations, timezone }: RevenueMet
         </p>
         <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
           <span>Collected Payments:</span>
-          <span className="font-semibold text-slate-700">{formatPaiseToINR(revenue.paidRevenuePaise)}</span>
+          <span className="font-semibold text-slate-700">
+            {formatPaiseToINR(revenue.paidRevenuePaise)}
+          </span>
         </div>
         {revenue.pendingRevenuePaise > 0 && (
           <div className="mt-1 flex items-center justify-between text-xs text-amber-600">
@@ -45,7 +49,9 @@ export function RevenueMetricsCard({ revenue, operations, timezone }: RevenueMet
       {/* 2. Order Volume */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Orders</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Total Orders
+          </span>
           <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
             {revenue.completedOrdersCount} Fulfilled
           </span>
@@ -68,7 +74,9 @@ export function RevenueMetricsCard({ revenue, operations, timezone }: RevenueMet
       {/* 3. Average Order Value */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Avg Order Value</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Avg Order Value
+          </span>
           <span className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
             AOV
           </span>
@@ -78,18 +86,24 @@ export function RevenueMetricsCard({ revenue, operations, timezone }: RevenueMet
         </p>
         <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
           <span>Total Sheets Printed:</span>
-          <span className="font-semibold text-slate-700">{operations.totalPrintedSheets.toLocaleString('en-IN')} pages</span>
+          <span className="font-semibold text-slate-700">
+            {operations.totalPrintedSheets.toLocaleString('en-IN')} pages
+          </span>
         </div>
         <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
           <span>Refunds Total:</span>
-          <span className="font-medium text-slate-700">{formatPaiseToINR(revenue.refundedPaise)}</span>
+          <span className="font-medium text-slate-700">
+            {formatPaiseToINR(revenue.refundedPaise)}
+          </span>
         </div>
       </div>
 
       {/* 4. Operations Wait Time */}
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Avg Queue Wait</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Avg Queue Wait
+          </span>
           <span className="inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700">
             Turnaround
           </span>
@@ -99,7 +113,9 @@ export function RevenueMetricsCard({ revenue, operations, timezone }: RevenueMet
         </p>
         <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
           <span>Median Wait Time:</span>
-          <span className="font-semibold text-slate-700">{formatWaitMinutes(operations.medianWaitMinutes)}</span>
+          <span className="font-semibold text-slate-700">
+            {formatWaitMinutes(operations.medianWaitMinutes)}
+          </span>
         </div>
         <div className="mt-1 flex items-center justify-between text-xs text-slate-500">
           <span>Shop Timezone:</span>

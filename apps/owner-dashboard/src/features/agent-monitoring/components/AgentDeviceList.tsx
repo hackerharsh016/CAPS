@@ -52,7 +52,10 @@ export function AgentDeviceList({
       {isLoading ? (
         <div className="py-6 space-y-3" role="status" aria-label="Loading devices">
           {[1, 2].map(i => (
-            <div key={i} className="h-16 animate-pulse rounded-lg bg-slate-50 border border-slate-100" />
+            <div
+              key={i}
+              className="h-16 animate-pulse rounded-lg bg-slate-50 border border-slate-100"
+            />
           ))}
         </div>
       ) : devices.length === 0 ? (
@@ -60,17 +63,24 @@ export function AgentDeviceList({
           <span className="text-3xl block mb-2">💻</span>
           <p className="font-semibold text-slate-700">No Windows print agents paired yet.</p>
           <p className="mt-0.5 text-slate-400">
-            Click <strong>Pair New Windows PC</strong> to generate a temporary code and connect your counter computer.
+            Click <strong>Pair New Windows PC</strong> to generate a temporary code and connect your
+            counter computer.
           </p>
         </div>
       ) : (
         <div className="divide-y divide-slate-100">
           {devices.map(device => {
             const lastSeenDate = new Date(device.lastHeartbeatAt);
-            const timeAgoStr = lastSeenDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeAgoStr = lastSeenDate.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
 
             return (
-              <div key={device.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div
+                key={device.id}
+                className="py-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+              >
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-base" aria-hidden="true">
@@ -109,7 +119,9 @@ export function AgentDeviceList({
 
                   <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 pl-6">
                     {device.deviceFingerprint && (
-                      <span className="font-mono">Fingerprint: {device.deviceFingerprint.slice(0, 12)}...</span>
+                      <span className="font-mono">
+                        Fingerprint: {device.deviceFingerprint.slice(0, 12)}...
+                      </span>
                     )}
                     <span>•</span>
                     <span>

@@ -43,7 +43,9 @@ export class OwnerPushService {
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
     this.fetchFn =
       config?.customFetch ??
-      (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   public setSupportedForTesting(supported: boolean): void {
@@ -151,7 +153,10 @@ export class OwnerPushService {
     // Persist to local storage
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        localStorage.setItem(`${STORAGE_KEY_PUSH_SUB}_${ownerUserId}`, JSON.stringify(subscription));
+        localStorage.setItem(
+          `${STORAGE_KEY_PUSH_SUB}_${ownerUserId}`,
+          JSON.stringify(subscription)
+        );
       } catch {
         // quota exceeded / private mode
       }
@@ -391,7 +396,9 @@ export class OwnerPushService {
     return defaults;
   }
 
-  public savePreferences(prefs: Partial<OwnerNotificationPreferences>): OwnerNotificationPreferences {
+  public savePreferences(
+    prefs: Partial<OwnerNotificationPreferences>
+  ): OwnerNotificationPreferences {
     const current = this.getPreferences();
     const updated = { ...current, ...prefs };
     this.memoryPreferences = updated;

@@ -72,7 +72,9 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
   } = useOperatorRecovery({
     shopId,
     onSuccess: response => {
-      setSuccessBanner(`Incident resolved: Job ${response.jobId} marked as '${response.newStatus}'.`);
+      setSuccessBanner(
+        `Incident resolved: Job ${response.jobId} marked as '${response.newStatus}'.`
+      );
       setRecoveringItem(null);
       void refreshQueue();
       setTimeout(() => setSuccessBanner(null), 5000);
@@ -193,11 +195,7 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
 
         {/* Filter Tabs */}
         <div className="px-6 bg-slate-50/50">
-          <QueueFilterTabs
-            currentFilter={filter}
-            onFilterChange={setFilter}
-            metrics={metrics}
-          />
+          <QueueFilterTabs currentFilter={filter} onFilterChange={setFilter} metrics={metrics} />
         </div>
 
         {/* Status / Error Alerts */}
@@ -272,11 +270,7 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
         {/* Queue List Content */}
         <div className="p-6">
           {isLoading ? (
-            <div
-              className="space-y-4 py-8"
-              role="status"
-              aria-label="Loading print queue"
-            >
+            <div className="space-y-4 py-8" role="status" aria-label="Loading print queue">
               {[1, 2, 3].map(i => (
                 <div
                   key={i}

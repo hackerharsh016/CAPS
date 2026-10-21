@@ -74,9 +74,7 @@ export function detectCapabilityDifferences(
   }
 
   // Check paper sizes
-  const missingSizes = previous.paper_sizes.filter(
-    size => !current.paper_sizes.includes(size)
-  );
+  const missingSizes = previous.paper_sizes.filter(size => !current.paper_sizes.includes(size));
   if (missingSizes.length > 0) {
     changes.push(`Paper sizes no longer reported: ${missingSizes.join(', ')}`);
   }
@@ -98,7 +96,9 @@ export class PrinterService {
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
     this.fetchFn =
       config?.customFetch ??
-      (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   /**
@@ -175,10 +175,7 @@ export class PrinterService {
     };
 
     if (!printer_id || !shopId) {
-      throw new PrinterManagementError(
-        'VALIDATION_ERROR',
-        'Printer ID and Shop ID are required.'
-      );
+      throw new PrinterManagementError('VALIDATION_ERROR', 'Printer ID and Shop ID are required.');
     }
 
     const client = getSupabaseBrowserClient();
@@ -266,7 +263,11 @@ export class PrinterService {
     if (!printRes.ok) {
       throw new PrinterManagementError('PRINTER_NOT_FOUND', `Printer ${printer_id} not found.`);
     }
-    const printers = (await printRes.json()) as Array<{ id: string; shop_id: string; name: string }>;
+    const printers = (await printRes.json()) as Array<{
+      id: string;
+      shop_id: string;
+      name: string;
+    }>;
     const targetPrinter = printers[0];
 
     if (!targetPrinter || targetPrinter.shop_id !== shopId) {

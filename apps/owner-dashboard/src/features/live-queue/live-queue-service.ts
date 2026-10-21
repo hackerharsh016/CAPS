@@ -187,7 +187,9 @@ export class LiveQueueService {
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
     this.fetchFn =
       config?.customFetch ??
-      (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   /**

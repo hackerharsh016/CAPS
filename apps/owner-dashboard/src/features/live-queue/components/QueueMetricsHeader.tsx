@@ -45,9 +45,7 @@ export function QueueMetricsHeader({ metrics }: QueueMetricsHeaderProps) {
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
           Today's Completed
         </p>
-        <p className="mt-2 text-2xl font-bold text-slate-900">
-          {metrics.todayCompletedCount} Jobs
-        </p>
+        <p className="mt-2 text-2xl font-bold text-slate-900">{metrics.todayCompletedCount} Jobs</p>
         <span className="text-xs font-medium text-emerald-600">1,240 total pages dispatched</span>
       </div>
 

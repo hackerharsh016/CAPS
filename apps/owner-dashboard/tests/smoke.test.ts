@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import OwnerDashboardPage from '../src/app/page.js';
+import OwnerDashboardPage from '../src/app/page';
 
 describe('Owner Dashboard Application Shell', () => {
   it('exports valid React dashboard component', () => {

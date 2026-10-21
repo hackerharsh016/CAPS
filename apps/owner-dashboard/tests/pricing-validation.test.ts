@@ -6,7 +6,10 @@ import {
   MAX_PAGE_PRICE_PAISE,
   MAX_BINDING_PRICE_PAISE
 } from '../src/features/pricing-management/validation';
-import type { PricingConfig, UrgentSurchargeConfig } from '../src/features/pricing-management/types';
+import type {
+  PricingConfig,
+  UrgentSurchargeConfig
+} from '../src/features/pricing-management/types';
 
 describe('Pricing & Shop Settings Validation', () => {
   const validPricingConfig: PricingConfig = {

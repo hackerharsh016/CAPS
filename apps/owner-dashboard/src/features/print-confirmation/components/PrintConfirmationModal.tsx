@@ -79,8 +79,8 @@ export function PrintConfirmationModal({
             <div className="flex justify-between items-center text-xs">
               <span className="font-semibold text-slate-700">Specifications:</span>
               <span>
-                {item.settings.paper_size} • {item.settings.color_mode} •{' '}
-                {item.settings.copies} copy
+                {item.settings.paper_size} • {item.settings.color_mode} • {item.settings.copies}{' '}
+                copy
               </span>
             </div>
             <div className="flex justify-between items-center text-xs">
@@ -90,8 +90,8 @@ export function PrintConfirmationModal({
           </div>
 
           <p className="text-xs text-slate-500">
-            Clicking <strong>Authorize Print</strong> marks this job approved. The local Raspberry Pi /
-            PC print agent will immediately lease and spool this job to the physical printer.
+            Clicking <strong>Authorize Print</strong> marks this job approved. The local Raspberry
+            Pi / PC print agent will immediately lease and spool this job to the physical printer.
           </p>
         </div>
 

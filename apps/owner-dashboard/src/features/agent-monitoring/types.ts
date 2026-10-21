@@ -3,7 +3,8 @@
  * Aligned with CAPS SRS UC-3, Section 4.2 & Master Plan §5.4, Migration 002, 009, 010, 012.
  */
 
-export type HardwareIncidentType = 'jam' | 'offline' | 'out_of_paper' | 'door_open' | 'agent_disconnected';
+export type HardwareIncidentType =
+  'jam' | 'offline' | 'out_of_paper' | 'door_open' | 'agent_disconnected';
 
 export type IncidentSeverity = 'critical' | 'warning' | 'info';
 

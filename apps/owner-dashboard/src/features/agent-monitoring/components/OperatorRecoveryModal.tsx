@@ -70,7 +70,9 @@ export function OperatorRecoveryModal({
         <div className="flex items-start justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-amber-500 text-lg" aria-hidden="true">⚠️</span>
+              <span className="text-amber-500 text-lg" aria-hidden="true">
+                ⚠️
+              </span>
               <h3 id="recovery-modal-title" className="text-base font-bold text-slate-900">
                 Operator Review & Incident Recovery
               </h3>
@@ -107,13 +109,15 @@ export function OperatorRecoveryModal({
           <div className="flex justify-between items-center">
             <span className="font-semibold text-slate-600">Document & Pages:</span>
             <span className="text-slate-800">
-              {item.document_name || 'Document.pdf'} ({item.settings.copies}x, {item.settings.color_mode})
+              {item.document_name || 'Document.pdf'} ({item.settings.copies}x,{' '}
+              {item.settings.color_mode})
             </span>
           </div>
           <div className="flex justify-between items-center">
             <span className="font-semibold text-slate-600">Amount / Status:</span>
             <span className="font-bold text-slate-900">
-              {formattedPrice} • <span className="text-amber-700 capitalize">{item.status.replace('_', ' ')}</span>
+              {formattedPrice} •{' '}
+              <span className="text-amber-700 capitalize">{item.status.replace('_', ' ')}</span>
             </span>
           </div>
         </div>
@@ -165,7 +169,9 @@ export function OperatorRecoveryModal({
                   className="mt-0.5 text-blue-600 focus:ring-blue-500"
                 />
                 <div className="ml-3">
-                  <span className="font-bold text-slate-900">Mark Completed (Physical Verified)</span>
+                  <span className="font-bold text-slate-900">
+                    Mark Completed (Physical Verified)
+                  </span>
                   <p className="mt-0.5 text-slate-500">
                     Spooler finished and sheets physically printed successfully. Closes job.
                   </p>
@@ -190,7 +196,8 @@ export function OperatorRecoveryModal({
                 <div className="ml-3">
                   <span className="font-bold text-slate-900">Cancel Job (Refund / Abort)</span>
                   <p className="mt-0.5 text-slate-500">
-                    Job unrecoverable due to damaged hardware/file error. Initiates customer notification.
+                    Job unrecoverable due to damaged hardware/file error. Initiates customer
+                    notification.
                   </p>
                 </div>
               </label>

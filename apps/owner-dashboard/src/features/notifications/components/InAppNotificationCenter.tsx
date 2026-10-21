@@ -76,7 +76,10 @@ export function InAppNotificationCenter({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/75 px-4 py-3">
             <div className="flex items-center space-x-2">
-              <h3 id="notification-menu-heading" className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <h3
+                id="notification-menu-heading"
+                className="text-xs font-bold text-slate-900 uppercase tracking-wider"
+              >
                 Notifications
               </h3>
               {unreadCount > 0 && (
@@ -137,7 +140,9 @@ export function InAppNotificationCenter({
                               : '🔔'}
                       </span>
                       <div>
-                        <p className={`font-semibold ${!n.read ? 'text-slate-900' : 'text-slate-700'}`}>
+                        <p
+                          className={`font-semibold ${!n.read ? 'text-slate-900' : 'text-slate-700'}`}
+                        >
                           {n.title}
                         </p>
                         <p className="mt-0.5 text-slate-500 leading-relaxed font-normal">

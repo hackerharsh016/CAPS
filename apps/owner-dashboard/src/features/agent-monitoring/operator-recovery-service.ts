@@ -57,7 +57,9 @@ export class OperatorRecoveryService {
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
     this.fetchFn =
       config?.customFetch ??
-      (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   /**
@@ -225,10 +227,7 @@ export class OperatorRecoveryService {
    * Fetches active hardware incidents (offline printers, paper jams, out-of-paper)
    * detected from connected agents and physical printers.
    */
-  async fetchActiveIncidents(
-    shopId: string,
-    accessToken?: string
-  ): Promise<HardwareIncident[]> {
+  async fetchActiveIncidents(shopId: string, accessToken?: string): Promise<HardwareIncident[]> {
     if (!shopId) return [];
 
     const client = getSupabaseBrowserClient();

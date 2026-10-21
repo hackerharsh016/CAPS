@@ -1,0 +1,4 @@
+*.tsbuildinfo
+.next/
+dist/
+node_modules/

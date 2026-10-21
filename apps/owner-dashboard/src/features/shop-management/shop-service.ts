@@ -26,7 +26,11 @@ export class ShopService {
     const env = getSupabaseEnv();
     this.supabaseUrl = (config?.supabaseUrl ?? env.supabaseUrl).replace(/\/$/, '');
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
-    this.fetchFn = config?.customFetch ?? (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+    this.fetchFn =
+      config?.customFetch ??
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   /**

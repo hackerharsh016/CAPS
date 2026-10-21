@@ -58,7 +58,9 @@ export class AgentPairingService {
     this.supabaseAnonKey = config?.supabaseAnonKey ?? env.supabaseAnonKey;
     this.fetchFn =
       config?.customFetch ??
-      (typeof fetch !== 'undefined' ? fetch.bind(globalThis) : (undefined as unknown as typeof fetch));
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   /**
@@ -72,7 +74,10 @@ export class AgentPairingService {
     const { shopId, ttlSeconds = 600 } = request;
 
     if (!shopId) {
-      throw new AgentPairingError('VALIDATION_ERROR', 'Shop ID is required to generate pairing code.');
+      throw new AgentPairingError(
+        'VALIDATION_ERROR',
+        'Shop ID is required to generate pairing code.'
+      );
     }
 
     const client = getSupabaseBrowserClient();
@@ -81,7 +86,10 @@ export class AgentPairingService {
     const effectiveUserId = session?.user?.id;
 
     if (!effectiveToken || !effectiveUserId) {
-      throw new AgentPairingError('UNAUTHORIZED_CROSS_SHOP', 'User session is invalid or unauthenticated.');
+      throw new AgentPairingError(
+        'UNAUTHORIZED_CROSS_SHOP',
+        'User session is invalid or unauthenticated.'
+      );
     }
 
     const headers: Record<string, string> = {
@@ -234,7 +242,10 @@ export class AgentPairingService {
     const { deviceId, shopId, reason } = request;
 
     if (!deviceId || !shopId) {
-      throw new AgentPairingError('VALIDATION_ERROR', 'Device ID and Shop ID are required to revoke device.');
+      throw new AgentPairingError(
+        'VALIDATION_ERROR',
+        'Device ID and Shop ID are required to revoke device.'
+      );
     }
 
     const client = getSupabaseBrowserClient();
@@ -243,7 +254,10 @@ export class AgentPairingService {
     const effectiveUserId = session?.user?.id;
 
     if (!effectiveToken || !effectiveUserId) {
-      throw new AgentPairingError('UNAUTHORIZED_CROSS_SHOP', 'User session is invalid or unauthenticated.');
+      throw new AgentPairingError(
+        'UNAUTHORIZED_CROSS_SHOP',
+        'User session is invalid or unauthenticated.'
+      );
     }
 
     const headers: Record<string, string> = {
@@ -282,7 +296,11 @@ export class AgentPairingService {
       throw new AgentPairingError('DEVICE_NOT_FOUND', `Device ${deviceId} not found.`);
     }
 
-    const devices = (await devRes.json()) as Array<{ id: string; shop_id: string; is_revoked: boolean }>;
+    const devices = (await devRes.json()) as Array<{
+      id: string;
+      shop_id: string;
+      is_revoked: boolean;
+    }>;
     const device = devices[0];
 
     if (!device) {
@@ -297,7 +315,10 @@ export class AgentPairingService {
     }
 
     if (device.is_revoked) {
-      throw new AgentPairingError('DEVICE_ALREADY_REVOKED', `Device ${deviceId} has already been revoked.`);
+      throw new AgentPairingError(
+        'DEVICE_ALREADY_REVOKED',
+        `Device ${deviceId} has already been revoked.`
+      );
     }
 
     // 3. Update device as revoked
@@ -318,7 +339,10 @@ export class AgentPairingService {
     });
 
     if (!patchRes.ok) {
-      throw new AgentPairingError('NETWORK_ERROR', `Failed to revoke agent device: HTTP ${patchRes.status}`);
+      throw new AgentPairingError(
+        'NETWORK_ERROR',
+        `Failed to revoke agent device: HTTP ${patchRes.status}`
+      );
     }
 
     return {

@@ -197,7 +197,9 @@ describe('Operator Recovery Service & Error Handling', () => {
           return {
             ok: true,
             status: 200,
-            json: async () => [{ id: ambiguousJobId, shop_id: 'other-shop-999', status: 'requires_review' }]
+            json: async () => [
+              { id: ambiguousJobId, shop_id: 'other-shop-999', status: 'requires_review' }
+            ]
           } as Response;
         }
 

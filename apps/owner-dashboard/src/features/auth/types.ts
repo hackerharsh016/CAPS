@@ -50,11 +50,7 @@ export interface AuthSession extends AuthTokens {
 }
 
 export type AuthChangeEvent =
-  | 'INITIAL_SESSION'
-  | 'SIGNED_IN'
-  | 'SIGNED_OUT'
-  | 'TOKEN_REFRESHED'
-  | 'USER_UPDATED';
+  'INITIAL_SESSION' | 'SIGNED_IN' | 'SIGNED_OUT' | 'TOKEN_REFRESHED' | 'USER_UPDATED';
 
 export type AuthStateChangeCallback = (event: AuthChangeEvent, session: AuthSession | null) => void;
 

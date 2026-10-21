@@ -18,9 +18,7 @@ export function usePricingForm(
     if (!activeShop) return null;
     return {
       pricing_config: JSON.parse(JSON.stringify(activeShop.pricing_config)),
-      urgent_surcharge_config: JSON.parse(
-        JSON.stringify(activeShop.urgent_surcharge_config)
-      ),
+      urgent_surcharge_config: JSON.parse(JSON.stringify(activeShop.urgent_surcharge_config)),
       auto_print_enabled: activeShop.auto_print_enabled,
       pay_at_counter_enabled: activeShop.pay_at_counter_enabled ?? false,
       status: activeShop.status,

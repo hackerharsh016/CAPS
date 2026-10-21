@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import {
-  OwnerPushService
-} from '../src/features/notifications/owner-push-service';
+import { OwnerPushService } from '../src/features/notifications/owner-push-service';
 
 const mockGetSession = vi.fn();
 
@@ -36,11 +34,14 @@ describe('Owner Push Notifications & Permission Lifecycle (P06-M03-F02-OWNER)', 
       }
     });
 
-    mockFetch = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({})
-    } as Response));
+    mockFetch = vi.fn(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          json: async () => ({})
+        }) as Response
+    );
 
     service = new OwnerPushService({
       customFetch: mockFetch as unknown as typeof fetch

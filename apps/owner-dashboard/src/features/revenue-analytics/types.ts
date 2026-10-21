@@ -12,13 +12,14 @@ export type PeriodPreset = 'today' | '7d' | '30d' | 'this_month' | 'custom';
 
 export type PaymentMethodType = 'upi' | 'card' | 'wallet' | 'pay_at_counter';
 export type PaymentStatusType = 'paid' | 'pay_at_counter_pending' | 'refunded' | 'failed';
-export type JobStatusType = 'completed' | 'queued' | 'printing' | 'cancelled' | 'failed' | 'downloading' | 'claimed';
+export type JobStatusType =
+  'completed' | 'queued' | 'printing' | 'cancelled' | 'failed' | 'downloading' | 'claimed';
 
 export interface ReportFilter {
   period: PeriodPreset;
   customStartDate?: string | undefined; // YYYY-MM-DD or ISO
-  customEndDate?: string | undefined;   // YYYY-MM-DD or ISO
-  timezone: string;                     // e.g. 'Asia/Kolkata'
+  customEndDate?: string | undefined; // YYYY-MM-DD or ISO
+  timezone: string; // e.g. 'Asia/Kolkata'
 }
 
 export interface PaidVsCompletedJobRecord {
@@ -42,20 +43,20 @@ export interface PaidVsCompletedJobRecord {
 }
 
 export interface RevenueSummary {
-  completedRevenuePaise: number;  // Fulfilled printing revenue
-  paidRevenuePaise: number;       // All verified collected payments
-  pendingRevenuePaise: number;    // Paid but not yet completed (in queue/printing)
+  completedRevenuePaise: number; // Fulfilled printing revenue
+  paidRevenuePaise: number; // All verified collected payments
+  pendingRevenuePaise: number; // Paid but not yet completed (in queue/printing)
   refundedPaise: number;
   completedOrdersCount: number;
   paidOrdersCount: number;
-  pendingOrdersCount: number;     // Active unfinished orders
+  pendingOrdersCount: number; // Active unfinished orders
   cancelledOrFailedCount: number;
   averageOrderValuePaise: number; // Based on paid orders
 }
 
 export interface HourlyDistributionPoint {
-  hour: number;        // 0 - 23
-  label: string;       // e.g. "11:00 AM"
+  hour: number; // 0 - 23
+  label: string; // e.g. "11:00 AM"
   orderCount: number;
   revenuePaise: number;
 }
@@ -92,8 +93,8 @@ export interface PaymentBreakdown {
 }
 
 export interface DailyTrendPoint {
-  date: string;                   // YYYY-MM-DD in shop timezone
-  label: string;                  // e.g. "Oct 21"
+  date: string; // YYYY-MM-DD in shop timezone
+  label: string; // e.g. "Oct 21"
   paidRevenuePaise: number;
   completedRevenuePaise: number;
   orderCount: number;
@@ -106,7 +107,7 @@ export interface OwnerReportsData {
   filter: ReportFilter;
   dateRange: {
     start: string; // ISO
-    end: string;   // ISO
+    end: string; // ISO
   };
   revenue: RevenueSummary;
   operations: OperationsSummary;

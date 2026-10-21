@@ -5,11 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type {
-  ReportFilter,
-  PeriodPreset,
-  OwnerReportsData
-} from '../types';
+import type { ReportFilter, PeriodPreset, OwnerReportsData } from '../types';
 import { DEFAULT_SHOP_TIMEZONE } from '../analytics-utils';
 import { OwnerAnalyticsService } from '../analytics-service';
 
@@ -56,7 +52,8 @@ export function useOwnerReports(options: UseOwnerReportsOptions = {}) {
       const data = await service.fetchOwnerReports(shopId, filter, accessToken);
       setReportsData(data);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to load owner sales and operations reports.';
+      const msg =
+        err instanceof Error ? err.message : 'Failed to load owner sales and operations reports.';
       setError(msg);
     } finally {
       setIsLoading(false);

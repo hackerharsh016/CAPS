@@ -10,7 +10,11 @@
 
 import type { QueueItem, JobStatus } from './types';
 
-export const EXECUTING_STATUSES: readonly JobStatus[] = ['claimed', 'downloading', 'printing'] as const;
+export const EXECUTING_STATUSES: readonly JobStatus[] = [
+  'claimed',
+  'downloading',
+  'printing'
+] as const;
 
 export function isJobExecuting(status: JobStatus): boolean {
   return EXECUTING_STATUSES.includes(status);

@@ -51,7 +51,11 @@ export function PeriodSelector({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 shadow-sm" role="group" aria-label="Report timeframe">
+      <div
+        className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1 shadow-sm"
+        role="group"
+        aria-label="Report timeframe"
+      >
         {presets.map(preset => {
           const isActive = currentPeriod === preset.id;
           return (
@@ -80,14 +84,28 @@ export function PeriodSelector({
 
       {/* Custom Date Range Modal Dialog */}
       {showCustomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="custom-range-title">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="custom-range-title"
+        >
           <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
-            <h3 id="custom-range-title" className="text-base font-bold text-slate-900">Select Custom Date Range</h3>
-            <p className="mt-1 text-xs text-slate-500">Pick start and end dates in shop timezone.</p>
+            <h3 id="custom-range-title" className="text-base font-bold text-slate-900">
+              Select Custom Date Range
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Pick start and end dates in shop timezone.
+            </p>
 
             <form onSubmit={handleCustomSubmit} className="mt-4 space-y-4">
               <div>
-                <label htmlFor="custom-start-date" className="block text-xs font-medium text-slate-700">Start Date</label>
+                <label
+                  htmlFor="custom-start-date"
+                  className="block text-xs font-medium text-slate-700"
+                >
+                  Start Date
+                </label>
                 <input
                   id="custom-start-date"
                   type="date"
@@ -99,7 +117,12 @@ export function PeriodSelector({
               </div>
 
               <div>
-                <label htmlFor="custom-end-date" className="block text-xs font-medium text-slate-700">End Date</label>
+                <label
+                  htmlFor="custom-end-date"
+                  className="block text-xs font-medium text-slate-700"
+                >
+                  End Date
+                </label>
                 <input
                   id="custom-end-date"
                   type="date"

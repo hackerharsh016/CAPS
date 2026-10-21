@@ -64,11 +64,7 @@ export function ConfirmPrintButton({
             ? 'Cannot confirm out of order. Wait for preceding jobs.'
             : 'Confirm & Print next job'
       }
-      title={
-        !isNextInQueue
-          ? 'Priority rule: Must confirm earlier waiting jobs first'
-          : undefined
-      }
+      title={!isNextInQueue ? 'Priority rule: Must confirm earlier waiting jobs first' : undefined}
       className={`inline-flex items-center justify-center space-x-1.5 rounded-lg px-5 py-2 text-xs font-bold shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
         isDisabled
           ? 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-60'

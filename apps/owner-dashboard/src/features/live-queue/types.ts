@@ -85,11 +85,7 @@ export interface QueueItem {
 export type QueueFilter = 'all' | 'urgent' | 'flexible' | 'executing' | 'requires_review';
 
 export type RealtimeConnectionState =
-  | 'connecting'
-  | 'connected'
-  | 'reconnecting'
-  | 'disconnected'
-  | 'fallback_polling';
+  'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'fallback_polling';
 
 export interface QueueSummaryMetrics {
   pendingCount: number;
