@@ -21,6 +21,66 @@
     }
   ],
   "paths": {
+    "/agent/pair": {
+      "post": {
+        "summary": "Agent Device Pairing Handshake",
+        "description": "Public onboarding: Desktop agent exchanges single-use pairing code for per-device credentials.",
+        "operationId": "pairDevice",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairAgentDeviceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Device enrolled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairAgentDeviceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid payload format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pairing code not found or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Pairing code already consumed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/agent/heartbeat": {
       "post": {
         "summary": "Agent Heartbeat & Capabilities",
@@ -162,6 +222,86 @@
             "schema": {
               "type": "string",
               "minLength": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobStatusUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status update processed and acknowledged",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusUpdateResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized agent device token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Job not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - lease expired or attempt ID mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid status transition or malformed payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/agent/jobs/status": {
+      "post": {
+        "summary": "Update Claimed Job Status (Body Job ID)",
+        "description": "Idempotently reports job execution progress, spooler ID, physical page counter, or failures where job_id is provided in the request body.",
+        "operationId": "updateJobStatusBody",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "description": "Unique idempotent execution request key",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -468,6 +608,35 @@
           "acknowledged_at": { "type": "string", "format": "date-time" }
         },
         "additionalProperties": false
+      },
+      "PairAgentDeviceRequest": {
+        "type": "object",
+        "required": ["pairing_code"],
+        "properties": {
+          "pairing_code": { "type": "string", "example": "123456" },
+          "device_fingerprint": { "type": "string", "example": "fp-desk-01" },
+          "fingerprint": { "type": "string", "example": "fp-desk-01" },
+          "device_name": { "type": "string", "example": "Front Desk Print Station" },
+          "hostname": { "type": "string", "example": "DESKTOP-PRINT-01" },
+          "os_version": { "type": "string", "example": "Windows 11 Pro 23H2" },
+          "agent_version": { "type": "string", "example": "0.1.0" }
+        },
+        "anyOf": [
+          { "required": ["device_fingerprint", "device_name"] },
+          { "required": ["hostname"] }
+        ]
+      },
+      "PairAgentDeviceResponse": {
+        "type": "object",
+        "required": ["success", "device_id", "shop_id", "device_secret"],
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "device_id": { "type": "string", "example": "dev-01" },
+          "shop_id": { "type": "string", "format": "uuid" },
+          "device_secret": { "type": "string", "example": "caps_agent_sec_998877665544332211" },
+          "device_token": { "type": "string", "example": "caps_agent_sec_998877665544332211" },
+          "agent_version": { "type": "string", "example": "0.1.0" }
+        }
       },
       "ApiErrorResponse": {
         "type": "object",
