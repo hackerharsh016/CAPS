@@ -83,6 +83,20 @@ export class IntegrationOrchestrator {
     purgedAt: string;
   }> = [];
 
+  // Supervised Pilot: Operator Pairing, Emergency Stop, and Heartbeat State
+  private readonly pairedAgents = new Map<
+    string,
+    { shopId: string; machineHostname: string; pairedAt: string; lastHeartbeat: string }
+  >();
+  private readonly activePairingCodes = new Map<
+    string,
+    { shopId: string; ownerUserId: string; expiresAt: number }
+  >();
+  private readonly pausedShops = new Map<
+    string,
+    { paused: boolean; reason?: string; pausedAt?: string }
+  >();
+
   private eventSequence = 0;
 
   public readonly spooler = new FakeWindowsSpooler();
@@ -325,6 +339,14 @@ export class IntegrationOrchestrator {
     agentDeviceId: string;
     idempotencyKey: string;
   }): AgentClaimResult {
+    // 0. Emergency Stop Check: If shop queue is paused, reject claims
+    if (this.isQueuePaused(params.shopId)) {
+      return {
+        claimed: false,
+        error: 'QUEUE_PAUSED_EMERGENCY_STOP: Shop operator has paused printing operations.'
+      };
+    }
+
     // 1. Idempotency check: if agent already claimed with this key, return existing lease
     for (const [jobId, lease] of this.activeLeases.entries()) {
       if (
@@ -774,7 +796,235 @@ export class IntegrationOrchestrator {
   }
 
   /**
-   * Section 9: Security Review: Zero Secret Leakage Invariant
+   * Section 9: Supervised Pilot: Operator Pairing, Diagnostics, Refunds, & Emergency Stop
+   */
+  generatePairingCode(
+    shopId: string,
+    ownerUserId: string
+  ): { pairingCode: string; expiresAt: string } {
+    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
+    const pairingCode = `PAIR-CP-${randomSuffix}`;
+    const expiresAt = Date.now() + 15 * 60 * 1000; // 15-minute TTL
+
+    this.activePairingCodes.set(pairingCode, { shopId, ownerUserId, expiresAt });
+
+    this.recordAuditEvent({
+      jobId: 'system-pairing',
+      actorType: 'owner',
+      actorId: ownerUserId,
+      fromStatus: 'idle',
+      toStatus: 'pairing_active',
+      eventName: 'PAIRING_CODE_GENERATED',
+      metadata: { shopId, pairingCode }
+    });
+
+    return { pairingCode, expiresAt: new Date(expiresAt).toISOString() };
+  }
+
+  agentPairDevice(params: {
+    pairingCode: string;
+    agentDeviceId: string;
+    machineHostname: string;
+  }): { success: boolean; shopId?: string | undefined; error?: string | undefined } {
+    const record = this.activePairingCodes.get(params.pairingCode);
+    if (!record) {
+      return { success: false, error: 'INVALID_OR_EXPIRED_PAIRING_CODE' };
+    }
+
+    if (Date.now() > record.expiresAt) {
+      this.activePairingCodes.delete(params.pairingCode);
+      return { success: false, error: 'PAIRING_CODE_EXPIRED' };
+    }
+
+    const now = new Date().toISOString();
+    this.pairedAgents.set(params.agentDeviceId, {
+      shopId: record.shopId,
+      machineHostname: params.machineHostname,
+      pairedAt: now,
+      lastHeartbeat: now
+    });
+
+    // Invalidate single-use pairing code
+    this.activePairingCodes.delete(params.pairingCode);
+
+    this.recordAuditEvent({
+      jobId: 'system-pairing',
+      actorType: 'agent',
+      actorId: params.agentDeviceId,
+      fromStatus: 'pairing_active',
+      toStatus: 'paired',
+      eventName: 'AGENT_SUCCESSFULLY_PAIRED',
+      metadata: { shopId: record.shopId, machineHostname: params.machineHostname }
+    });
+
+    return { success: true, shopId: record.shopId };
+  }
+
+  agentHeartbeat(agentDeviceId: string): {
+    success: boolean;
+    timestamp?: string | undefined;
+    error?: string | undefined;
+  } {
+    const agent = this.pairedAgents.get(agentDeviceId);
+    if (!agent) {
+      return { success: false, error: 'AGENT_NOT_PAIRED' };
+    }
+
+    const now = new Date().toISOString();
+    agent.lastHeartbeat = now;
+    return { success: true, timestamp: now };
+  }
+
+  getPairedAgent(agentDeviceId: string): {
+    paired: boolean;
+    shopId?: string | undefined;
+    machineHostname?: string | undefined;
+    lastHeartbeat?: string | undefined;
+  } {
+    const agent = this.pairedAgents.get(agentDeviceId);
+    if (!agent) {
+      return { paired: false };
+    }
+    return {
+      paired: true,
+      shopId: agent.shopId,
+      machineHostname: agent.machineHostname,
+      lastHeartbeat: agent.lastHeartbeat
+    };
+  }
+
+  setEmergencyStop(
+    shopId: string,
+    paused: boolean,
+    reason?: string
+  ): { success: boolean; isPaused: boolean; reason?: string | undefined } {
+    this.pausedShops.set(shopId, {
+      paused,
+      reason,
+      pausedAt: new Date().toISOString()
+    });
+
+    this.recordAuditEvent({
+      jobId: 'system-queue-control',
+      actorType: 'owner',
+      actorId: 'operator',
+      fromStatus: paused ? 'active' : 'paused',
+      toStatus: paused ? 'paused' : 'active',
+      eventName: paused ? 'QUEUE_EMERGENCY_STOP_ENGAGED' : 'QUEUE_RESUMED_OPERATIONAL',
+      metadata: { shopId, reason }
+    });
+
+    return { success: true, isPaused: paused, reason };
+  }
+
+  isQueuePaused(shopId: string): boolean {
+    const record = this.pausedShops.get(shopId);
+    return Boolean(record?.paused);
+  }
+
+  submitPrinterTestPage(params: {
+    shopId: string;
+    printerId: string;
+    agentDeviceId: string;
+  }): SpoolerSubmissionResult {
+    const printer = this.printers.get(params.printerId);
+    if (!printer) {
+      return { success: false, jobStatus: 'failed', error: 'PRINTER_NOT_FOUND' };
+    }
+
+    const idempotencyKey = `idem-test-page-${Date.now()}`;
+    const spoolerResult = this.spooler.submitJob({
+      printerName: printer.name,
+      documentTitle: 'CAPS_Diagnostic_Calibration_Page.pdf',
+      leaseToken: 'lease-tok-diagnostic-test',
+      idempotencyKey,
+      pages: 1
+    });
+
+    if (!spoolerResult.success) {
+      return {
+        success: false,
+        jobStatus: 'failed',
+        error: `${spoolerResult.errorCode}: ${spoolerResult.errorMessage}`
+      };
+    }
+
+    this.recordAuditEvent({
+      jobId: 'diagnostic-test-page',
+      actorType: 'agent',
+      actorId: params.agentDeviceId,
+      fromStatus: 'idle',
+      toStatus: 'printing',
+      eventName: 'PRINTER_TEST_PAGE_SPOOLED',
+      metadata: { printerId: params.printerId, spoolerJobId: spoolerResult.spoolerJobId }
+    });
+
+    return {
+      success: true,
+      spoolerJobId: spoolerResult.spoolerJobId,
+      jobStatus: 'printing'
+    };
+  }
+
+  refundJob(params: { jobId: string; ownerUserId: string; reason: string }): {
+    success: boolean;
+    refundId?: string | undefined;
+    amountPaise?: number | undefined;
+    error?: string | undefined;
+  } {
+    const job = this.jobs.get(params.jobId);
+    if (!job) {
+      return { success: false, error: 'JOB_NOT_FOUND' };
+    }
+
+    if (job.payment_status !== 'paid') {
+      return {
+        success: false,
+        error: `INVALID_PAYMENT_STATE: Cannot refund job with payment_status '${job.payment_status}'.`
+      };
+    }
+
+    const prevStatus = job.status;
+    job.status = 'cancelled';
+    job.payment_status = 'refunded';
+    job.updated_at = new Date().toISOString();
+
+    const refundId = `rfnd_test_caps_${Date.now()}`;
+
+    // Active lease cancellation
+    this.activeLeases.delete(params.jobId);
+
+    // Immediate privacy purge upon refund/cancellation
+    this.deletedDocumentsLog.push({
+      jobId: job.id,
+      storageKey: job.document_storage_key,
+      reason: `refunded_${params.reason}`,
+      deletedAt: new Date().toISOString()
+    });
+
+    this.recordAuditEvent({
+      jobId: job.id,
+      actorType: 'owner',
+      actorId: params.ownerUserId,
+      fromStatus: prevStatus,
+      toStatus: 'cancelled',
+      eventName: 'JOB_REFUNDED_BY_OPERATOR',
+      metadata: {
+        refundId,
+        refundAmountPaise: job.price_total_paise,
+        reason: params.reason
+      }
+    });
+
+    return {
+      success: true,
+      refundId,
+      amountPaise: job.price_total_paise
+    };
+  }
+
+  /**
+   * Section 10: Security Review: Zero Secret Leakage Invariant
    */
   verifyZeroSecretLeakage(): { clean: boolean; violations: string[] } {
     const violations: string[] = [];
