@@ -4,7 +4,7 @@
  * Live Queue View Component for CAPS Owner Dashboard.
  * Master live queue container with two-tier prioritization, metrics,
  * realtime connection indicators, one-tap print confirmation,
- * hardware incident banners, and operator recovery for ambiguous outcomes.
+ * hardware incident banners, push notification permission prompts, and operator recovery.
  */
 
 import React, { useState } from 'react';
@@ -18,6 +18,9 @@ import { PrintConfirmationModal } from '../../print-confirmation/components/Prin
 import { useOperatorRecovery } from '../../agent-monitoring/hooks/use-operator-recovery';
 import { HardwareIncidentBanner } from '../../agent-monitoring/components/HardwareIncidentBanner';
 import { OperatorRecoveryModal } from '../../agent-monitoring/components/OperatorRecoveryModal';
+import { useOwnerNotifications } from '../../notifications/hooks/use-owner-notifications';
+import { NotificationPermissionBanner } from '../../notifications/components/NotificationPermissionBanner';
+import { useAuth } from '../../auth/auth-context';
 import type { QueueItem } from '../types';
 
 export interface LiveQueueViewProps {
@@ -26,6 +29,7 @@ export interface LiveQueueViewProps {
 }
 
 export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueueViewProps) {
+  const { profile } = useAuth();
   const {
     queue,
     metrics,
@@ -75,6 +79,13 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
     }
   });
 
+  const {
+    permission: pushPermission,
+    isSupported: isPushSupported,
+    isLoading: isPushLoading,
+    enablePush
+  } = useOwnerNotifications({ ownerUserId: profile?.id });
+
   const handleConfirm = async (jobId: string) => {
     if (onConfirmPrint) {
       await onConfirmPrint(jobId);
@@ -107,6 +118,14 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+      {/* Push Notification Opt-in Prompt Banner */}
+      <NotificationPermissionBanner
+        permission={pushPermission}
+        isSupported={isPushSupported}
+        isLoading={isPushLoading}
+        onEnable={enablePush}
+      />
+
       {/* Hardware / Desktop Agent Incident Notifications */}
       <HardwareIncidentBanner incidents={incidents} onDismiss={dismissIncident} />
 

@@ -2,7 +2,7 @@
 
 /**
  * Owner Dashboard Navigation Header.
- * Displays shop switcher, online badge, current owner profile, and sign-out button.
+ * Displays shop switcher, online badge, notification bell, current owner profile, and sign-out button.
  */
 
 import React from 'react';
@@ -11,10 +11,19 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '../features/auth/auth-context';
 import { ShopSelector } from '../features/shop-management/ShopSelector';
 import { isAuthPath } from '../features/auth/route-guard-utils';
+import { InAppNotificationCenter } from '../features/notifications/components/InAppNotificationCenter';
+import { useOwnerNotifications } from '../features/notifications/hooks/use-owner-notifications';
 
 export function OwnerHeader() {
   const pathname = usePathname();
   const { isAuthenticated, profile, signOut } = useAuth();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotifications
+  } = useOwnerNotifications({ ownerUserId: profile?.id });
 
   // Hide dashboard navigation on auth routes
   if (isAuthPath(pathname)) {
@@ -85,6 +94,15 @@ export function OwnerHeader() {
             </nav>
 
             <div className="flex items-center space-x-3 border-l border-slate-200 pl-4">
+              {/* Notification Center Bell */}
+              <InAppNotificationCenter
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkAsRead={markAsRead}
+                onMarkAllAsRead={markAllAsRead}
+                onClearAll={clearNotifications}
+              />
+
               <span className="text-xs font-semibold text-slate-700">
                 {profile?.name ?? 'Shop Owner'}
               </span>
