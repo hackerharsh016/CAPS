@@ -3,7 +3,7 @@
  * Queries owner-scoped shops and enforces strict tenant boundaries.
  */
 
-import type { Shop } from './types';
+import type { Shop, ShopUpdateInput } from './types';
 import { CrossShopAccessError } from './types';
 import { getSupabaseEnv } from '../../lib/supabase';
 
@@ -61,6 +61,76 @@ export class ShopService {
       return shops;
     } catch {
       return [];
+    }
+  }
+
+  /**
+   * Updates shop configuration, pricing, or settings.
+   * Enforces owner authorization and tenant boundaries.
+   */
+  async updateShop(
+    shopId: string,
+    updates: ShopUpdateInput,
+    ownerId: string,
+    authorizedShops: Shop[],
+    accessToken?: string,
+    isAdmin = false
+  ): Promise<Shop> {
+    this.validateShopAccess(ownerId, shopId, authorizedShops, isAdmin);
+
+    const endpoint = `${this.supabaseUrl}/rest/v1/shops?id=eq.${shopId}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      apikey: this.supabaseAnonKey,
+      Prefer: 'return=representation'
+    };
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    try {
+      const response = await this.fetchFn(endpoint, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        let errMessage = `Failed to update shop (status: ${response.status})`;
+        try {
+          const errBody = (await response.json()) as { message?: string; details?: string };
+          errMessage = errBody.message || errBody.details || errMessage;
+        } catch {
+          // ignore json parse errors
+        }
+        throw new Error(errMessage);
+      }
+
+      const data = (await response.json()) as Shop[];
+      if (!data[0]) {
+        throw new Error('Shop record not found or could not be updated.');
+      }
+      return data[0];
+    } catch (err) {
+      if (err instanceof CrossShopAccessError) {
+        throw err;
+      }
+      // If network failure occurs in mock/dev mode, merge updates with existing local shop
+      const existing = authorizedShops.find(s => s.id === shopId);
+      if (existing && (!this.supabaseUrl || this.supabaseUrl.includes('localhost'))) {
+        return {
+          ...existing,
+          ...updates,
+          pricing_config: updates.pricing_config ?? existing.pricing_config,
+          urgent_surcharge_config:
+            updates.urgent_surcharge_config ?? existing.urgent_surcharge_config,
+          updated_at: new Date().toISOString()
+        };
+      }
+      throw err;
     }
   }
 

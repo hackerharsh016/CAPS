@@ -44,6 +44,7 @@ export interface Shop {
   pricing_config: PricingConfig;
   urgent_surcharge_config: UrgentSurchargeConfig;
   auto_print_enabled: boolean;
+  pay_at_counter_enabled?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +58,16 @@ export interface ShopMembership {
   shop?: Shop | undefined;
 }
 
+export interface ShopUpdateInput {
+  name?: string;
+  address?: string;
+  status?: ShopStatus;
+  pricing_config?: PricingConfig;
+  urgent_surcharge_config?: UrgentSurchargeConfig;
+  auto_print_enabled?: boolean;
+  pay_at_counter_enabled?: boolean;
+}
+
 export interface ShopContextValue {
   activeShop: Shop | null;
   availableShops: Shop[];
@@ -65,6 +76,7 @@ export interface ShopContextValue {
   setActiveShopId: (shopId: string) => void;
   refreshShops: () => Promise<void>;
   isAuthorizedForShop: (shopId: string) => boolean;
+  updateActiveShop: (updates: ShopUpdateInput) => Promise<Shop>;
 }
 
 export class CrossShopAccessError extends Error {

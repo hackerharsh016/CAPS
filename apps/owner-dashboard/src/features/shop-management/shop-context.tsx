@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import type { Shop, ShopContextValue } from './types';
+import type { Shop, ShopContextValue, ShopUpdateInput } from './types';
 import { ShopService } from './shop-service';
 import { useAuth } from '../auth/auth-context';
 
@@ -138,6 +138,39 @@ export function ShopProvider({
     [availableShops, profile?.role]
   );
 
+  const updateActiveShop = useCallback(
+    async (updates: ShopUpdateInput): Promise<Shop> => {
+      if (!user) {
+        throw new Error('Cannot update shop: User is not authenticated.');
+      }
+      if (!activeShopId) {
+        throw new Error('No active shop selected to update.');
+      }
+
+      // Snapshot previous state for rollback
+      const previousShops = [...availableShops];
+
+      try {
+        const updated = await shopService.updateShop(
+          activeShopId,
+          updates,
+          user.id,
+          availableShops,
+          session?.access_token,
+          profile?.role === 'admin'
+        );
+
+        setAvailableShops(prev => prev.map(s => (s.id === updated.id ? updated : s)));
+        return updated;
+      } catch (err) {
+        // Rollback state upon failure
+        setAvailableShops(previousShops);
+        throw err;
+      }
+    },
+    [user, activeShopId, availableShops, shopService, session?.access_token, profile?.role]
+  );
+
   const activeShop = useMemo(() => {
     return availableShops.find(s => s.id === activeShopId) ?? availableShops[0] ?? null;
   }, [availableShops, activeShopId]);
@@ -150,9 +183,19 @@ export function ShopProvider({
       error,
       setActiveShopId,
       refreshShops: loadShops,
-      isAuthorizedForShop
+      isAuthorizedForShop,
+      updateActiveShop
     }),
-    [activeShop, availableShops, isLoading, error, setActiveShopId, loadShops, isAuthorizedForShop]
+    [
+      activeShop,
+      availableShops,
+      isLoading,
+      error,
+      setActiveShopId,
+      loadShops,
+      isAuthorizedForShop,
+      updateActiveShop
+    ]
   );
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
