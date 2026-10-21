@@ -1,6 +1,6 @@
 /**
  * Agent Monitoring & Operator Recovery Domain Types.
- * Aligned with CAPS SRS UC-3, Section 4.2 & Master Plan §5.4, Migration 002, 009, 012.
+ * Aligned with CAPS SRS UC-3, Section 4.2 & Master Plan §5.4, Migration 002, 009, 010, 012.
  */
 
 export type HardwareIncidentType = 'jam' | 'offline' | 'out_of_paper' | 'door_open' | 'agent_disconnected';
@@ -28,6 +28,10 @@ export interface AgentDeviceStatus {
   isOnline: boolean;
   lastHeartbeatAt: string;
   isRevoked: boolean;
+  revokedAt?: string | undefined;
+  revokedReason?: string | undefined;
+  deviceFingerprint?: string | undefined;
+  ipAddress?: string | undefined;
 }
 
 export type AmbiguousOutcomeResolution = 'retry' | 'cancel' | 'mark_completed';
@@ -60,4 +64,39 @@ export interface AmbiguousJobDetails {
   lastAttemptAt?: string | undefined;
   pageCount?: number | undefined;
   priceTotalPaise: number;
+}
+
+export interface AgentPairingCode {
+  id: string;
+  shopId: string;
+  code: string;
+  expiresAt: string;
+  isUsed: boolean;
+  usedAt?: string | undefined;
+  createdAt: string;
+}
+
+export interface GeneratePairingCodeRequest {
+  shopId: string;
+  ttlSeconds?: number | undefined;
+}
+
+export interface GeneratePairingCodeResponse {
+  pairingCodeId: string;
+  code: string;
+  expiresAt: string;
+  ttlSeconds: number;
+}
+
+export interface RevokeAgentDeviceRequest {
+  deviceId: string;
+  shopId: string;
+  reason: string;
+}
+
+export interface RevokeAgentDeviceResponse {
+  deviceId: string;
+  isRevoked: boolean;
+  revokedAt: string;
+  reason: string;
 }
