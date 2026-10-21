@@ -1,3 +1,7 @@
+# Unignore src/lib in owner-dashboard (root .gitignore contains generic lib/)
+!src/lib/
+!src/lib/**
+
 *.tsbuildinfo
 .next/
 dist/
