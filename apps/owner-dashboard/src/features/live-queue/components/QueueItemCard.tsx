@@ -8,16 +8,24 @@
 
 import React from 'react';
 import type { QueueItem } from '../types';
+import { ConfirmPrintButton } from '../../print-confirmation/components/ConfirmPrintButton';
 
 export interface QueueItemCardProps {
   item: QueueItem;
-  onConfirmPrint?: ((jobId: string) => void) | undefined;
+  onConfirmPrint?: ((jobId: string) => Promise<void> | void) | undefined;
   disabled?: boolean | undefined;
+  isConfirming?: boolean | undefined;
 }
 
-export function QueueItemCard({ item, onConfirmPrint, disabled = false }: QueueItemCardProps) {
+export function QueueItemCard({
+  item,
+  onConfirmPrint,
+  disabled = false,
+  isConfirming = false
+}: QueueItemCardProps) {
   const isUrgent = item.priority_tier === 'urgent';
   const isExecuting = item.is_currently_executing;
+  const isNextInQueue = item.queue_position === 1 && !isExecuting && item.status === 'queued';
 
   const formattedPrice = (item.price_total_paise / 100).toLocaleString('en-IN', {
     style: 'currency',
@@ -129,19 +137,20 @@ export function QueueItemCard({ item, onConfirmPrint, disabled = false }: QueueI
           </div>
 
           {/* Action button */}
-          {isExecuting ? (
-            <button
-              disabled
-              className="rounded-lg bg-emerald-100 px-4 py-2 text-xs font-semibold text-emerald-800 cursor-default"
-            >
-              Spooling / Printing
-            </button>
+          {onConfirmPrint ? (
+            <ConfirmPrintButton
+              jobId={item.id}
+              isNextInQueue={isNextInQueue}
+              isExecuting={isExecuting}
+              isConfirming={isConfirming}
+              disabled={disabled}
+              onConfirm={onConfirmPrint}
+            />
           ) : (
             <button
               type="button"
-              disabled={disabled}
-              onClick={() => onConfirmPrint?.(item.id)}
-              className="rounded-lg bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50"
+              disabled
+              className="rounded-lg bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-400 cursor-not-allowed"
             >
               Confirm & Print
             </button>

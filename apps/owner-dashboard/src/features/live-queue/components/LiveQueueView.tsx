@@ -3,21 +3,25 @@
 /**
  * Live Queue View Component for CAPS Owner Dashboard.
  * Master live queue container with two-tier prioritization, metrics,
- * realtime connection indicators, and accessible controls.
+ * realtime connection indicators, one-tap print confirmation, and accessible controls.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useLiveQueue } from '../hooks/use-live-queue';
 import { QueueMetricsHeader } from './QueueMetricsHeader';
 import { QueueFilterTabs } from './QueueFilterTabs';
 import { QueueItemCard } from './QueueItemCard';
 import { ConnectionStateBadge } from './ConnectionStateBadge';
+import { usePrintConfirmation } from '../../print-confirmation/hooks/use-print-confirmation';
+import { PrintConfirmationModal } from '../../print-confirmation/components/PrintConfirmationModal';
+import type { QueueItem } from '../types';
 
 export interface LiveQueueViewProps {
-  onConfirmPrint?: (jobId: string) => void;
+  onConfirmPrint?: ((jobId: string) => Promise<void> | void) | undefined;
+  shopId?: string | undefined;
 }
 
-export function LiveQueueView({ onConfirmPrint }: LiveQueueViewProps) {
+export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueueViewProps) {
   const {
     queue,
     metrics,
@@ -25,9 +29,37 @@ export function LiveQueueView({ onConfirmPrint }: LiveQueueViewProps) {
     setFilter,
     connectionState,
     isLoading,
-    error,
+    error: queueError,
     refreshQueue
   } = useLiveQueue();
+
+  const [selectedItemForModal, setSelectedItemForModal] = useState<QueueItem | null>(null);
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  const {
+    isConfirming,
+    confirmingJobId,
+    error: confirmationError,
+    confirmJob,
+    clearError: clearConfirmError
+  } = usePrintConfirmation({
+    shopId,
+    onSuccess: response => {
+      setSuccessBanner(`Job ${response.jobId} approved! Dispatched to printer agent.`);
+      setSelectedItemForModal(null);
+      void refreshQueue();
+      setTimeout(() => setSuccessBanner(null), 5000);
+    }
+  });
+
+  const handleConfirm = async (jobId: string) => {
+    if (onConfirmPrint) {
+      await onConfirmPrint(jobId);
+      return;
+    }
+
+    await confirmJob(jobId, queue);
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
@@ -53,7 +85,7 @@ export function LiveQueueView({ onConfirmPrint }: LiveQueueViewProps) {
             <button
               type="button"
               onClick={() => refreshQueue()}
-              disabled={isLoading}
+              disabled={isLoading || isConfirming}
               className="inline-flex items-center space-x-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
             >
               <svg
@@ -83,17 +115,58 @@ export function LiveQueueView({ onConfirmPrint }: LiveQueueViewProps) {
           />
         </div>
 
-        {/* Queue List Content */}
-        <div className="p-6">
-          {error && (
+        {/* Status / Error Alerts */}
+        <div className="px-6 pt-4 space-y-2">
+          {successBanner && (
             <div
-              role="alert"
-              className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800"
+              role="status"
+              className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs font-semibold text-emerald-800"
             >
-              {error}
+              <div className="flex items-center space-x-2">
+                <span>✅</span>
+                <span>{successBanner}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSuccessBanner(null)}
+                className="text-emerald-600 hover:text-emerald-900"
+              >
+                ✕
+              </button>
             </div>
           )}
 
+          {confirmationError && (
+            <div
+              role="alert"
+              className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-800"
+            >
+              <div className="flex items-center space-x-2">
+                <span>⚠️</span>
+                <span>{confirmationError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={clearConfirmError}
+                className="text-rose-600 hover:text-rose-900"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {queueError && (
+            <div
+              role="alert"
+              className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800"
+            >
+              {queueError}
+            </div>
+          )}
+        </div>
+
+        {/* Queue List Content */}
+        <div className="p-6">
           {isLoading ? (
             <div
               className="space-y-4 py-8"
@@ -125,13 +198,27 @@ export function LiveQueueView({ onConfirmPrint }: LiveQueueViewProps) {
             <div className="space-y-4" role="list" aria-label="Print queue jobs list">
               {queue.map(item => (
                 <div key={item.id} role="listitem">
-                  <QueueItemCard item={item} onConfirmPrint={onConfirmPrint} />
+                  <QueueItemCard
+                    item={item}
+                    onConfirmPrint={handleConfirm}
+                    isConfirming={isConfirming && confirmingJobId === item.id}
+                    disabled={isConfirming}
+                  />
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Confirmation Review Modal */}
+      <PrintConfirmationModal
+        isOpen={selectedItemForModal !== null}
+        item={selectedItemForModal}
+        isConfirming={isConfirming}
+        onClose={() => setSelectedItemForModal(null)}
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 }
