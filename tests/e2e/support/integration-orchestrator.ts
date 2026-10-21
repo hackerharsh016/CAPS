@@ -43,9 +43,17 @@ export interface ImmutableEventLog {
 
 export class IntegrationOrchestrator {
   private readonly jobs = new Map<string, E2EPrintJob>();
-  private readonly activeLeases = new Map<string, { agentDeviceId: string; leaseToken: string; expiresAt: number; idempotencyKey: string }>();
+  private readonly activeLeases = new Map<
+    string,
+    { agentDeviceId: string; leaseToken: string; expiresAt: number; idempotencyKey: string }
+  >();
   private readonly auditEvents: ImmutableEventLog[] = [];
-  private readonly deletedDocumentsLog: Array<{ jobId: string; storageKey: string; reason: string; deletedAt: string }> = [];
+  private readonly deletedDocumentsLog: Array<{
+    jobId: string;
+    storageKey: string;
+    reason: string;
+    deletedAt: string;
+  }> = [];
   private eventSequence = 0;
 
   public readonly spooler = new FakeWindowsSpooler();
@@ -70,7 +78,12 @@ export class IntegrationOrchestrator {
     return [...this.auditEvents];
   }
 
-  getDeletedDocumentsLog(): Array<{ jobId: string; storageKey: string; reason: string; deletedAt: string }> {
+  getDeletedDocumentsLog(): Array<{
+    jobId: string;
+    storageKey: string;
+    reason: string;
+    deletedAt: string;
+  }> {
     return [...this.deletedDocumentsLog];
   }
 
@@ -101,7 +114,8 @@ export class IntegrationOrchestrator {
 
     // Payment Precondition: Must be paid OR authorized at counter
     const isPaid = job.payment_status === 'paid';
-    const isCounterAuthorized = job.payment_status === 'pay_at_counter_pending' && params.confirmAtCounter === true;
+    const isCounterAuthorized =
+      job.payment_status === 'pay_at_counter_pending' && params.confirmAtCounter === true;
 
     if (!isPaid && !isCounterAuthorized) {
       return {
@@ -149,7 +163,10 @@ export class IntegrationOrchestrator {
   }): AgentClaimResult {
     // 1. Idempotency check: if agent already claimed with this key, return existing lease
     for (const [jobId, lease] of this.activeLeases.entries()) {
-      if (lease.agentDeviceId === params.agentDeviceId && lease.idempotencyKey === params.idempotencyKey) {
+      if (
+        lease.agentDeviceId === params.agentDeviceId &&
+        lease.idempotencyKey === params.idempotencyKey
+      ) {
         const job = this.jobs.get(jobId);
         return {
           claimed: true,
@@ -167,7 +184,8 @@ export class IntegrationOrchestrator {
       .filter(j => !this.activeLeases.has(j.id)) // Not currently leased
       .sort((a, b) => {
         // Urgent priority (tier 0) first, flexible (tier 1) second
-        const tierOrder = (a.priority_tier === 'urgent' ? 0 : 1) - (b.priority_tier === 'urgent' ? 0 : 1);
+        const tierOrder =
+          (a.priority_tier === 'urgent' ? 0 : 1) - (b.priority_tier === 'urgent' ? 0 : 1);
         if (tierOrder !== 0) return tierOrder;
         // FIFO by enqueued_at
         const aTime = a.enqueued_at ? new Date(a.enqueued_at).getTime() : 0;
@@ -293,11 +311,11 @@ export class IntegrationOrchestrator {
   /**
    * Step 5: Hardware Completion Telemetry & Immediate Privacy File Purge.
    */
-  agentCompletePrint(params: {
-    jobId: string;
-    agentDeviceId: string;
-    spoolerJobId: number;
-  }): { success: boolean; jobStatus: string; error?: string | undefined } {
+  agentCompletePrint(params: { jobId: string; agentDeviceId: string; spoolerJobId: number }): {
+    success: boolean;
+    jobStatus: string;
+    error?: string | undefined;
+  } {
     const job = this.jobs.get(params.jobId);
     if (!job) {
       return { success: false, jobStatus: 'unknown', error: 'JOB_NOT_FOUND' };

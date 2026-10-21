@@ -10,7 +10,14 @@ export interface SpoolerJobRecord {
   documentTitle: string;
   leaseToken: string;
   idempotencyKey: string;
-  status: 'SUBMITTED' | 'SPOOLING' | 'PRINTING' | 'PRINTED' | 'ERROR_OUT_OF_PAPER' | 'ERROR_PAPER_JAM' | 'DELETED';
+  status:
+    | 'SUBMITTED'
+    | 'SPOOLING'
+    | 'PRINTING'
+    | 'PRINTED'
+    | 'ERROR_OUT_OF_PAPER'
+    | 'ERROR_PAPER_JAM'
+    | 'DELETED';
   pagesTotal: number;
   pagesPrinted: number;
   submittedAt: number;
@@ -84,7 +91,9 @@ export class FakeWindowsSpooler {
       documentTitle: params.documentTitle,
       leaseToken: params.leaseToken,
       idempotencyKey: params.idempotencyKey,
-      status: this.simulatePaperJamPrinters.has(params.printerName) ? 'ERROR_PAPER_JAM' : 'SUBMITTED',
+      status: this.simulatePaperJamPrinters.has(params.printerName)
+        ? 'ERROR_PAPER_JAM'
+        : 'SUBMITTED',
       pagesTotal: params.pages,
       pagesPrinted: 0,
       submittedAt: Date.now()
