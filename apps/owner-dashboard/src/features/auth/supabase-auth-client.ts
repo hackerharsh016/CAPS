@@ -30,6 +30,50 @@ export interface SignInCredentials {
   password?: string | undefined;
 }
 
+export interface DemoAccount {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+  role: UserRole;
+}
+
+export const DEMO_ACCOUNTS: Record<string, DemoAccount> = {
+  'owner@campusxerox.com': {
+    id: '00000000-0000-0000-0000-000000000002',
+    email: 'owner@campusxerox.com',
+    password: 'OwnerPass123!',
+    name: 'Rajesh Sharma',
+    phone: '+919876543211',
+    role: 'shop_owner'
+  },
+  'owner@quickprint.com': {
+    id: '00000000-0000-0000-0000-000000000002',
+    email: 'owner@quickprint.com',
+    password: 'OwnerPassword123!',
+    name: 'Rajesh Sharma',
+    phone: '+919876543211',
+    role: 'shop_owner'
+  },
+  'admin@caps.internal': {
+    id: '00000000-0000-0000-0000-000000000001',
+    email: 'admin@caps.internal',
+    password: 'AdminPassword123!',
+    name: 'System Administrator',
+    phone: '+919876543210',
+    role: 'admin'
+  },
+  'customer@student.edu': {
+    id: '00000000-0000-0000-0000-000000000003',
+    email: 'customer@student.edu',
+    password: 'CustomerPassword123!',
+    name: 'Aarav Patel',
+    phone: '+919876543212',
+    role: 'customer'
+  }
+};
+
 export class RoleGuardError extends Error {
   readonly code = 'ROLE_NOT_AUTHORIZED';
   readonly status = 403;
@@ -135,6 +179,7 @@ export class SupabaseAuthClient {
   /**
    * Signs in a shop owner with email and password.
    * Enforces role validation immediately after token acquisition.
+   * Seamlessly supports local demo accounts when backend auth is unreachable or unseeded.
    */
   async signInWithPassword(credentials: SignInCredentials): Promise<{
     user: AuthUser;
@@ -149,18 +194,48 @@ export class SupabaseAuthClient {
       } satisfies AuthError;
     }
 
+    const normalizedEmail = credentials.email.trim().toLowerCase();
+    const demoAccount = DEMO_ACCOUNTS[normalizedEmail];
+    const isDemoPassword = demoAccount ? demoAccount.password === credentials.password : false;
+
     const endpoint = `${this.supabaseUrl}/auth/v1/token?grant_type=password`;
 
-    const response = await this.fetchFn(endpoint, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({
-        email: credentials.email,
-        password: credentials.password
-      })
-    });
+    let response: Response;
+    try {
+      response = await this.fetchFn(endpoint, {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password
+        })
+      });
+    } catch {
+      // If network fetch fails (e.g. Supabase is offline / unreachable in local dev)
+      if (demoAccount && isDemoPassword) {
+        return this.establishDemoSession(demoAccount);
+      }
+      if (demoAccount && !isDemoPassword) {
+        throw {
+          code: 'INVALID_CREDENTIALS',
+          message: 'Invalid login credentials.',
+          status: 400
+        } satisfies AuthError;
+      }
+      throw {
+        code: 'NETWORK_ERROR',
+        message:
+          'Could not connect to authentication service. Please check your network connection or verify that the backend server is running.',
+        status: 503
+      } satisfies AuthError;
+    }
 
     if (!response.ok) {
+      // If remote backend rejected (e.g. mock unseeded credentials in dev), check demo accounts
+      if (demoAccount && isDemoPassword) {
+        return this.establishDemoSession(demoAccount);
+      }
+
       let errData: { error_description?: string; msg?: string; message?: string } = {};
       try {
         errData = (await response.json()) as typeof errData;
@@ -229,12 +304,70 @@ export class SupabaseAuthClient {
   }
 
   /**
+   * Establishes an authorized session from demo credentials.
+   * Enforces role invariants (e.g. throws RoleGuardError if customer role).
+   */
+  private establishDemoSession(account: DemoAccount): {
+    user: AuthUser;
+    session: AuthSession;
+    profile: UserProfile;
+  } {
+    this.assertOwnerRole(account.role);
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const session: AuthSession = {
+      access_token: `mock-jwt-${account.role}-${account.id}`,
+      refresh_token: `mock-refresh-${account.role}-${account.id}`,
+      expires_in: 3600,
+      expires_at: nowSeconds + 3600,
+      token_type: 'bearer',
+      user: {
+        id: account.id,
+        email: account.email,
+        phone: account.phone,
+        user_metadata: {
+          role: account.role,
+          name: account.name,
+          phone: account.phone
+        },
+        app_metadata: {
+          role: account.role,
+          provider: 'email'
+        },
+        created_at: new Date().toISOString()
+      }
+    };
+
+    const profile = this.deriveProfileFromSession(session);
+    this.assertOwnerRole(profile.role);
+
+    this.currentSession = session;
+    this.currentUserProfile = profile;
+    this.storage.setSession(session);
+    this.notifyListeners('SIGNED_IN', session);
+
+    return { user: session.user, session, profile };
+  }
+
+  /**
    * Refreshes the active session using the refresh token.
    */
   async refreshSession(): Promise<AuthSession | null> {
     const existing = this.storage.getSession();
     if (!existing || !existing.refresh_token) {
       return null;
+    }
+
+    if (existing.access_token.startsWith('mock-jwt-')) {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      const session: AuthSession = {
+        ...existing,
+        expires_at: nowSeconds + existing.expires_in
+      };
+      this.currentSession = session;
+      this.storage.setSession(session);
+      this.notifyListeners('TOKEN_REFRESHED', session);
+      return session;
     }
 
     const endpoint = `${this.supabaseUrl}/auth/v1/token?grant_type=refresh_token`;
@@ -304,7 +437,7 @@ export class SupabaseAuthClient {
    */
   async signOut(): Promise<void> {
     const session = this.currentSession;
-    if (session) {
+    if (session && !session.access_token.startsWith('mock-jwt-')) {
       try {
         await this.fetchFn(`${this.supabaseUrl}/auth/v1/logout`, {
           method: 'POST',

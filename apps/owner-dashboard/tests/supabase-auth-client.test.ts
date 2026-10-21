@@ -156,4 +156,143 @@ describe('SupabaseAuthClient — Security & Role Guards', () => {
       status: 400
     });
   });
+
+  describe('Local Demo Credentials & Network Fallback', () => {
+    it('authenticates demo owner@campusxerox.com when fetch throws TypeError (Failed to fetch)', async () => {
+      const failingFetch: typeof fetch = async () => {
+        throw new TypeError('Failed to fetch');
+      };
+
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'http://localhost:54321',
+        supabaseAnonKey: 'mock-anon-key',
+        storage,
+        customFetch: failingFetch
+      });
+
+      const result = await client.signInWithPassword({
+        email: 'owner@campusxerox.com',
+        password: 'OwnerPass123!'
+      });
+
+      expect(result.session.access_token).toBe(
+        'mock-jwt-shop_owner-00000000-0000-0000-0000-000000000002'
+      );
+      expect(result.profile.role).toBe('shop_owner');
+      expect(result.profile.name).toBe('Rajesh Sharma');
+      expect(result.user.id).toBe('00000000-0000-0000-0000-000000000002');
+      expect(storage.getSession()?.access_token).toBe(
+        'mock-jwt-shop_owner-00000000-0000-0000-0000-000000000002'
+      );
+    });
+
+    it('authenticates demo owner@quickprint.com when fetch throws network error', async () => {
+      const failingFetch: typeof fetch = async () => {
+        throw new Error('connect ECONNREFUSED 127.0.0.1:54321');
+      };
+
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'http://localhost:54321',
+        supabaseAnonKey: 'mock-anon-key',
+        storage,
+        customFetch: failingFetch
+      });
+
+      const result = await client.signInWithPassword({
+        email: 'owner@quickprint.com',
+        password: 'OwnerPassword123!'
+      });
+
+      expect(result.profile.role).toBe('shop_owner');
+      expect(result.user.email).toBe('owner@quickprint.com');
+    });
+
+    it('rejects demo owner when invalid password is provided offline', async () => {
+      const failingFetch: typeof fetch = async () => {
+        throw new TypeError('Failed to fetch');
+      };
+
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'http://localhost:54321',
+        supabaseAnonKey: 'mock-anon-key',
+        storage,
+        customFetch: failingFetch
+      });
+
+      await expect(
+        client.signInWithPassword({
+          email: 'owner@campusxerox.com',
+          password: 'WrongPassword'
+        })
+      ).rejects.toMatchObject({
+        code: 'INVALID_CREDENTIALS',
+        status: 400
+      });
+    });
+
+    it('returns NETWORK_ERROR with helpful message for unknown accounts when offline', async () => {
+      const failingFetch: typeof fetch = async () => {
+        throw new TypeError('Failed to fetch');
+      };
+
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'http://localhost:54321',
+        supabaseAnonKey: 'mock-anon-key',
+        storage,
+        customFetch: failingFetch
+      });
+
+      await expect(
+        client.signInWithPassword({
+          email: 'unknown@example.com',
+          password: 'SomePassword123!'
+        })
+      ).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+        status: 503
+      });
+    });
+
+    it('strictly forbids demo customer account with RoleGuardError', async () => {
+      const failingFetch: typeof fetch = async () => {
+        throw new TypeError('Failed to fetch');
+      };
+
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'http://localhost:54321',
+        supabaseAnonKey: 'mock-anon-key',
+        storage,
+        customFetch: failingFetch
+      });
+
+      await expect(
+        client.signInWithPassword({
+          email: 'customer@student.edu',
+          password: 'CustomerPassword123!'
+        })
+      ).rejects.toThrow(RoleGuardError);
+    });
+
+    it('refreshes mock demo sessions without network errors', async () => {
+      const failingFetch: typeof fetch = async () => {
+        throw new TypeError('Failed to fetch');
+      };
+
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'http://localhost:54321',
+        supabaseAnonKey: 'mock-anon-key',
+        storage,
+        customFetch: failingFetch
+      });
+
+      await client.signInWithPassword({
+        email: 'owner@campusxerox.com',
+        password: 'OwnerPass123!'
+      });
+
+      const refreshed = await client.refreshSession();
+      expect(refreshed).not.toBeNull();
+      expect(refreshed?.access_token).toContain('mock-jwt-shop_owner');
+    });
+  });
 });

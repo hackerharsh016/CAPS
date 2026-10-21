@@ -67,6 +67,14 @@ export function LoginForm({ redirectUrl = '/', onSuccess }: LoginFormProps) {
         setFormError(
           'Access Denied: This account has a Customer role. The Owner Dashboard requires a Shop Owner or Admin account.'
         );
+      } else if (
+        errorObj.code === 'NETWORK_ERROR' ||
+        errorObj.message?.toLowerCase().includes('failed to fetch') ||
+        errorObj.message?.toLowerCase().includes('network')
+      ) {
+        setFormError(
+          'Could not connect to authentication service. Please check your network connection or click "Fill Demo Shop Owner Credentials" below.'
+        );
       } else {
         setFormError(errorObj.message || 'Login failed. Please check your credentials.');
       }
