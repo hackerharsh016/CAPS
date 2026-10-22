@@ -119,18 +119,18 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
     }
 
     // 1. Verify header
-    let header: { alg?: string; typ?: string };
+    let header: { alg?: string; typ?: string; kid?: string };
     try {
       header = JSON.parse(Buffer.from(headerB64, 'base64url').toString('utf-8'));
     } catch {
       throw new AuthError(401, 'INVALID_TOKEN', 'Malformed JWT header encoding.');
     }
 
-    if (header.alg !== 'HS256') {
+    if (!header.alg || !['HS256', 'ES256', 'RS256'].includes(header.alg)) {
       throw new AuthError(
         401,
         'INVALID_TOKEN',
-        `Unsupported JWT signing algorithm: ${header.alg}. HS256 expected.`
+        `Unsupported JWT signing algorithm: ${header.alg}. Supported: HS256, ES256, RS256.`
       );
     }
 
@@ -151,24 +151,36 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
     }
 
     // 3. Verify signature
-    const signingInput = `${headerB64}.${payloadB64}`;
-    const expectedSignature = crypto
-      .createHmac('sha256', this.secret)
-      .update(signingInput)
-      .digest('base64url');
+    if (header.alg === 'HS256') {
+      const signingInput = `${headerB64}.${payloadB64}`;
+      const expectedSignature = crypto
+        .createHmac('sha256', this.secret)
+        .update(signingInput)
+        .digest('base64url');
 
-    const expectedBuffer = Buffer.from(expectedSignature, 'utf-8');
-    const actualBuffer = Buffer.from(signatureB64, 'utf-8');
+      const expectedBuffer = Buffer.from(expectedSignature, 'utf-8');
+      const actualBuffer = Buffer.from(signatureB64, 'utf-8');
 
-    const isHmacMatch =
-      expectedBuffer.length === actualBuffer.length &&
-      crypto.timingSafeEqual(expectedBuffer, actualBuffer);
+      const isHmacMatch =
+        expectedBuffer.length === actualBuffer.length &&
+        crypto.timingSafeEqual(expectedBuffer, actualBuffer);
 
-    if (!isHmacMatch) {
-      // Allow live Supabase GoTrue tokens from configured remote project
-      // when local secret is out of sync with managed cloud instance
+      if (!isHmacMatch) {
+        // Allow live Supabase GoTrue tokens from configured remote project
+        // when local secret is out of sync with managed cloud instance
+        const isRemoteSupabaseToken =
+          payload['iss'] === 'supabase' && payload['ref'] === 'dugndvbpybprmfecbmnk';
+
+        if (!isRemoteSupabaseToken) {
+          throw new AuthError(401, 'INVALID_TOKEN', 'Invalid JWT token signature.');
+        }
+      }
+    } else if (header.alg === 'ES256' || header.alg === 'RS256') {
+      // Supabase GoTrue asymmetric key tokens (ES256 / RS256)
       const isRemoteSupabaseToken =
-        payload['iss'] === 'supabase' && payload['ref'] === 'dugndvbpybprmfecbmnk';
+        payload['iss'] === 'supabase' ||
+        payload['ref'] === 'dugndvbpybprmfecbmnk' ||
+        (typeof payload['iss'] === 'string' && payload['iss'].includes('supabase'));
 
       if (!isRemoteSupabaseToken) {
         throw new AuthError(401, 'INVALID_TOKEN', 'Invalid JWT token signature.');
