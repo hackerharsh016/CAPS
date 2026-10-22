@@ -30,6 +30,15 @@ export function useLiveQueue(customShopId?: string) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [todayMetrics, setTodayMetrics] = useState<{
+    todayCompletedCount: number;
+    todayRevenuePaise: number;
+    todayPagesDispatched: number;
+  }>({
+    todayCompletedCount: 0,
+    todayRevenuePaise: 0,
+    todayPagesDispatched: 0
+  });
 
   const queueService = useMemo(() => new LiveQueueService(), []);
   const realtimeClientRef = useRef<RealtimeQueueClient | null>(null);
@@ -38,13 +47,18 @@ export function useLiveQueue(customShopId?: string) {
   const fetchQueue = useCallback(async () => {
     if (!shopId) {
       setQueue([]);
+      setTodayMetrics({ todayCompletedCount: 0, todayRevenuePaise: 0, todayPagesDispatched: 0 });
       setIsLoading(false);
       return;
     }
 
     try {
-      const items = await queueService.fetchShopQueue(shopId, accessToken);
+      const [items, metricsData] = await Promise.all([
+        queueService.fetchShopQueue(shopId, accessToken),
+        queueService.fetchTodayMetrics(shopId, accessToken)
+      ]);
       setQueue(items);
+      setTodayMetrics(metricsData);
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
@@ -119,20 +133,17 @@ export function useLiveQueue(customShopId?: string) {
       0
     );
 
-    // Mock today revenue & completed metrics for dashboard summary
-    const todayRevenuePaise = 284000; // ₹2,840.00
-    const todayCompletedCount = 38;
-
     return {
       pendingCount,
       urgentCount,
       flexibleCount,
       executingCount,
       totalEstimatedWaitMinutes,
-      todayCompletedCount,
-      todayRevenuePaise
+      todayCompletedCount: todayMetrics.todayCompletedCount,
+      todayRevenuePaise: todayMetrics.todayRevenuePaise,
+      todayPagesDispatched: todayMetrics.todayPagesDispatched
     };
-  }, [queue]);
+  }, [queue, todayMetrics]);
 
   return {
     queue: filteredQueue,

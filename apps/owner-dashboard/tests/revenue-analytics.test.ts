@@ -398,7 +398,7 @@ describe('P05-M05-F01: Owner Sales and Operations Reports', () => {
       );
     });
 
-    it('returns contract-compliant report data using fallback fixtures when fetch fails', async () => {
+    it('returns zeroed aggregated report data when fetch fails', async () => {
       const mockFetch = vi.fn().mockRejectedValue(new Error('Network connection failed'));
       const service = new OwnerAnalyticsService({
         customFetch: mockFetch as unknown as typeof fetch
@@ -409,10 +409,10 @@ describe('P05-M05-F01: Owner Sales and Operations Reports', () => {
 
       expect(data).toBeDefined();
       expect(data.shopId).toBe(DEMO_SHOP_ID);
-      expect(data.revenue.paidRevenuePaise).toBeGreaterThan(0);
-      expect(data.revenue.completedRevenuePaise).toBeGreaterThan(0);
-      expect(data.dailyTrends.length).toBeGreaterThan(0);
-      expect(data.jobs.length).toBeGreaterThan(0);
+      expect(data.revenue.paidRevenuePaise).toBe(0);
+      expect(data.revenue.completedRevenuePaise).toBe(0);
+      expect(data.dailyTrends).toEqual([]);
+      expect(data.jobs).toEqual([]);
     });
 
     it('handles empty job set gracefully with zero counts and null peak demand', () => {

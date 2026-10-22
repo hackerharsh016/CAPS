@@ -46,7 +46,9 @@ export function QueueMetricsHeader({ metrics }: QueueMetricsHeaderProps) {
           Today's Completed
         </p>
         <p className="mt-2 text-2xl font-bold text-slate-900">{metrics.todayCompletedCount} Jobs</p>
-        <span className="text-xs font-medium text-emerald-600">1,240 total pages dispatched</span>
+        <span className="text-xs font-medium text-emerald-600">
+          {(metrics.todayPagesDispatched ?? 0).toLocaleString()} total pages dispatched
+        </span>
       </div>
 
       {/* Today's Revenue */}
@@ -66,7 +68,13 @@ export function QueueMetricsHeader({ metrics }: QueueMetricsHeaderProps) {
         <p className="mt-2 text-2xl font-bold text-slate-900">
           ~{metrics.totalEstimatedWaitMinutes} mins
         </p>
-        <span className="text-xs text-slate-500 font-mono">Agent v0.1.0 • Win11 Online</span>
+        <span className="text-xs text-slate-500 font-mono">
+          {metrics.executingCount > 0
+            ? `${metrics.executingCount} active in spool`
+            : metrics.pendingCount > 0
+              ? 'Ready for pickup'
+              : 'Queue idle'}
+        </span>
       </div>
     </div>
   );

@@ -196,7 +196,7 @@ describe('Owner Self-Registration & Database Schema Validation', () => {
       expect(service.getActiveShopId()).toBe('shop-created-uuid-1');
     });
 
-    it('falls back to localized in-memory shop creation when in offline/localhost environment', async () => {
+    it('propagates error when network fails during shop creation without creating mock data', async () => {
       const failingFetch: typeof fetch = async () => {
         throw new Error('Connection refused to localhost');
       };
@@ -214,14 +214,9 @@ describe('Owner Self-Registration & Database Schema Validation', () => {
         geo_lng: 77.1025
       };
 
-      const created = await service.createShop(shopInput, 'owner-offline-1');
-
-      expect(created.id).toBeDefined();
-      expect(created.name).toBe('Campus Corner Xerox');
-      expect(created.owner_id).toBe('owner-offline-1');
-      expect(created.geo_lat).toBe(28.7041);
-      expect(created.geo_lng).toBe(77.1025);
-      expect(service.getActiveShopId()).toBe(created.id);
+      await expect(service.createShop(shopInput, 'owner-offline-1')).rejects.toThrow(
+        'Connection refused to localhost'
+      );
     });
   });
 });

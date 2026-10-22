@@ -21,6 +21,7 @@ import { OperatorRecoveryModal } from '../../agent-monitoring/components/Operato
 import { useOwnerNotifications } from '../../notifications/hooks/use-owner-notifications';
 import { NotificationPermissionBanner } from '../../notifications/components/NotificationPermissionBanner';
 import { useAuth } from '../../auth/auth-context';
+import { useShop } from '../../shop-management/shop-context';
 import type { QueueItem } from '../types';
 
 export interface LiveQueueViewProps {
@@ -28,8 +29,11 @@ export interface LiveQueueViewProps {
   shopId?: string | undefined;
 }
 
-export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueueViewProps) {
+export function LiveQueueView({ onConfirmPrint, shopId: customShopId }: LiveQueueViewProps) {
   const { profile } = useAuth();
+  const { activeShop, isLoading: isShopLoading } = useShop();
+  const shopId = customShopId ?? activeShop?.id ?? '';
+
   const {
     queue,
     metrics,
@@ -39,7 +43,7 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
     isLoading,
     error: queueError,
     refreshQueue
-  } = useLiveQueue();
+  } = useLiveQueue(shopId);
 
   const [selectedItemForModal, setSelectedItemForModal] = useState<QueueItem | null>(null);
   const [recoveringItem, setRecoveringItem] = useState<QueueItem | null>(null);
@@ -117,6 +121,22 @@ export function LiveQueueView({ onConfirmPrint, shopId = 'shop-123' }: LiveQueue
     }
     return true;
   });
+
+  if (!isShopLoading && !activeShop) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-2xl">
+            🏪
+          </div>
+          <h3 className="mt-4 text-base font-bold text-slate-900">No Active Print Shop</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            You don't have any registered print shop yet. Please complete registration to start receiving orders.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">

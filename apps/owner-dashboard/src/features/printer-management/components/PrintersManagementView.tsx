@@ -24,7 +24,7 @@ export interface PrintersManagementViewProps {
 }
 
 export function PrintersManagementView({
-  shopId = '00000000-0000-0000-0000-000000000001'
+  shopId = ''
 }: PrintersManagementViewProps) {
   const {
     printers,
@@ -54,6 +54,17 @@ export function PrintersManagementView({
   const [isPairingModalOpen, setIsPairingModalOpen] = useState(false);
   const [deviceToRevoke, setDeviceToRevoke] = useState<AgentDeviceStatus | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+
+  if (!shopId) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <h3 className="text-base font-bold text-slate-900">No Active Print Shop</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Please register or select a print shop to manage connected printers and Windows desktop agents.
+        </p>
+      </div>
+    );
+  }
 
   const handleSaveAssignment = async (input: {
     printer_id: string;

@@ -17,6 +17,7 @@ export interface Shop {
   pricing_config: PricingConfig;
   urgent_surcharge_config: UrgentSurchargeConfig;
   auto_print_enabled: boolean;
+  allow_pay_at_counter?: boolean | undefined;
   created_at: string;
   updated_at: string;
 }

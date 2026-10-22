@@ -64,7 +64,6 @@ export function RegisterForm({ redirectUrl = '/', onSuccess }: RegisterFormProps
   const [a4ColorSingle, setA4ColorSingle] = useState('10.00'); // INR
   const [spiralPrice, setSpiralPrice] = useState('35.00'); // INR
   const [urgentAmount, setUrgentAmount] = useState('20.00'); // INR
-  const [allowPayAtCounter, setAllowPayAtCounter] = useState(true);
   const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
 
   // 4. Terms agreement & Status
@@ -277,8 +276,7 @@ export function RegisterForm({ redirectUrl = '/', onSuccess }: RegisterFormProps
         status: 'open',
         pricing_config: pricingConfig,
         urgent_surcharge_config: urgentConfig,
-        auto_print_enabled: autoPrintEnabled,
-        allow_pay_at_counter: allowPayAtCounter
+        auto_print_enabled: autoPrintEnabled
       };
 
       // 3. Create shop record in public.shops
@@ -303,28 +301,6 @@ export function RegisterForm({ redirectUrl = '/', onSuccess }: RegisterFormProps
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const fillDemoOwnerDetails = () => {
-    setName('Rajesh Sharma');
-    setEmail(`owner-${Date.now().toString().slice(-4)}@campusprint.com`);
-    setPhone('+91 98765 43210');
-    setPassword('OwnerPass123!');
-    setConfirmPassword('OwnerPass123!');
-    setShopName('Campus Central Xerox & Quick Print');
-    setShopAddress('Shop 12, Ground Floor, Academic Block B, North Campus');
-    setGeoLat('12.9716');
-    setGeoLng('77.5946');
-    setA4BwSingle('1.50');
-    setA4BwDouble('2.50');
-    setA4ColorSingle('10.00');
-    setSpiralPrice('35.00');
-    setUrgentAmount('20.00');
-    setAllowPayAtCounter(true);
-    setAutoPrintEnabled(false);
-    setAgreeTerms(true);
-    setFieldErrors({});
-    setFormError(null);
   };
 
   if (registrationSuccess) {
@@ -786,19 +762,6 @@ export function RegisterForm({ redirectUrl = '/', onSuccess }: RegisterFormProps
             <label className="flex items-start space-x-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={allowPayAtCounter}
-                onChange={e => setAllowPayAtCounter(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-              />
-              <span className="text-xs text-slate-700">
-                <strong>Allow Pay-at-Counter:</strong> Enable cash or physical UPI payment when
-                customers pick up their documents (with owner approval guard).
-              </span>
-            </label>
-
-            <label className="flex items-start space-x-3 cursor-pointer">
-              <input
-                type="checkbox"
                 checked={autoPrintEnabled}
                 onChange={e => setAutoPrintEnabled(e.target.checked)}
                 className="mt-0.5 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
@@ -850,14 +813,7 @@ export function RegisterForm({ redirectUrl = '/', onSuccess }: RegisterFormProps
             )}
           </button>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-xs text-slate-500">
-            <button
-              type="button"
-              onClick={fillDemoOwnerDetails}
-              className="text-slate-500 hover:text-emerald-700 underline hover:no-underline"
-            >
-              Fill Demo Shop Owner Details
-            </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2 text-xs text-slate-500">
             <div className="flex items-center space-x-1">
               <span>Already registered?</span>
               <Link href="/login" className="font-semibold text-emerald-600 hover:underline">

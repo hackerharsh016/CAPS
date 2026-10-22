@@ -11,7 +11,6 @@
 import { getSupabaseEnv } from '../../lib/supabase';
 import type { ReportFilter, OwnerReportsData, PaidVsCompletedJobRecord } from './types';
 import { aggregateReportsData, computeFilterDateRange } from './analytics-utils';
-import { generateMockJobRecords } from './fixtures';
 
 export interface AnalyticsServiceConfig {
   customFetch?: typeof fetch | undefined;
@@ -75,8 +74,7 @@ export class OwnerAnalyticsService {
       });
 
       if (!response.ok) {
-        // Fallback to contract-compliant mock records
-        return this.getFallbackReports(shopId, filter, dateRange, referenceDate);
+        return aggregateReportsData(shopId, [], filter, dateRange);
       }
 
       const rawJobs = (await response.json()) as Array<{
@@ -152,21 +150,7 @@ export class OwnerAnalyticsService {
 
       return aggregateReportsData(shopId, records, filter, dateRange);
     } catch {
-      // Offline / dev fallback
-      return this.getFallbackReports(shopId, filter, dateRange, referenceDate);
+      return aggregateReportsData(shopId, [], filter, dateRange);
     }
-  }
-
-  /**
-   * Deterministic fallback using test fixtures for local testing.
-   */
-  private getFallbackReports(
-    shopId: string,
-    filter: ReportFilter,
-    dateRange: { start: Date; end: Date },
-    referenceDate: Date
-  ): OwnerReportsData {
-    const mockJobs = generateMockJobRecords(shopId, referenceDate);
-    return aggregateReportsData(shopId, mockJobs, filter, dateRange);
   }
 }

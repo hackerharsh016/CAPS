@@ -12,51 +12,6 @@ import { useAuth } from '../auth/auth-context';
 
 const ShopContext = createContext<ShopContextValue | null>(null);
 
-const DEFAULT_DEMO_SHOP: Shop = {
-  id: '00000000-0000-0000-0000-000000000001',
-  owner_id: '00000000-0000-0000-0000-000000000002',
-  name: 'Campus Xerox & Digital Station',
-  address: '12 North Campus Road, Near Metro Gate 2, Delhi',
-  geo_lat: 28.6923,
-  geo_lng: 77.2145,
-  status: 'open',
-  pricing_config: {
-    A4: {
-      bw_single_paise: 200,
-      bw_double_paise: 300,
-      color_single_paise: 1000,
-      color_double_paise: 1800
-    },
-    A3: {
-      bw_single_paise: 400,
-      bw_double_paise: 600,
-      color_single_paise: 2000,
-      color_double_paise: 3600
-    },
-    Legal: {
-      bw_single_paise: 250,
-      bw_double_paise: 350,
-      color_single_paise: 1200,
-      color_double_paise: 2000
-    },
-    binding_prices_paise: {
-      none: 0,
-      spiral: 4000,
-      staple: 500,
-      lamination: 2000
-    },
-    gst_percentage: 18
-  },
-  urgent_surcharge_config: {
-    type: 'flat',
-    amount: 2000,
-    max_urgent_jobs_per_hour: 5
-  },
-  auto_print_enabled: false,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
-};
-
 export interface ShopProviderProps {
   children: React.ReactNode;
   shopService?: ShopService | undefined;
@@ -88,14 +43,14 @@ export function ShopProvider({
     setError(null);
 
     try {
-      let shops = await shopService.fetchOwnerShops(user.id, session?.access_token);
-
-      // If in dev/test environment and no remote shops returned, provide fallback demo shop scoped to user
-      if (shops.length === 0) {
-        shops = [{ ...DEFAULT_DEMO_SHOP, owner_id: user.id }];
-      }
-
+      const shops = await shopService.fetchOwnerShops(user.id, session?.access_token);
       setAvailableShops(shops);
+
+      if (shops.length === 0) {
+        setActiveShopIdState(null);
+        shopService.clearActiveShopId();
+        return;
+      }
 
       // Resolve active shop
       const savedShopId = shopService.getActiveShopId();

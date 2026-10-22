@@ -80,13 +80,6 @@ export function LoginForm({ redirectUrl = '/', onSuccess }: LoginFormProps) {
     }
   };
 
-  const fillDemoOwner = () => {
-    setEmail('owner@campusxerox.com');
-    setPassword('OwnerPass123!');
-    setFieldErrors({});
-    setFormError(null);
-  };
-
   return (
     <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
       <div className="mb-6 text-center">
@@ -196,14 +189,7 @@ export function LoginForm({ redirectUrl = '/', onSuccess }: LoginFormProps) {
         </button>
       </form>
 
-      <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs">
-        <button
-          type="button"
-          onClick={fillDemoOwner}
-          className="text-slate-500 hover:text-emerald-600 underline hover:no-underline"
-        >
-          Fill Demo Shop Owner Credentials
-        </button>
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 border-t border-slate-100 pt-4 text-xs">
         <div className="flex items-center space-x-1 text-slate-500">
           <span>New shop owner?</span>
           <Link href="/register" className="font-semibold text-emerald-600 hover:underline">

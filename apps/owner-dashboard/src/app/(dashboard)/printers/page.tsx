@@ -13,10 +13,22 @@ import { PrinterStatusPanel } from '../../../components/printers/printer-status-
 
 function PrintersPageContent() {
   const { activeShop } = useShop();
+
+  if (!activeShop) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <h3 className="text-base font-bold text-slate-900">No Active Print Shop</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Please register or select a print shop to manage printers and desktop agents.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      <PrinterStatusPanel shopId={activeShop?.id || 'default-shop'} />
-      <PrintersManagementView shopId={activeShop?.id} />
+      <PrinterStatusPanel shopId={activeShop.id} />
+      <PrintersManagementView shopId={activeShop.id} />
     </div>
   );
 }

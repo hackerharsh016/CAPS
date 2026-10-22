@@ -17,10 +17,21 @@ import { useShop } from '../../shop-management/shop-context';
 
 export function ReportsView() {
   const { activeShop } = useShop();
-  const shopId = activeShop?.id ?? '00000000-0000-0000-0000-000000000001';
+  const shopId = activeShop?.id ?? '';
 
   const { reportsData, isLoading, error, filter, setPeriod, setCustomDateRange, refresh } =
     useOwnerReports({ shopId });
+
+  if (!activeShop) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <h3 className="text-base font-bold text-slate-900">No Active Print Shop</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Please register or select a print shop to view sales and revenue reports.
+        </p>
+      </div>
+    );
+  }
 
   if (error) {
     return (
