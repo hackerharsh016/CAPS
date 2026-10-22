@@ -439,6 +439,19 @@ export function createAuthHooks(
     const token = parts[1];
     const targetShopId = extractTargetShopId(request);
 
+    // Development convenience fallback: Allow dev customer token in local development mode
+    if (process.env['NODE_ENV'] === 'development' && token === 'dev_customer_token') {
+      request.user = {
+        id: '11111111-1111-4111-8111-111111111111',
+        role: 'customer',
+        email: 'customer@caps.local',
+        user_metadata: { role: 'customer', name: 'Customer Demo' },
+        app_metadata: { role: 'customer' }
+      };
+      request.agent = null;
+      return;
+    }
+
     // Step 2: If token starts with caps_agent_sec_:
     if (token.startsWith('caps_agent_sec_')) {
       const secretPayload = token.slice('caps_agent_sec_'.length);

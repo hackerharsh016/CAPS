@@ -160,9 +160,10 @@ export class CheckoutService {
       }
 
       // 6. Generate order identifiers & 24h strict privacy expiration deadline
-      let orderId = crypto.randomUUID
-        ? crypto.randomUUID()
-        : `order-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      let orderId =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : '10000000-0000-4000-8000-' + Math.random().toString(16).slice(2, 14).padStart(12, '0');
 
       const apiUrl =
         typeof process !== 'undefined'
@@ -171,26 +172,55 @@ export class CheckoutService {
 
       // Submit print job to live Cloud API if available
       try {
+        let sessionToken: string | null = null;
+        try {
+          const { getSupabaseBrowserClient } = await import('../../lib/supabase');
+          const session = await getSupabaseBrowserClient().getSession();
+          sessionToken = session?.access_token || null;
+        } catch {
+          // No browser session or running in test runner
+        }
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Idempotency-Key': idempotency_key
+        };
+
+        if (sessionToken) {
+          headers['Authorization'] = `Bearer ${sessionToken}`;
+        } else if (process.env.NODE_ENV === 'development') {
+          headers['Authorization'] = 'Bearer dev_customer_token';
+        }
+
+        const jobPayload: Record<string, unknown> = {
+          shop_id: shop.id,
+          priority_tier: input.priority_tier,
+          document_storage_key:
+            input.document_storage_key || `docs/${input.customer_id}/${orderId}.pdf`,
+          settings: {
+            paper_size: input.settings.paper_size,
+            color_mode: input.settings.color_mode,
+            sides: input.settings.sides,
+            orientation: input.settings.orientation,
+            copies: input.settings.copies,
+            page_range: input.settings.page_range,
+            binding: input.settings.binding
+          }
+        };
+
+        const isUuid =
+          typeof input.quote.quote_id === 'string' &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            input.quote.quote_id
+          );
+        if (isUuid) {
+          jobPayload['quote_id'] = input.quote.quote_id;
+        }
+
         const jobRes = await fetch(`${apiUrl}/api/v1/print-jobs`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Idempotency-Key': idempotency_key
-          },
-          body: JSON.stringify({
-            shop_id: shop.id,
-            quote_id: input.quote.quote_id,
-            priority_tier: input.priority_tier,
-            settings: {
-              paper_size: input.settings.paper_size,
-              color_mode: input.settings.color_mode,
-              sides: input.settings.sides,
-              orientation: input.settings.orientation,
-              copies: input.settings.copies,
-              page_range: input.settings.page_range,
-              binding: input.settings.binding
-            }
-          })
+          headers,
+          body: JSON.stringify(jobPayload)
         });
 
         if (jobRes.ok) {

@@ -5,7 +5,10 @@ import { PaymentsService, PaymentError } from './payments.service.js';
 const createOrderSchema = z.object({
   print_job_id: z.string().uuid(),
   notes: z.record(z.string()).optional(),
-  requested_amount_paise: z.number().int().positive().optional()
+  requested_amount_paise: z.number().int().positive().optional(),
+  amount_paise: z.number().int().positive().optional(),
+  currency: z.string().optional(),
+  receipt: z.string().optional()
 });
 
 export interface PaymentsPluginOptions {
@@ -18,7 +21,7 @@ export const paymentsRoutes: FastifyPluginAsync<PaymentsPluginOptions> = async (
 ) => {
   const { paymentsService } = options;
 
-  fastify.post('/orders', async (request, reply) => {
+  const handleCreateOrder = async (request: any, reply: any) => {
     const parseResult = createOrderSchema.safeParse(request.body);
     if (!parseResult.success) {
       return reply.status(400).send({
@@ -30,8 +33,15 @@ export const paymentsRoutes: FastifyPluginAsync<PaymentsPluginOptions> = async (
       });
     }
 
+    const requestedAmount =
+      parseResult.data.requested_amount_paise ?? parseResult.data.amount_paise;
+
     try {
-      const order = await paymentsService.createRazorpayOrder(parseResult.data);
+      const order = await paymentsService.createRazorpayOrder({
+        print_job_id: parseResult.data.print_job_id,
+        notes: parseResult.data.notes,
+        requested_amount_paise: requestedAmount
+      });
       return reply.status(201).send({
         data: order
       });
@@ -53,5 +63,8 @@ export const paymentsRoutes: FastifyPluginAsync<PaymentsPluginOptions> = async (
         }
       });
     }
-  });
+  };
+
+  fastify.post('/orders', handleCreateOrder);
+  fastify.post('/razorpay/order', handleCreateOrder);
 };

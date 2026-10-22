@@ -48,6 +48,7 @@ import {
   IPrintJobsRepository
 } from './modules/print-jobs/print-jobs.repository.js';
 import { SupabasePrintJobsRepository } from './repositories/supabase/supabase-print-jobs.repository.js';
+import { SupabasePaymentsRepository } from './repositories/supabase/supabase-payments.repository.js';
 import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 import { telemetryRoutes } from './common/telemetry/telemetry.routes.js';
@@ -249,7 +250,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       ? new SupabasePrintJobsRepository(supabaseRepoOpts)
       : new MockPrintJobsRepository());
   const printJobsRepo = jobsRepo;
-  const paymentsRepo = options.paymentsRepo ?? new MockPaymentsRepository();
+  const paymentsRepo =
+    options.paymentsRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabasePaymentsRepository(supabaseRepoOpts)
+      : new MockPaymentsRepository());
   const razorpayClient =
     options.razorpayClient ??
     createRazorpayClient({

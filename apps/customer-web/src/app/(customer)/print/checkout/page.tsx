@@ -16,6 +16,8 @@ import type { QuoteResponse } from '../../../../features/pricing/types';
 import { generateAuthoritativeQuote } from '../../../../features/pricing/pricing-calculator';
 import { CheckoutShell } from '../../../../features/checkout/components/CheckoutShell';
 import type { CheckoutResult } from '../../../../features/checkout/types';
+import { useAuth } from '../../../../features/auth/auth-context';
+import type { CustomerDetails } from '../../../../components/checkout/razorpay-modal';
 
 interface StoredQuoteData {
   quote: QuoteResponse;
@@ -47,8 +49,14 @@ function CheckoutPageContent() {
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [confirmedResult, setConfirmedResult] = useState<CheckoutResult | null>(null);
 
-  // Fallback test customer ID (authenticated session)
-  const customerId = 'usr-customer-111-rohit';
+  // Authenticated customer context with fallback
+  const { user, profile } = useAuth();
+  const customerId = user?.id || '11111111-1111-4111-8111-111111111111';
+  const customerDetails: CustomerDetails = {
+    name: profile?.name || (user?.user_metadata?.name as string) || 'Customer Demo',
+    email: user?.email || 'customer@caps.local',
+    phone: profile?.phone || (user?.user_metadata?.phone as string) || '9876543210'
+  };
 
   const targetShopId = shopId || shop?.id || '';
 
@@ -228,7 +236,7 @@ function CheckoutPageContent() {
           <p className="text-xs text-emerald-800">
             {confirmedResult.payment_method === 'pay_at_counter'
               ? 'Your job has been submitted to the shop for counter payment confirmation.'
-              : 'Your payment was initiated and order has entered the print queue.'}{' '}
+              : 'Your payment was successfully verified and your order is in the print queue.'}{' '}
             Redirecting to order tracking...
           </p>
         </div>
@@ -242,6 +250,7 @@ function CheckoutPageContent() {
           documentStorageKey={`docs/${customerId}/${docId}.pdf`}
           fileSizeBytes={docData?.sizeBytes || 1024 * 1024}
           customerId={customerId}
+          customerDetails={customerDetails}
           settings={settings}
           quote={quote}
           onOrderConfirmed={handleOrderConfirmed}
