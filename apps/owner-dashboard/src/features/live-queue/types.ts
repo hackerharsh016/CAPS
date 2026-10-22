@@ -96,6 +96,7 @@ export interface QueueSummaryMetrics {
   totalEstimatedWaitMinutes: number;
   todayCompletedCount: number;
   todayRevenuePaise: number;
+  todayPagesDispatched?: number | undefined;
 }
 
 export interface RealtimeQueueEvent {

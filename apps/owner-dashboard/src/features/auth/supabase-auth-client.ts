@@ -13,7 +13,8 @@ import type {
   UserProfile,
   UserRole,
   AuthChangeEvent,
-  AuthStateChangeCallback
+  AuthStateChangeCallback,
+  SignUpCredentials
 } from './types';
 import type { AuthStorageAdapter } from './storage';
 import { MemoryStorageAdapter } from './storage';
@@ -258,6 +259,144 @@ export class SupabaseAuthClient {
   }
 
   /**
+   * Signs up a new shop owner account with Supabase Auth.
+   * Passes name, phone, and role='shop_owner' in metadata so the
+   * database trigger handle_new_user automatically populates public.profiles.
+   */
+  async signUp(credentials: SignUpCredentials): Promise<{
+    user: AuthUser;
+    session: AuthSession | null;
+    profile: UserProfile;
+  }> {
+    if (!credentials.email || !credentials.password) {
+      throw {
+        code: 'VALIDATION_ERROR',
+        message: 'Email and password are required.',
+        status: 400
+      } satisfies AuthError;
+    }
+
+    if (!credentials.name || !credentials.phone) {
+      throw {
+        code: 'VALIDATION_ERROR',
+        message: 'Name and phone number are required.',
+        status: 400
+      } satisfies AuthError;
+    }
+
+    const endpoint = `${this.supabaseUrl}/auth/v1/signup`;
+
+    const response = await this.safeFetch(endpoint, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({
+        email: credentials.email,
+        password: credentials.password,
+        data: {
+          name: credentials.name.trim(),
+          phone: credentials.phone.trim(),
+          role: credentials.role || 'shop_owner'
+        }
+      })
+    });
+
+    if (!response.ok) {
+      let errData: { error_description?: string; msg?: string; message?: string } = {};
+      try {
+        errData = (await response.json()) as typeof errData;
+      } catch {
+        // use default message
+      }
+      const message =
+        errData.error_description || errData.msg || errData.message || 'Failed to register account.';
+      throw {
+        code: response.status === 400 ? 'REGISTRATION_FAILED' : 'AUTH_ERROR',
+        message,
+        status: response.status
+      } satisfies AuthError;
+    }
+
+    const data = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      token_type?: string;
+      id?: string;
+      email?: string;
+      user?: {
+        id: string;
+        email?: string;
+        phone?: string;
+        user_metadata?: Record<string, unknown>;
+        app_metadata?: Record<string, unknown>;
+        created_at: string;
+      };
+    };
+
+    const userObj = data.user || {
+      id: data.id || 'owner-' + Math.random().toString(36).slice(2, 9),
+      email: data.email || credentials.email,
+      user_metadata: {
+        name: credentials.name,
+        phone: credentials.phone,
+        role: credentials.role || 'shop_owner'
+      },
+      created_at: new Date().toISOString()
+    };
+
+    let session: AuthSession | null = null;
+    if (data.access_token && data.refresh_token) {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      session = {
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_in: data.expires_in ?? 3600,
+        expires_at: nowSeconds + (data.expires_in ?? 3600),
+        token_type: data.token_type || 'bearer',
+        user: {
+          id: userObj.id,
+          email: userObj.email,
+          phone: userObj.phone,
+          user_metadata: userObj.user_metadata,
+          app_metadata: userObj.app_metadata,
+          created_at: userObj.created_at
+        }
+      };
+
+      const profile = this.deriveProfileFromSession(session);
+      this.assertOwnerRole(profile.role);
+
+      this.currentSession = session;
+      this.currentUserProfile = profile;
+      this.storage.setSession(session);
+      this.notifyListeners('SIGNED_IN', session);
+
+      return { user: session.user, session, profile };
+    }
+
+    const fallbackProfile: UserProfile = {
+      id: userObj.id,
+      name: credentials.name,
+      phone: credentials.phone,
+      email: credentials.email,
+      role: 'shop_owner',
+      created_at: userObj.created_at
+    };
+
+    return {
+      user: {
+        id: userObj.id,
+        email: userObj.email,
+        phone: userObj.phone,
+        user_metadata: userObj.user_metadata,
+        created_at: userObj.created_at
+      },
+      session: null,
+      profile: fallbackProfile
+    };
+  }
+
+  /**
    * Refreshes the active session using the refresh token.
    */
   async refreshSession(): Promise<AuthSession | null> {
@@ -364,6 +503,9 @@ export class SupabaseAuthClient {
     if (this.currentSession) {
       const now = Math.floor(Date.now() / 1000);
       if (this.currentSession.expires_at <= now) {
+        this.storage.removeSession();
+        this.currentSession = null;
+        this.currentUserProfile = null;
         return null;
       }
     }

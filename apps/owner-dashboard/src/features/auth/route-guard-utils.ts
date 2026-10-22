@@ -23,20 +23,33 @@ export const PROTECTED_ROUTES = [
   '/shop'
 ];
 
-export const AUTH_ROUTES = ['/login', '/auth'];
+export const AUTH_ROUTES = ['/login', '/auth', '/register'];
 
 export const PUBLIC_ROUTES = ['/api/health', '/favicon.ico'];
+
+/**
+ * Normalizes a pathname by stripping query parameters, hashes, and trailing slashes.
+ */
+export function cleanPath(pathname: string): string {
+  if (!pathname) return '/';
+  const withoutQuery = pathname.split('?')[0]?.split('#')[0] ?? '';
+  const lower = withoutQuery.toLowerCase().trim();
+  if (lower.length > 1 && lower.endsWith('/')) {
+    return lower.slice(0, -1);
+  }
+  return lower || '/';
+}
 
 /**
  * Checks if a pathname requires authentication.
  */
 export function isProtectedPath(pathname: string): boolean {
-  const normalized = pathname.toLowerCase();
-  if (normalized === '/' || normalized === '') {
+  const cleaned = cleanPath(pathname);
+  if (cleaned === '/') {
     return true;
   }
   return PROTECTED_ROUTES.some(
-    route => route !== '/' && (normalized === route || normalized.startsWith(`${route}/`))
+    route => route !== '/' && (cleaned === route || cleaned.startsWith(`${route}/`))
   );
 }
 
@@ -44,23 +57,25 @@ export function isProtectedPath(pathname: string): boolean {
  * Checks if a pathname is an auth route (e.g. login).
  */
 export function isAuthPath(pathname: string): boolean {
-  const normalized = pathname.toLowerCase();
-  return AUTH_ROUTES.some(route => normalized === route || normalized.startsWith(`${route}/`));
+  const cleaned = cleanPath(pathname);
+  return AUTH_ROUTES.some(route => cleaned === route || cleaned.startsWith(`${route}/`));
 }
 
 /**
  * Checks if a pathname is publicly accessible without login.
  */
 export function isPublicPath(pathname: string): boolean {
-  const normalized = pathname.toLowerCase();
-  return PUBLIC_ROUTES.some(route => normalized === route || normalized.startsWith(`${route}/`));
+  const cleaned = cleanPath(pathname);
+  return PUBLIC_ROUTES.some(route => cleaned === route || cleaned.startsWith(`${route}/`));
 }
 
 /**
  * Builds a login redirect URL preserving the original target in a query param.
+ * Prevents recursive loops and eliminates self-redirects.
  */
 export function createLoginRedirectUrl(currentPath: string, loginPath = '/login'): string {
-  if (!currentPath || currentPath === '/' || isAuthPath(currentPath)) {
+  const cleaned = cleanPath(currentPath);
+  if (!currentPath || cleaned === '/' || isAuthPath(cleaned)) {
     return loginPath;
   }
   return `${loginPath}?redirect=${encodeURIComponent(currentPath)}`;

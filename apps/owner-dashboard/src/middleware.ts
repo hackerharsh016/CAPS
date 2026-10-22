@@ -10,7 +10,8 @@ import type { NextRequest } from 'next/server';
 import {
   isProtectedPath,
   isAuthPath,
-  createLoginRedirectUrl
+  createLoginRedirectUrl,
+  cleanPath
 } from './features/auth/route-guard-utils';
 
 export function middleware(request: NextRequest) {
@@ -21,13 +22,17 @@ export function middleware(request: NextRequest) {
   const userRoleCookie = request.cookies.get('caps_user_role')?.value;
 
   const hasToken = !!(accessTokenCookie?.value || sessionCookie?.value);
+  const isOwnerOrAdmin = userRoleCookie === 'shop_owner' || userRoleCookie === 'admin';
   const isCustomer = userRoleCookie === 'customer';
 
-  // 1. If accessing auth pages (/login) while already logged in as owner/admin
-  if (isAuthPath(pathname) && hasToken && !isCustomer) {
+  // 1. If accessing auth pages (/login, /register, etc.) while already logged in as verified owner/admin
+  if (isAuthPath(pathname) && hasToken && isOwnerOrAdmin) {
     const redirectParam = request.nextUrl.searchParams.get('redirect');
     const destination =
-      redirectParam && redirectParam.startsWith('/') && !isAuthPath(redirectParam)
+      redirectParam &&
+      redirectParam.startsWith('/') &&
+      !isAuthPath(redirectParam) &&
+      cleanPath(redirectParam) !== cleanPath(pathname)
         ? redirectParam
         : '/';
     const response = NextResponse.redirect(new URL(destination, request.url));
@@ -43,8 +48,8 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // 3. If accessing protected routes without session
-  if (isProtectedPath(pathname) && !hasToken) {
+  // 3. If accessing protected routes without valid owner session
+  if (isProtectedPath(pathname) && (!hasToken || !isOwnerOrAdmin)) {
     const loginUrl = createLoginRedirectUrl(pathname + request.nextUrl.search);
     const response = NextResponse.redirect(new URL(loginUrl, request.url));
     applySecurityHeaders(response);

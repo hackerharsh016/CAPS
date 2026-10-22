@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import type { AuthError, AuthSession, AuthStatus, AuthUser, UserProfile } from './types';
+import type { AuthError, AuthSession, AuthStatus, AuthUser, UserProfile, SignUpCredentials } from './types';
 import { SupabaseAuthClient, type SignInCredentials, RoleGuardError } from './supabase-auth-client';
 import { getSupabaseBrowserClient } from '../../lib/supabase';
 
@@ -20,6 +20,11 @@ export interface AuthContextValue {
   isOwnerOrAdmin: boolean;
   error: AuthError | null;
   signInWithPassword: (credentials: SignInCredentials) => Promise<void>;
+  signUp: (credentials: SignUpCredentials) => Promise<{
+    user: AuthUser;
+    session: AuthSession | null;
+    profile: UserProfile;
+  }>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<AuthSession | null>;
 }
@@ -94,6 +99,37 @@ export function AuthProvider({ children, authClient: customAuthClient }: AuthPro
     [client]
   );
 
+  const signUp = useCallback(
+    async (credentials: SignUpCredentials) => {
+      setError(null);
+      try {
+        const result = await client.signUp(credentials);
+        if (result.session) {
+          setSession(result.session);
+          setProfile(result.profile);
+          setStatus('authenticated');
+        }
+        return result;
+      } catch (err: unknown) {
+        if (err instanceof RoleGuardError) {
+          const authErr: AuthError = {
+            code: err.code,
+            message: err.message,
+            status: err.status
+          };
+          setError(authErr);
+          setStatus('forbidden');
+          throw authErr;
+        }
+
+        const authErr = err as AuthError;
+        setError(authErr);
+        throw authErr;
+      }
+    },
+    [client]
+  );
+
   const signOut = useCallback(async () => {
     setError(null);
     try {
@@ -135,6 +171,7 @@ export function AuthProvider({ children, authClient: customAuthClient }: AuthPro
       isOwnerOrAdmin,
       error,
       signInWithPassword,
+      signUp,
       signOut,
       refreshSession
     }),

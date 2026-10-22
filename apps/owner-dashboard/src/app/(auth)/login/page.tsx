@@ -3,11 +3,15 @@
 import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LoginForm } from '../../../features/auth/components/LoginForm';
+import { isAuthPath } from '../../../features/auth/route-guard-utils';
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
-  const redirectUrl = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+  const redirectUrl =
+    redirectParam && redirectParam.startsWith('/') && !isAuthPath(redirectParam)
+      ? redirectParam
+      : '/';
 
   return <LoginForm redirectUrl={redirectUrl} />;
 }

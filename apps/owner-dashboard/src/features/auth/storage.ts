@@ -141,8 +141,9 @@ export class BrowserCookieStorageAdapter implements AuthStorageAdapter {
 
     const accessToken = cookies[ACCESS_TOKEN_COOKIE];
     const refreshToken = cookies[REFRESH_TOKEN_COOKIE];
+    const rawRole = cookies[ROLE_COOKIE];
     const roleCookie =
-      (cookies[ROLE_COOKIE] as 'customer' | 'shop_owner' | 'admin') || 'shop_owner';
+      rawRole === 'shop_owner' || rawRole === 'admin' ? rawRole : 'customer';
 
     if (!accessToken) return null;
 

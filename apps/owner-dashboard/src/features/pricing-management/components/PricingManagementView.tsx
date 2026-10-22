@@ -40,6 +40,17 @@ export function PricingManagementView({ showSettingsOnly = false }: PricingManag
     saveChanges
   } = usePricingForm(activeShop, updateActiveShop);
 
+  if (!isShopLoading && !activeShop) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center">
+        <h3 className="text-base font-bold text-slate-900">No Active Print Shop</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Please register or select a print shop to manage paper pricing and shop settings.
+        </p>
+      </div>
+    );
+  }
+
   if (isShopLoading || !formData) {
     return (
       <div

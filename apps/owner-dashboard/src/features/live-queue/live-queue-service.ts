@@ -220,7 +220,10 @@ export class LiveQueueService {
       if (apiRes.ok) {
         const json = await apiRes.json();
         const rawItems = (json.data?.queue || json.queue || json.data || json) as any[];
-        if (Array.isArray(rawItems) && rawItems.length > 0) {
+        if (Array.isArray(rawItems)) {
+          if (rawItems.length === 0) {
+            return [];
+          }
           const mappedItems: QueueItem[] = rawItems.map(item => ({
             id: item.id,
             shop_id: item.shop_id || shopId,
@@ -265,7 +268,7 @@ export class LiveQueueService {
         }
       }
     } catch {
-      // Continue to Supabase RPC / fallback
+      // Continue to Supabase RPC
     }
 
     const endpoint = `${this.supabaseUrl}/rest/v1/rpc/get_shop_queue`;
@@ -285,23 +288,100 @@ export class LiveQueueService {
       });
 
       if (!response.ok) {
-        // In local/mock mode, return deterministic demo queue
-        return this.getFallbackQueue(shopId);
+        return [];
       }
 
       const rawItems = (await response.json()) as QueueItem[];
+      if (!Array.isArray(rawItems) || rawItems.length === 0) {
+        return [];
+      }
       return computeQueueETAs(calculateQueuePositions(rawItems));
     } catch {
-      // Offline / dev fallback
-      return this.getFallbackQueue(shopId);
+      return [];
     }
   }
 
-  private getFallbackQueue(shopId: string): QueueItem[] {
-    const scoped = DEMO_QUEUE_FIXTURES.map(item => ({
-      ...item,
-      shop_id: shopId
-    }));
-    return computeQueueETAs(calculateQueuePositions(scoped));
+  /**
+   * Fetches authoritative today metrics (completed jobs count, settled revenue, pages dispatched).
+   */
+  async fetchTodayMetrics(
+    shopId: string,
+    accessToken?: string
+  ): Promise<{ todayCompletedCount: number; todayRevenuePaise: number; todayPagesDispatched: number }> {
+    if (!shopId) {
+      return { todayCompletedCount: 0, todayRevenuePaise: 0, todayPagesDispatched: 0 };
+    }
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const startOfDayIso = startOfDay.toISOString();
+
+    const params = new URLSearchParams({
+      shop_id: `eq.${shopId}`,
+      status: 'eq.completed',
+      updated_at: `gte.${startOfDayIso}`,
+      select: 'id,price_total_paise,settings'
+    });
+
+    const endpoint = `${this.supabaseUrl}/rest/v1/print_jobs?${params.toString()}`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      apikey: this.supabaseAnonKey
+    };
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    try {
+      const response = await this.fetchFn(endpoint, {
+        method: 'GET',
+        headers
+      });
+
+      if (!response.ok) {
+        return { todayCompletedCount: 0, todayRevenuePaise: 0, todayPagesDispatched: 0 };
+      }
+
+      const rows = (await response.json()) as Array<{
+        id: string;
+        price_total_paise?: number;
+        settings?: { copies?: number; page_range?: string };
+      }>;
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return { todayCompletedCount: 0, todayRevenuePaise: 0, todayPagesDispatched: 0 };
+      }
+
+      let todayRevenuePaise = 0;
+      let todayPagesDispatched = 0;
+
+      for (const row of rows) {
+        todayRevenuePaise += Number(row.price_total_paise) || 0;
+        const copies = Number(row.settings?.copies) || 1;
+        const pageRange = row.settings?.page_range || 'all';
+        let pageCount = 1;
+        if (pageRange !== 'all') {
+          const match = pageRange.match(/^(\d+)-(\d+)$/);
+          if (match && match[1] && match[2]) {
+            const start = parseInt(match[1], 10);
+            const end = parseInt(match[2], 10);
+            if (!isNaN(start) && !isNaN(end) && end >= start) {
+              pageCount = end - start + 1;
+            }
+          } else if (pageRange.includes(',')) {
+            pageCount = pageRange.split(',').filter(p => p.trim()).length || 1;
+          }
+        }
+        todayPagesDispatched += pageCount * copies;
+      }
+
+      return {
+        todayCompletedCount: rows.length,
+        todayRevenuePaise,
+        todayPagesDispatched
+      };
+    } catch {
+      return { todayCompletedCount: 0, todayRevenuePaise: 0, todayPagesDispatched: 0 };
+    }
   }
 }
