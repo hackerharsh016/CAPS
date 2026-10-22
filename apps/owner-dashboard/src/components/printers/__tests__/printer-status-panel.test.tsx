@@ -125,9 +125,9 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
         })
       );
       expect(printers.length).toBe(4);
-      expect(printers[0].name).toBe('HP LaserJet Pro M404n');
-      expect(printers[0].is_online).toBe(true);
-      expect(printers[0].toner_level).toBe(85);
+      expect(printers[0]!.name).toBe('HP LaserJet Pro M404n');
+      expect(printers[0]!.is_online).toBe(true);
+      expect(printers[0]!.toner_level).toBe(85);
     });
 
     it('submits retry requests via POST /api/v1/shops/:shopId/jobs/:jobId/retry', async () => {
@@ -150,7 +150,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
       const html = renderToStaticMarkup(
         <PrinterStatusPanel
           shopId={shopId}
-          printers={[mockPrinters[1]]} // JAMMED printer
+          printers={[mockPrinters[1]!]} // JAMMED printer
         />
       );
 
@@ -163,7 +163,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
       const html = renderToStaticMarkup(
         <PrinterStatusPanel
           shopId={shopId}
-          printers={[mockPrinters[2]]} // PAPER_OUT printer
+          printers={[mockPrinters[2]!]} // PAPER_OUT printer
         />
       );
 
@@ -176,7 +176,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
       const html = renderToStaticMarkup(
         <PrinterStatusPanel
           shopId={shopId}
-          printers={[mockPrinters[3]]} // OFFLINE printer
+          printers={[mockPrinters[3]!]} // OFFLINE printer
         />
       );
 
@@ -188,7 +188,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
       const html = renderToStaticMarkup(
         <PrinterStatusPanel
           shopId={shopId}
-          printers={[mockPrinters[1]]} // 10% toner
+          printers={[mockPrinters[1]!]} // 10% toner
         />
       );
 
@@ -248,7 +248,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
       expect(mockChannel.subscribe).toHaveBeenCalled();
 
       // Trigger callback with agent status payload
-      const registeredHandler = mockChannel.on.mock.calls[0][2];
+      const registeredHandler = mockChannel.on.mock.calls[0]![2];
       registeredHandler({
         payload: {
           printer_id: 'printer-1',

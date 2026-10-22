@@ -96,7 +96,35 @@ class AgentConfig:
 
 def load_config(env: dict[str, str] | None = None) -> AgentConfig:
     """Load and validate configuration from environment dictionary or process env."""
-    e = os.environ if env is None else env
+    e = dict(os.environ) if env is None else dict(env)
+
+    # If running with ambient process environment, attempt to load local .env if present
+    if env is None:
+        candidates = (
+            Path(".env"),
+            Path("apps/print-agent/.env"),
+            Path(__file__).resolve().parents[3] / ".env",
+            Path(__file__).resolve().parents[2] / ".env",
+        )
+        for candidate in candidates:
+            if candidate.is_file():
+                try:
+                    for line in candidate.read_text(encoding="utf-8").splitlines():
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            k, v = k.strip(), v.strip().strip("'\"")
+                            if k not in e:
+                                e[k] = v
+                except Exception:
+                    pass
+                break
+
+    # Security check: Service role key must never be exposed to the print agent
+    if "SUPABASE_SERVICE_ROLE_KEY" in e or "SERVICE_ROLE_KEY" in e:
+        raise ConfigurationError(
+            "Security violation: SUPABASE_SERVICE_ROLE_KEY must NEVER be configured in print agent!"
+        )
 
     api_url = e.get("CAPS_AGENT_CLOUD_API_URL")
     if not api_url:

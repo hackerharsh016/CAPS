@@ -1,7 +1,8 @@
 import { buildApp } from './app.js';
-import { validateEnv } from './config/env.js';
+import { validateEnv, tryLoadLocalEnv } from './config/env.js';
 
 async function bootstrap() {
+  tryLoadLocalEnv();
   const env = validateEnv(process.env);
   const app = buildApp({ env });
 

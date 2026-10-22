@@ -41,4 +41,12 @@ describe('Cloud API — Environment Validation', () => {
       /Environment validation failed/
     );
   });
+
+  it('rejects client exposure of privileged service role keys', () => {
+    expect(() =>
+      validateEnv({
+        NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY: 'leaked-service-key-here'
+      })
+    ).toThrowError(/SECURITY VIOLATION/);
+  });
 });

@@ -15,12 +15,9 @@ import {
   normalizePrintSettings,
   createHarmonizedPrintSettings,
   toValidationPrintSettings
-} from '../../../../../../packages/types/dist/index.js';
-import type {
-  PrintSettings,
-  HarmonizedPrintSettings
-} from '../../../../../../packages/types/dist/index.js';
-import { PrintSettingsSchema } from '../../../../../../packages/validation/dist/index.js';
+} from '@caps/types';
+import type { PrintSettings, HarmonizedPrintSettings } from '@caps/types';
+import { PrintSettingsSchema } from '@caps/validation';
 import { QuoteService, PrintJobService } from '../../../services/api/quote.service';
 
 describe('PrintConfigurationForm & Sides/Duplex Harmonization (INT-D1-01)', () => {

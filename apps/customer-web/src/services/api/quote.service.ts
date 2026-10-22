@@ -4,12 +4,8 @@
  * and job creation with backend endpoints (POST /api/v1/quotes/calculate and POST /api/v1/print-jobs).
  */
 
-import type {
-  QuoteRequest,
-  QuoteResponse,
-  PrintSettings
-} from '../../../../../packages/types/dist/index.js';
-import { normalizePrintSettings } from '../../../../../packages/types/dist/index.js';
+import type { QuoteRequest, QuoteResponse, PrintSettings } from '@caps/types';
+import { normalizePrintSettings } from '@caps/types';
 
 export interface QuoteServiceOptions {
   baseUrl?: string | undefined;

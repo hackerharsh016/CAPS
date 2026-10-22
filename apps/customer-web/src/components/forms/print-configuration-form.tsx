@@ -17,12 +17,8 @@ import type {
   BindingType,
   PrintSettings,
   HarmonizedPrintSettings
-} from '../../../../../packages/types/dist/index.js';
-import {
-  sidesToDuplex,
-  duplexToSides,
-  createHarmonizedPrintSettings
-} from '../../../../../packages/types/dist/index.js';
+} from '@caps/types';
+import { sidesToDuplex, duplexToSides, createHarmonizedPrintSettings } from '@caps/types';
 import { QuoteService, PrintJobService } from '../../services/api/quote.service';
 
 export interface PrintConfigurationFormProps {
