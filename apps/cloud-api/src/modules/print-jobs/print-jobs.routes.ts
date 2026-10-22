@@ -26,6 +26,9 @@ const createPrintJobSchema = z.object({
   documentId: z.string().optional(),
   document_storage_key: z.string().optional(),
   documentStorageKey: z.string().optional(),
+  document_page_count: z.number().int().positive().optional(),
+  documentPageCount: z.number().int().positive().optional(),
+  page_count: z.number().int().positive().optional(),
   printer_id: z.string().optional(),
   printerId: z.string().optional(),
   settings: printSettingsSchema.optional(),
@@ -119,6 +122,10 @@ export const printJobsRoutes: FastifyPluginAsync<PrintJobsPluginOptions> = async
         quote_id: parsed.data.quote_id || parsed.data.quoteId,
         document_id: parsed.data.document_id || parsed.data.documentId,
         document_storage_key: parsed.data.document_storage_key || parsed.data.documentStorageKey,
+        document_page_count:
+          parsed.data.document_page_count ||
+          parsed.data.documentPageCount ||
+          parsed.data.page_count,
         printer_id: parsed.data.printer_id || parsed.data.printerId,
         settings: parsed.data.settings,
         priority_tier: parsed.data.priority_tier || parsed.data.priorityTier

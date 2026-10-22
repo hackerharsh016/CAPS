@@ -47,6 +47,7 @@ export type CheckoutErrorCode =
   | 'INVALID_PAYMENT_METHOD'
   | 'PAY_AT_COUNTER_UNAVAILABLE'
   | 'VALIDATION_FAILED'
+  | 'ORDER_CREATION_FAILED'
   | 'NETWORK_ERROR';
 
 export interface CheckoutError {

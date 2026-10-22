@@ -106,11 +106,15 @@ export class PrintJobsService {
       total_paise: 0
     };
 
+    let quote = null;
     if (input.quote_id) {
-      const quote = await this.quotesRepo.findById(input.quote_id);
-      if (!quote) {
+      quote = await this.quotesRepo.findById(input.quote_id);
+      if (!quote && !settings) {
         throw new NotFoundError(`Quote "${input.quote_id}" not found.`);
       }
+    }
+
+    if (quote) {
       if (new Date(quote.expires_at).getTime() < Date.now() || quote.status === 'expired') {
         throw new PrintJobError(
           410,
@@ -131,13 +135,13 @@ export class PrintJobsService {
       priceBreakdown = quote.price_breakdown;
 
       // Mark quote consumed
-      await this.quotesRepo.update(input.quote_id, { status: 'consumed' });
+      await this.quotesRepo.update(input.quote_id!, { status: 'consumed' });
     } else {
-      // Direct settings provided without pre-existing quote: compute authoritative price server-side
+      // Direct settings provided (or quote was generated client-side): compute authoritative price server-side
       if (!settings) {
         throw new ValidationError('Print settings are required when quote_id is not provided.');
       }
-      const pageCount = 1;
+      const pageCount = input.document_page_count || input.page_count || 1;
       priceBreakdown = calculatePriceBreakdown({
         settings: settings as unknown as PrintSettings,
         priorityTier,

@@ -62,6 +62,8 @@ export interface CreatePrintJobInput {
   quote_id?: string | undefined;
   document_id?: string | undefined;
   document_storage_key?: string | undefined;
+  document_page_count?: number | undefined;
+  page_count?: number | undefined;
   printer_id?: string | undefined;
   settings?: PrintSettings | Record<string, unknown> | undefined;
   priority_tier?: PriorityTier | undefined;

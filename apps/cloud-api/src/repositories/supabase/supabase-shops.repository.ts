@@ -239,7 +239,9 @@ class RestQueryBuilder {
   ) {}
 
   select(_columns = '*', _options: { count?: string } = {}) {
-    this.action = 'select';
+    if (this.action !== 'insert' && this.action !== 'update' && this.action !== 'delete') {
+      this.action = 'select';
+    }
     return this;
   }
 
@@ -294,6 +296,14 @@ class RestQueryBuilder {
 
   then(onfulfilled: (value: any) => any, onrejected?: (reason: any) => any) {
     return this.execute().then(onfulfilled, onrejected);
+  }
+
+  catch(onrejected?: (reason: any) => any) {
+    return this.execute().catch(onrejected);
+  }
+
+  finally(onfinally?: (() => void) | undefined | null) {
+    return this.execute().finally(onfinally);
   }
 
   private async execute(): Promise<{ data: any; count?: number; error: any }> {

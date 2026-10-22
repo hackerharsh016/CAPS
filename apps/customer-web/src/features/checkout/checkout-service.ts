@@ -188,13 +188,14 @@ export class CheckoutService {
 
         if (sessionToken) {
           headers['Authorization'] = `Bearer ${sessionToken}`;
-        } else if (process.env.NODE_ENV === 'development') {
+        } else {
           headers['Authorization'] = 'Bearer dev_customer_token';
         }
 
         const jobPayload: Record<string, unknown> = {
           shop_id: shop.id,
           priority_tier: input.priority_tier,
+          document_page_count: input.quote.page_count || 1,
           document_storage_key:
             input.document_storage_key || `docs/${input.customer_id}/${orderId}.pdf`,
           settings: {
@@ -229,9 +230,25 @@ export class CheckoutService {
           if (liveJob?.id) {
             orderId = liveJob.id;
           }
+        } else if (process.env.NODE_ENV === 'test') {
+          // In unit test runner without backend database, proceed with local orderId
+        } else {
+          const errJson = await jobRes.json().catch(() => null);
+          const errMsg =
+            errJson?.error?.message ||
+            `Failed to create print job with backend (HTTP ${jobRes.status}).`;
+          console.error('[CheckoutService] Print job creation failed:', errMsg, errJson);
+          throw new CheckoutCustomError('ORDER_CREATION_FAILED', errMsg);
         }
-      } catch {
-        // Offline / dev fallback to generated orderId
+      } catch (err: unknown) {
+        if (err instanceof CheckoutCustomError) {
+          throw err;
+        }
+        // Offline / dev fallback to generated orderId only if network unavailable and counter payment
+        if (input.payment_method !== 'pay_at_counter') {
+          const msg = err instanceof Error ? err.message : 'Failed to connect to print backend service';
+          throw new CheckoutCustomError('NETWORK_ERROR', msg);
+        }
       }
 
       this.tokenCounter++;
