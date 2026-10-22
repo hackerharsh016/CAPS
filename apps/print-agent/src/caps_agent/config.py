@@ -7,6 +7,7 @@ type validation using standard library dataclasses.
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -100,25 +101,64 @@ def load_config(env: dict[str, str] | None = None) -> AgentConfig:
 
     # If running with ambient process environment, attempt to load local .env if present
     if env is None:
-        candidates = (
-            Path(".env"),
-            Path("apps/print-agent/.env"),
-            Path(__file__).resolve().parents[3] / ".env",
-            Path(__file__).resolve().parents[2] / ".env",
-        )
-        for candidate in candidates:
+        candidates: list[Path] = []
+
+        # 1. Explicit override via environment variable if provided
+        env_override = os.environ.get("CAPS_AGENT_ENV_FILE")
+        if env_override:
+            candidates.append(Path(env_override))
+
+        # 2. Adjacent to the executable / script
+        exe_dir = Path(sys.executable).resolve().parent
+        candidates.extend([
+            exe_dir / ".env",
+            exe_dir / ".env.example",
+        ])
+
+        # 3. Search up directory hierarchy from executable, CWD, and module location
+        search_roots = [exe_dir, Path.cwd().resolve(), Path(__file__).resolve().parent]
+        for root in search_roots:
+            curr = root
+            for _ in range(5):
+                candidates.extend([
+                    curr / "apps" / "print-agent" / ".env",
+                    curr / "apps" / "print-agent" / ".env.example",
+                    curr / ".env",
+                    curr / ".env.example",
+                ])
+                if curr.parent == curr:
+                    break
+                curr = curr.parent
+
+        # Deduplicate while preserving lookup precedence
+        seen_paths: set[Path] = set()
+        unique_candidates: list[Path] = []
+        for c in candidates:
+            resolved = c.resolve()
+            if resolved not in seen_paths:
+                seen_paths.add(resolved)
+                unique_candidates.append(resolved)
+
+        for candidate in unique_candidates:
             if candidate.is_file():
                 try:
-                    for line in candidate.read_text(encoding="utf-8").splitlines():
+                    candidate_text = candidate.read_text(encoding="utf-8")
+                    # Security boundary: do not load repo-level .env meant for cloud services
+                    if "SUPABASE_SERVICE_ROLE_KEY" in candidate_text:
+                        continue
+
+                    for line in candidate_text.splitlines():
                         line = line.strip()
                         if line and not line.startswith("#") and "=" in line:
                             k, v = line.split("=", 1)
                             k, v = k.strip(), v.strip().strip("'\"")
                             if k not in e:
                                 e[k] = v
+
+                    if "CAPS_AGENT_CLOUD_API_URL" in e:
+                        break
                 except Exception:
                     pass
-                break
 
     # Security check: Service role key must never be exposed to the print agent
     if "SUPABASE_SERVICE_ROLE_KEY" in e or "SERVICE_ROLE_KEY" in e:

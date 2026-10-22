@@ -92,6 +92,8 @@ if (-not $SkipTests) {
 
 # 3. Clean prior artifacts if requested
 if ($Clean) {
+    # Ensure any running caps-agent instance is stopped before cleaning dist folder
+    Get-Process caps-agent -ErrorAction SilentlyContinue | Stop-Process -Force
     Write-Host "`n--- [Step 2/5] Cleaning prior build and dist artifacts ---" -ForegroundColor Yellow
     if (Test-Path $OutputDir) {
         Remove-Item -Recurse -Force $OutputDir
@@ -147,6 +149,25 @@ Write-Host "Executable SHA256: $ExeHash"
 
 # Generate build manifest
 $BundleDir = Split-Path -Parent $TargetExe
+
+# Bundle local configuration files alongside executable
+$DistEnv = Join-Path $BundleDir ".env"
+$DistEnvExample = Join-Path $BundleDir ".env.example"
+$SrcEnv = Join-Path $AgentRoot ".env"
+$SrcEnvExample = Join-Path $AgentRoot ".env.example"
+
+if (Test-Path $SrcEnv) {
+    Copy-Item $SrcEnv $DistEnv -Force
+    Write-Host "Bundled .env: $DistEnv" -ForegroundColor Green
+} elseif (Test-Path $SrcEnvExample) {
+    Copy-Item $SrcEnvExample $DistEnv -Force
+    Write-Host "Bundled default .env (from example): $DistEnv" -ForegroundColor Yellow
+}
+if (Test-Path $SrcEnvExample) {
+    Copy-Item $SrcEnvExample $DistEnvExample -Force
+    Write-Host "Bundled .env.example: $DistEnvExample" -ForegroundColor Green
+}
+
 $AllFiles = Get-ChildItem -Path $BundleDir -Recurse -File
 $FileManifest = @()
 $TotalBytes = 0

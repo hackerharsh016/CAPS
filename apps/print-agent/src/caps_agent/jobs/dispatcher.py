@@ -372,7 +372,8 @@ class JobDispatcher:
         while True:
             with self._lock:
                 sm = self._state_machines.get(job_id)
-                if sm and sm.is_terminal:
+                is_active = any(active.job_id == job_id for active in self._active_jobs.values())
+                if sm and sm.is_terminal and not is_active:
                     return sm.current_state
 
             if timeout is not None:
@@ -447,6 +448,18 @@ class JobDispatcher:
     def _execute_job(self, job: JobItem) -> None:
         """Coordinate lifecycle state transitions and execute PrintEngine print_document."""
         sm = self._state_machines[job.job_id]
+        cleanup_done = False
+
+        def _do_cleanup() -> None:
+            nonlocal cleanup_done
+            if not cleanup_done and self.cleaner is not None:
+                cleanup_done = True
+                try:
+                    self.cleaner.cleanup_job(job.job_id)
+                except Exception as c_err:
+                    logger.warning(
+                        "Post-execution artifact cleanup error for job '%s': %s", job.job_id, c_err
+                    )
 
         try:
             # Transition: QUEUED -> CLAIMED
@@ -569,6 +582,7 @@ class JobDispatcher:
                         except Exception as err:
                             logger.warning("Failed to record failure in journal: %s", err)
 
+            _do_cleanup()
             self._notify_status(sm)
 
         except Exception as err:
@@ -589,16 +603,11 @@ class JobDispatcher:
                         )
                     except Exception as j_err:
                         logger.warning("Failed to record failure in journal: %s", j_err)
+                _do_cleanup()
                 self._notify_status(sm)
 
         finally:
-            if self.cleaner is not None:
-                try:
-                    self.cleaner.cleanup_job(job.job_id)
-                except Exception as c_err:
-                    logger.warning(
-                        "Post-execution artifact cleanup error for job '%s': %s", job.job_id, c_err
-                    )
+            _do_cleanup()
 
     def shutdown(self, wait: bool = True, timeout: float = 5.0) -> None:
         """Stop dispatcher, send poison pill sentinels to workers, and join threads."""

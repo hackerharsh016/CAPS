@@ -77,6 +77,58 @@ class TestAgentConfig(unittest.TestCase):
                 log_level="VERBOSE_INVALID",
             )
 
+    def test_ambient_env_file_loading_and_override(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_env = Path(tmp_dir) / ".env"
+            tmp_env.write_text(
+                "CAPS_AGENT_CLOUD_API_URL=http://127.0.0.1:4000/api/v1\n"
+                "CAPS_AGENT_REALTIME_URL=wss://dugndvbpybprmfecbmnk.supabase.co/realtime/v1/websocket\n"
+                "CAPS_SHOP_ID=shop-ambient-1\n",
+                encoding="utf-8",
+            )
+            old_val = os.environ.get("CAPS_AGENT_ENV_FILE")
+            try:
+                os.environ["CAPS_AGENT_ENV_FILE"] = str(tmp_env)
+                cfg = load_config(env=None)
+                self.assertEqual(cfg.cloud_api_url, "http://127.0.0.1:4000/api/v1")
+                self.assertEqual(cfg.shop_id, "shop-ambient-1")
+            finally:
+                if old_val is not None:
+                    os.environ["CAPS_AGENT_ENV_FILE"] = old_val
+                else:
+                    os.environ.pop("CAPS_AGENT_ENV_FILE", None)
+
+    def test_ambient_env_skips_service_role_key(self) -> None:
+        import os
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            bad_env = Path(tmp_dir) / ".env"
+            bad_env.write_text(
+                "SUPABASE_SERVICE_ROLE_KEY=super-secret-service-role-key\n"
+                "CAPS_AGENT_CLOUD_API_URL=http://127.0.0.1:4000/api/v1\n",
+                encoding="utf-8",
+            )
+            old_val = os.environ.get("CAPS_AGENT_ENV_FILE")
+            try:
+                os.environ["CAPS_AGENT_ENV_FILE"] = str(bad_env)
+                # Should skip bad_env containing service role key and fall back or fail on missing URLs
+                # without raising security violation from the bad file
+                try:
+                    cfg = load_config(env=None)
+                    # If other fallback candidates exist, cloud_api_url is from safe file
+                    self.assertIsNotNone(cfg.cloud_api_url)
+                except ConfigurationError as err:
+                    self.assertNotIn("SUPABASE_SERVICE_ROLE_KEY must NEVER be configured", str(err))
+            finally:
+                if old_val is not None:
+                    os.environ["CAPS_AGENT_ENV_FILE"] = old_val
+                else:
+                    os.environ.pop("CAPS_AGENT_ENV_FILE", None)
+
 
 if __name__ == "__main__":
     unittest.main()

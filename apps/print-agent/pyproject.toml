@@ -33,6 +33,10 @@ rendering = [
     "pypdfium2>=4.30.0",
     "pillow>=10.0.0",
 ]
+desktop = [
+    "pystray>=0.19.5",
+    "pillow>=10.0.0",
+]
 
 [project.scripts]
 caps-agent = "caps_agent.main:main"

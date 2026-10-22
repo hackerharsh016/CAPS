@@ -157,11 +157,12 @@ class TempFileManager:
         files: list[Path] = []
 
         # Check job directory pattern
-        for entry in self.base_dir.iterdir():
-            if entry.is_dir() and entry.name.startswith(f"job_{safe_job_id}"):
-                for file_path in entry.rglob("*"):
-                    if file_path.is_file():
-                        files.append(file_path.resolve())
+        if self.base_dir.exists():
+            for entry in self.base_dir.iterdir():
+                if entry.is_dir() and entry.name.startswith(f"job_{safe_job_id}"):
+                    for file_path in entry.rglob("*"):
+                        if file_path.is_file():
+                            files.append(file_path.resolve())
 
         # Also add any explicitly tracked files
         tracked = self._tracked_files.get(safe_job_id, set())
@@ -198,14 +199,15 @@ class TempFileManager:
                 logger.warning("Could not unlink tracked file '%s': %s", path, e)
 
         # Delete any matching job directories in base_dir
-        for entry in self.base_dir.iterdir():
-            if entry.is_dir() and entry.name.startswith(f"job_{safe_job_id}"):
-                try:
-                    # Count files before rmtree
-                    count = sum(1 for p in entry.rglob("*") if p.is_file())
-                    shutil.rmtree(entry, ignore_errors=True)
-                    deleted_count += count
-                except Exception as e:
-                    logger.warning("Could not remove job directory '%s': %s", entry, e)
+        if self.base_dir.exists():
+            for entry in self.base_dir.iterdir():
+                if entry.is_dir() and entry.name.startswith(f"job_{safe_job_id}"):
+                    try:
+                        # Count files before rmtree
+                        count = sum(1 for p in entry.rglob("*") if p.is_file())
+                        shutil.rmtree(entry, ignore_errors=True)
+                        deleted_count += count
+                    except Exception as e:
+                        logger.warning("Could not remove job directory '%s': %s", entry, e)
 
         return deleted_count

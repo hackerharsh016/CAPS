@@ -50,6 +50,11 @@ hidden_imports = [
     "jsonschema_specifications",
     "referencing",
     "rpds",
+    "pystray",
+    "pystray._win32",
+    "PIL",
+    "PIL.Image",
+    "PIL.ImageDraw",
 ]
 
 # Excluded packages to ensure slim, deterministic binary build
