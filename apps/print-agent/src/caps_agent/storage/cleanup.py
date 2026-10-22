@@ -142,23 +142,24 @@ class ArtifactCleaner:
 
         # Fallback / directory removal in base_dir
         safe_id = job_id.replace("/", "").replace("\\", "").replace("..", "")
-        for entry in self.base_dir.iterdir():
-            if entry.is_dir() and entry.name.startswith(f"job_{safe_id}"):
-                try:
-                    # Clean remaining files inside
-                    for sub_file in list(entry.rglob("*")):
-                        if sub_file.is_file():
-                            try:
-                                b = self.wipe_and_unlink(sub_file, secure=secure)
-                                report.files_deleted += 1
-                                report.bytes_freed += b
-                            except Exception as e:
-                                report.errors.append(f"Subfile {sub_file.name}: {e}")
+        if self.base_dir.exists():
+            for entry in self.base_dir.iterdir():
+                if entry.is_dir() and entry.name.startswith(f"job_{safe_id}"):
+                    try:
+                        # Clean remaining files inside
+                        for sub_file in list(entry.rglob("*")):
+                            if sub_file.is_file():
+                                try:
+                                    b = self.wipe_and_unlink(sub_file, secure=secure)
+                                    report.files_deleted += 1
+                                    report.bytes_freed += b
+                                except Exception as e:
+                                    report.errors.append(f"Subfile {sub_file.name}: {e}")
 
-                    shutil.rmtree(entry, ignore_errors=True)
-                    report.dirs_deleted += 1
-                except Exception as err:
-                    report.errors.append(f"Directory {entry.name}: {err}")
+                        shutil.rmtree(entry, ignore_errors=True)
+                        report.dirs_deleted += 1
+                    except Exception as err:
+                        report.errors.append(f"Directory {entry.name}: {err}")
 
         return report
 
