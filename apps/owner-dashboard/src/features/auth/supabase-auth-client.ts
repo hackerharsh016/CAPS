@@ -100,6 +100,35 @@ export class SupabaseAuthClient {
   }
 
   /**
+   * Executes fetch with network-level exception trapping, ensuring
+   * that connection drops, DNS failures, or offline states return
+   * structured AuthError instances rather than raw unhandled rejections.
+   */
+  private async safeFetch(url: string, init: RequestInit): Promise<Response> {
+    try {
+      return await this.fetchFn(url, init);
+    } catch (err) {
+      const originalMessage = err instanceof Error ? err.message : String(err);
+      const isNetworkError =
+        originalMessage.toLowerCase().includes('failed to fetch') ||
+        originalMessage.toLowerCase().includes('network') ||
+        originalMessage.toLowerCase().includes('timeout') ||
+        originalMessage.toLowerCase().includes('econnrefused');
+
+      const userMessage = isNetworkError
+        ? 'Unable to connect to authentication server. Please check your network connection.'
+        : `Network request failed: ${originalMessage}`;
+
+      const authError: AuthError = {
+        code: 'NETWORK_ERROR',
+        message: userMessage,
+        status: 0
+      };
+      throw authError;
+    }
+  }
+
+  /**
    * Extracts or constructs a UserProfile from session metadata.
    */
   private deriveProfileFromSession(session: AuthSession): UserProfile {
@@ -151,7 +180,7 @@ export class SupabaseAuthClient {
 
     const endpoint = `${this.supabaseUrl}/auth/v1/token?grant_type=password`;
 
-    const response = await this.fetchFn(endpoint, {
+    const response = await this.safeFetch(endpoint, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({
@@ -239,7 +268,7 @@ export class SupabaseAuthClient {
 
     const endpoint = `${this.supabaseUrl}/auth/v1/token?grant_type=refresh_token`;
     try {
-      const response = await this.fetchFn(endpoint, {
+      const response = await this.safeFetch(endpoint, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -306,7 +335,7 @@ export class SupabaseAuthClient {
     const session = this.currentSession;
     if (session) {
       try {
-        await this.fetchFn(`${this.supabaseUrl}/auth/v1/logout`, {
+        await this.safeFetch(`${this.supabaseUrl}/auth/v1/logout`, {
           method: 'POST',
           headers: this.getHeaders(session.access_token)
         });

@@ -112,6 +112,35 @@ export class SupabaseAuthClient {
   }
 
   /**
+   * Executes fetch with network-level exception trapping, ensuring
+   * that connection drops, DNS failures, or offline states return
+   * structured AuthError instances rather than raw unhandled rejections.
+   */
+  private async safeFetch(url: string, init: RequestInit): Promise<Response> {
+    try {
+      return await this.fetchImpl(url, init);
+    } catch (err) {
+      const originalMessage = err instanceof Error ? err.message : String(err);
+      const isNetworkError =
+        originalMessage.toLowerCase().includes('failed to fetch') ||
+        originalMessage.toLowerCase().includes('network') ||
+        originalMessage.toLowerCase().includes('timeout') ||
+        originalMessage.toLowerCase().includes('econnrefused');
+
+      const userMessage = isNetworkError
+        ? 'Unable to connect to authentication server. Please check your network connection.'
+        : `Network request failed: ${originalMessage}`;
+
+      const authError: AuthError = {
+        code: 'NETWORK_ERROR',
+        message: userMessage,
+        status: 0
+      };
+      throw authError;
+    }
+  }
+
+  /**
    * Evaluates if a session token is expired or within the 60s refresh window.
    */
   public isSessionExpired(session: AuthSession, bufferSeconds = 60): boolean {
@@ -186,7 +215,7 @@ export class SupabaseAuthClient {
 
     this.refreshPromise = (async () => {
       try {
-        const response = await this.fetchImpl(
+        const response = await this.safeFetch(
           `${this.baseUrl}/auth/v1/token?grant_type=refresh_token`,
           {
             method: 'POST',
@@ -240,7 +269,7 @@ export class SupabaseAuthClient {
     session: AuthSession;
     user: AuthUser;
   }> {
-    const response = await this.fetchImpl(`${this.baseUrl}/auth/v1/token?grant_type=password`, {
+    const response = await this.safeFetch(`${this.baseUrl}/auth/v1/token?grant_type=password`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({
@@ -319,7 +348,7 @@ export class SupabaseAuthClient {
 
     payload.data = userData;
 
-    const response = await this.fetchImpl(`${this.baseUrl}/auth/v1/signup`, {
+    const response = await this.safeFetch(`${this.baseUrl}/auth/v1/signup`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(payload)
@@ -379,7 +408,7 @@ export class SupabaseAuthClient {
    * Sends an OTP to the customer's phone or email.
    */
   public async signInWithOtp(credentials: OtpCredentials): Promise<{ message: string }> {
-    const response = await this.fetchImpl(`${this.baseUrl}/auth/v1/otp`, {
+    const response = await this.safeFetch(`${this.baseUrl}/auth/v1/otp`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(credentials)
@@ -410,7 +439,7 @@ export class SupabaseAuthClient {
     session: AuthSession;
     user: AuthUser;
   }> {
-    const response = await this.fetchImpl(`${this.baseUrl}/auth/v1/verify`, {
+    const response = await this.safeFetch(`${this.baseUrl}/auth/v1/verify`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify({
@@ -465,7 +494,7 @@ export class SupabaseAuthClient {
     const session = this.activeSession ?? loadSessionFromStorage(this.storage);
     if (session?.access_token) {
       try {
-        await this.fetchImpl(`${this.baseUrl}/auth/v1/logout`, {
+        await this.safeFetch(`${this.baseUrl}/auth/v1/logout`, {
           method: 'POST',
           headers: this.getHeaders(session.access_token)
         });
@@ -487,7 +516,7 @@ export class SupabaseAuthClient {
       return null;
     }
 
-    const response = await this.fetchImpl(`${this.baseUrl}/auth/v1/user`, {
+    const response = await this.safeFetch(`${this.baseUrl}/auth/v1/user`, {
       method: 'GET',
       headers: this.getHeaders(token)
     });

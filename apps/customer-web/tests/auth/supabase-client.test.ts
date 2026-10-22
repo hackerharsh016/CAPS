@@ -147,6 +147,38 @@ describe('Supabase Auth Client and Security Guards', () => {
       expect(memoryStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
     });
 
+    it('traps network exceptions and throws structured NETWORK_ERROR', async () => {
+      const mockFetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+      const client = new SupabaseAuthClient({
+        supabaseUrl: 'https://caps-test.supabase.co',
+        supabaseAnonKey: 'anon-key-abc',
+        storage: memoryStorage,
+        customFetch: mockFetch as unknown as typeof fetch
+      });
+
+      await expect(
+        client.signInWithPassword({
+          email: 'customer@caps-print.test',
+          password: 'Password123!'
+        })
+      ).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+        status: 0,
+        message: expect.stringContaining('Unable to connect to authentication server')
+      });
+
+      await expect(
+        client.signUp({
+          email: 'customer@caps-print.test',
+          password: 'Password123!'
+        })
+      ).rejects.toMatchObject({
+        code: 'NETWORK_ERROR',
+        status: 0,
+        message: expect.stringContaining('Unable to connect to authentication server')
+      });
+    });
+
     it('signs up a new customer account', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
