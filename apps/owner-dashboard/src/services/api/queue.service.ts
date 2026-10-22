@@ -149,10 +149,10 @@ export class QueueService {
     }
 
     const json = await response.json();
-    const rawJob = json.data || json.job || json;
+    const rawJob = json.data?.job || json.job || json.data || json;
 
     const normalizedStatus: CanonicalJobStatus = normalizeJobStatus(
-      rawJob.status || 'OWNER_CONFIRMED'
+      rawJob.status || json.status || 'QUEUED'
     );
 
     const job: QueueItem = {
