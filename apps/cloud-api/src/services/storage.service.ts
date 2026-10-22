@@ -408,6 +408,34 @@ export class StorageService {
   }
 
   /**
+   * Purges a customer document from Supabase Storage bucket (INT-D3-07).
+   * Calls supabase.storage.from('customer-documents').remove([path]).
+   * Immediately deletes file from storage and returns true on success.
+   */
+  public async purgeDocument(storagePath: string): Promise<boolean> {
+    if (!storagePath || storagePath === '[PURGED]') {
+      return true;
+    }
+
+    const cleanPath = storagePath.replace(/^\/+/, '');
+    const bucketClient = this.client.from(this.bucket);
+
+    if (bucketClient.remove) {
+      const { data, error } = await bucketClient.remove([cleanPath]);
+      if (error) {
+        throw new StorageError(
+          500,
+          'STORAGE_PURGE_FAILED',
+          `Failed to purge document at path "${cleanPath}": ${error.message || error}`
+        );
+      }
+      return true;
+    }
+
+    return true;
+  }
+
+  /**
    * Removes an object or list of objects from storage.
    */
   public async deleteObject(path: string): Promise<boolean> {
