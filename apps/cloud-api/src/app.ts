@@ -193,11 +193,53 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   // 2. Register global error handler enforcing CAPS §5.4 error response envelope
   registerErrorHandlers(app);
 
-  // 3. Register sliding-window rate limiter
+  // 3. CORS configuration
+  app.register(cors, {
+    origin: (origin, cb) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+      const normalizedOrigin = origin.replace(/\/+$/, '');
+      const isAllowed =
+        env.CORS_ORIGINS.some(allowed => {
+          const normalizedAllowed = allowed.replace(/\/+$/, '');
+          return normalizedAllowed === '*' || normalizedAllowed === normalizedOrigin;
+        }) ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalizedOrigin) ||
+        /^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(normalizedOrigin);
+
+      if (isAllowed) {
+        cb(null, true);
+      } else {
+        cb(new Error(`Not allowed by CORS: ${origin}`), false);
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Idempotency-Key',
+      'idempotency-key',
+      'x-razorpay-signature',
+      'traceparent',
+      'tracestate',
+      'Accept',
+      'Origin',
+      'X-Requested-With'
+    ],
+    exposedHeaders: ['Content-Range', 'X-Content-Range', 'Idempotency-Key']
+  });
+
+  // 4. Register sliding-window rate limiter
   const rateLimitOpts: RateLimiterOptions = {
     max: options.rateLimitOptions?.max ?? env.RATE_LIMIT_MAX,
     windowMs: options.rateLimitOptions?.windowMs ?? env.RATE_LIMIT_WINDOW_MS,
-    skip: options.rateLimitOptions?.skip ?? (req => req.url === '/health' || req.url === '/ready')
+    skip:
+      options.rateLimitOptions?.skip ??
+      (req => req.method === 'OPTIONS' || req.url === '/health' || req.url === '/ready')
   };
   registerRateLimiter(app, rateLimitOpts);
 
@@ -215,7 +257,7 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       }
     : undefined;
 
-  // 4. Supabase JWT & Agent Device Secret authentication and role authorization decorators
+  // 5. Supabase JWT & Agent Device Secret authentication and role authorization decorators
   const agentsRepo =
     options.agentsRepo ??
     (isSupabaseConfigured && supabaseRepoOpts
@@ -229,12 +271,6 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.decorate('tokenVerifier', tokenVerifier);
   app.decorate('authenticate', authenticate);
   app.decorate('authorize', authorize);
-
-  // 5. CORS configuration
-  app.register(cors, {
-    origin: env.CORS_ORIGINS,
-    credentials: true
-  });
 
   // 6. Initialize repositories
   const shopsRepo =

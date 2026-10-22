@@ -70,13 +70,13 @@ function PrintSettingsContent() {
       }
     }
 
-    // Default mock document info when navigating directly or during testing
+    // Default document info when navigating directly or during testing
     setDocInfo({
       id: docId,
       name: `Document_${docId.slice(0, 8)}.pdf`,
-      pageCount: 12,
+      pageCount: 1,
       mimeType: 'application/pdf',
-      sizeBytes: 1024 * 1024 * 2.4
+      sizeBytes: 1024 * 1024
     });
   }, [docId]);
 

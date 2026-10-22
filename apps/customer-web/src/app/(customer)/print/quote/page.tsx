@@ -73,11 +73,11 @@ function QuotePageContent() {
       }
     }
 
-    // Default mock document info if accessed directly
+    // Default document info if accessed directly
     setDocData({
       id: docId,
       name: `Document_${docId.slice(0, 8)}.pdf`,
-      pageCount: 12
+      pageCount: 1
     });
   }, [docId]);
 

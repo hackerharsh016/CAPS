@@ -13,7 +13,10 @@ import type { Shop } from '../../../../features/shop-discovery/types';
 import type { PrintSettings } from '../../../../features/print-settings/types';
 import { DEFAULT_PRINT_SETTINGS } from '../../../../features/print-settings/validation';
 import type { QuoteResponse } from '../../../../features/pricing/types';
-import { generateAuthoritativeQuote } from '../../../../features/pricing/pricing-calculator';
+import {
+  generateAuthoritativeQuote,
+  type ShopPricingRates
+} from '../../../../features/pricing/pricing-calculator';
 import { CheckoutShell } from '../../../../features/checkout/components/CheckoutShell';
 import type { CheckoutResult } from '../../../../features/checkout/types';
 import { useAuth } from '../../../../features/auth/auth-context';
@@ -72,17 +75,24 @@ function CheckoutPageContent() {
   useEffect(() => {
     if (!docId) return;
 
+    let loadedDoc: StoredDocumentData | null = null;
+    let loadedSettings: PrintSettings = DEFAULT_PRINT_SETTINGS;
+
     if (typeof window !== 'undefined') {
       try {
         const storedDoc = sessionStorage.getItem(`caps_doc_${docId}`);
         if (storedDoc) {
-          setDocData(JSON.parse(storedDoc));
+          loadedDoc = JSON.parse(storedDoc);
+          setDocData(loadedDoc);
         }
 
         const storedSettings = sessionStorage.getItem(`caps_print_settings_${docId}`);
         if (storedSettings) {
           const parsed: StoredSettingsData = JSON.parse(storedSettings);
-          if (parsed.settings) setSettings(parsed.settings);
+          if (parsed.settings) {
+            loadedSettings = parsed.settings;
+            setSettings(loadedSettings);
+          }
         }
 
         const storedQuote = sessionStorage.getItem(`caps_active_quote_${docId}`);
@@ -94,29 +104,43 @@ function CheckoutPageContent() {
           }
         }
       } catch {
-        // Fall through to default mock
+        // Fall through
       }
     }
 
-    // Default mock document and quote if accessed directly during iteration
-    const mockDoc: StoredDocumentData = {
-      id: docId,
-      name: `Document_${docId.slice(0, 8)}.pdf`,
-      pageCount: 10,
-      sizeBytes: 1024 * 1024 * 1.5
-    };
-    setDocData(mockDoc);
+    if (!loadedDoc) {
+      loadedDoc = {
+        id: docId,
+        name: `Document_${docId.slice(0, 8)}.pdf`,
+        pageCount: 1,
+        sizeBytes: 1024 * 1024
+      };
+      setDocData(loadedDoc);
+    }
 
     if (targetShopId) {
-      const generated = generateAuthoritativeQuote({
-        shop_id: targetShopId,
-        settings: DEFAULT_PRINT_SETTINGS,
-        priority_tier: 'flexible',
-        document_page_count: 10
-      });
+      const customRates: Partial<ShopPricingRates> | undefined = shop?.pricing
+        ? {
+            bw_per_page_paise: shop.pricing.bw_per_page_paise,
+            color_per_page_paise: shop.pricing.color_per_page_paise,
+            duplex_discount_paise: shop.pricing.duplex_discount_paise ?? 25,
+            spiral_binding_paise: shop.pricing.spiral_binding_paise,
+            urgent_surcharge_paise: shop.pricing.urgent_surcharge_paise
+          }
+        : undefined;
+
+      const generated = generateAuthoritativeQuote(
+        {
+          shop_id: targetShopId,
+          settings: loadedSettings,
+          priority_tier: 'flexible',
+          document_page_count: loadedDoc.pageCount || 1
+        },
+        customRates
+      );
       setQuote(generated);
     }
-  }, [docId, targetShopId]);
+  }, [docId, targetShopId, shop?.pricing]);
 
   const handleOrderConfirmed = (result: CheckoutResult) => {
     setConfirmedResult(result);

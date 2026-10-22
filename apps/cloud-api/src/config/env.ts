@@ -8,7 +8,7 @@ export const envSchema = z.object({
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:3000,http://localhost:3001')
-    .transform(val => val.split(',').map(s => s.trim())),
+    .transform(val => val.split(',').map(s => s.trim().replace(/\/+$/, ''))),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(10).optional(),
   SUPABASE_JWT_SECRET: z

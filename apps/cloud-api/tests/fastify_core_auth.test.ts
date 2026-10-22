@@ -435,4 +435,66 @@ describe('Cloud API — Fastify Core, Auth Middleware, Rate Limiting & Error Tax
       await mockApp.close();
     });
   });
+
+  describe('CORS Preflight & Origin Handling', () => {
+    it('allows preflight OPTIONS request for Vercel deployment origin', async () => {
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/payments/razorpay/order',
+        headers: {
+          origin: 'https://caps-snowy.vercel.app',
+          'access-control-request-method': 'POST',
+          'access-control-request-headers': 'content-type,authorization,idempotency-key'
+        }
+      });
+
+      expect([200, 204]).toContain(response.statusCode);
+      expect(response.headers['access-control-allow-origin']).toBe('https://caps-snowy.vercel.app');
+      expect(response.headers['access-control-allow-credentials']).toBe('true');
+    });
+
+    it('allows preflight OPTIONS request for localhost with arbitrary ports', async () => {
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/payments/orders',
+        headers: {
+          origin: 'http://localhost:3000',
+          'access-control-request-method': 'POST',
+          'access-control-request-headers': 'content-type'
+        }
+      });
+
+      expect([200, 204]).toContain(response.statusCode);
+      expect(response.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+    });
+
+    it('allows preflight OPTIONS request for Vercel preview branch domains', async () => {
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/quotes',
+        headers: {
+          origin: 'https://caps-preview-feat-abc.vercel.app',
+          'access-control-request-method': 'POST'
+        }
+      });
+
+      expect([200, 204]).toContain(response.statusCode);
+      expect(response.headers['access-control-allow-origin']).toBe(
+        'https://caps-preview-feat-abc.vercel.app'
+      );
+    });
+
+    it('rejects CORS for unauthorized untrusted origins', async () => {
+      const response = await app.inject({
+        method: 'OPTIONS',
+        url: '/api/v1/payments/razorpay/order',
+        headers: {
+          origin: 'https://malicious-phishing-site.com',
+          'access-control-request-method': 'POST'
+        }
+      });
+
+      expect(response.headers['access-control-allow-origin']).toBeUndefined();
+    });
+  });
 });

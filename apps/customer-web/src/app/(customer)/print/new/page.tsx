@@ -35,12 +35,26 @@ function PrintOrderContent() {
     }
   }, [shopId]);
 
-  const handleUploadSuccess = async (doc: UploadedDocumentMetadata) => {
+  const handleUploadSuccess = async (doc: UploadedDocumentMetadata, file?: File) => {
     setUploadedDoc(doc);
     setIsLoadingPreview(true);
     try {
-      const previewData = await defaultConversionService.getOrStartDocumentPreview(doc);
+      const previewData = await defaultConversionService.getOrStartDocumentPreview(doc, file);
       setPreview(previewData);
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          `caps_doc_${doc.id}`,
+          JSON.stringify({
+            id: doc.id,
+            name: doc.name,
+            pageCount: previewData.pageCount,
+            sizeBytes: doc.sizeBytes,
+            mimeType: doc.mimeType,
+            storageKey: doc.storagePath
+          })
+        );
+      }
     } catch (err) {
       console.error('Failed to generate preview:', err);
     } finally {

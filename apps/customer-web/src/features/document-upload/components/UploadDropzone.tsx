@@ -17,7 +17,7 @@ import { PrivacyNotice } from './PrivacyNotice';
 export interface UploadDropzoneProps {
   targetShopId?: string | undefined;
   customerId?: string | undefined;
-  onUploadSuccess?: ((doc: UploadedDocumentMetadata) => void) | undefined;
+  onUploadSuccess?: ((doc: UploadedDocumentMetadata, file?: File) => void) | undefined;
   onUploadReset?: (() => void) | undefined;
 }
 
@@ -100,7 +100,7 @@ export function UploadDropzone({
         });
 
         if (onUploadSuccess) {
-          onUploadSuccess(metadata);
+          onUploadSuccess(metadata, fileToUpload);
         }
       } catch (err: unknown) {
         const uploadErr = err as UploadValidationError;

@@ -18,7 +18,9 @@ export function registerRateLimiter(
   const max = options.max ?? 100;
   const windowMs = options.windowMs ?? 60000;
   const skip =
-    options.skip ?? ((req: FastifyRequest) => req.url === '/health' || req.url === '/ready');
+    options.skip ??
+    ((req: FastifyRequest) =>
+      req.method === 'OPTIONS' || req.url === '/health' || req.url === '/ready');
   const keyGenerator =
     options.keyGenerator ??
     ((req: FastifyRequest) => {
