@@ -52,6 +52,10 @@ describe('Owner Auth & Role Route Guards', () => {
 
     it('classifies auth paths', () => {
       expect(isAuthPath('/login')).toBe(true);
+      expect(isAuthPath('/login/')).toBe(true);
+      expect(isAuthPath('/login?error=customer_not_allowed')).toBe(true);
+      expect(isAuthPath('/register')).toBe(true);
+      expect(isAuthPath('/register?redirect=%2Fqueue')).toBe(true);
       expect(isAuthPath('/auth/callback')).toBe(true);
       expect(isAuthPath('/queue')).toBe(false);
     });
@@ -66,6 +70,10 @@ describe('Owner Auth & Role Route Guards', () => {
       expect(createLoginRedirectUrl('/queue')).toBe('/login?redirect=%2Fqueue');
       expect(createLoginRedirectUrl('/')).toBe('/login');
       expect(createLoginRedirectUrl('/login')).toBe('/login');
+      expect(createLoginRedirectUrl('/login?error=customer_not_allowed')).toBe('/login');
+      expect(createLoginRedirectUrl('/login?redirect=%2Fqueue')).toBe('/login');
+      expect(createLoginRedirectUrl('/register')).toBe('/login');
+      expect(createLoginRedirectUrl('/queue?tab=pending')).toBe('/login?redirect=%2Fqueue%3Ftab%3Dpending');
     });
   });
 

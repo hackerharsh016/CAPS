@@ -6,7 +6,9 @@
  */
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '../auth-context';
+import { isAuthPath } from '../route-guard-utils';
 
 export interface LoginFormProps {
   redirectUrl?: string | undefined;
@@ -58,7 +60,10 @@ export function LoginForm({ redirectUrl = '/', onSuccess }: LoginFormProps) {
       if (onSuccess) {
         onSuccess();
       } else if (typeof window !== 'undefined') {
-        const dest = redirectUrl && redirectUrl.startsWith('/') ? redirectUrl : '/';
+        const dest =
+          redirectUrl && redirectUrl.startsWith('/') && !isAuthPath(redirectUrl)
+            ? redirectUrl
+            : '/';
         window.location.href = dest;
       }
     } catch (err: unknown) {
@@ -191,14 +196,20 @@ export function LoginForm({ redirectUrl = '/', onSuccess }: LoginFormProps) {
         </button>
       </form>
 
-      <div className="mt-6 border-t border-slate-100 pt-4">
+      <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs">
         <button
           type="button"
           onClick={fillDemoOwner}
-          className="w-full text-center text-xs font-medium text-slate-500 hover:text-emerald-600"
+          className="text-slate-500 hover:text-emerald-600 underline hover:no-underline"
         >
           Fill Demo Shop Owner Credentials
         </button>
+        <div className="flex items-center space-x-1 text-slate-500">
+          <span>New shop owner?</span>
+          <Link href="/register" className="font-semibold text-emerald-600 hover:underline">
+            Register your print shop
+          </Link>
+        </div>
       </div>
     </div>
   );

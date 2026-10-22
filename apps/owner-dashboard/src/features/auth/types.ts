@@ -15,6 +15,14 @@ export interface UserProfile {
   updated_at?: string | undefined;
 }
 
+export interface SignUpCredentials {
+  email: string;
+  password: string;
+  name: string;
+  phone: string;
+  role?: UserRole | undefined;
+}
+
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;

@@ -171,6 +171,19 @@ export function ShopProvider({
     [user, activeShopId, availableShops, shopService, session?.access_token, profile?.role]
   );
 
+  const createShop = useCallback(
+    async (input: Parameters<ShopService['createShop']>[0]) => {
+      if (!user) {
+        throw new Error('Authentication required to register shop.');
+      }
+      const newShop = await shopService.createShop(input, user.id, session?.access_token);
+      setAvailableShops(prev => [newShop, ...prev]);
+      setActiveShopIdState(newShop.id);
+      return newShop;
+    },
+    [user, shopService, session?.access_token]
+  );
+
   const activeShop = useMemo(() => {
     return availableShops.find(s => s.id === activeShopId) ?? availableShops[0] ?? null;
   }, [availableShops, activeShopId]);
@@ -184,7 +197,8 @@ export function ShopProvider({
       setActiveShopId,
       refreshShops: loadShops,
       isAuthorizedForShop,
-      updateActiveShop
+      updateActiveShop,
+      createShop
     }),
     [
       activeShop,
@@ -194,7 +208,8 @@ export function ShopProvider({
       setActiveShopId,
       loadShops,
       isAuthorizedForShop,
-      updateActiveShop
+      updateActiveShop,
+      createShop
     ]
   );
 

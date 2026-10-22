@@ -58,6 +58,18 @@ export interface ShopMembership {
   shop?: Shop | undefined;
 }
 
+export interface CreateShopInput {
+  name: string;
+  address: string;
+  geo_lat: number;
+  geo_lng: number;
+  pricing_config?: PricingConfig | undefined;
+  urgent_surcharge_config?: UrgentSurchargeConfig | undefined;
+  auto_print_enabled?: boolean | undefined;
+  allow_pay_at_counter?: boolean | undefined;
+  status?: ShopStatus | undefined;
+}
+
 export interface ShopUpdateInput {
   name?: string;
   address?: string;
@@ -77,6 +89,7 @@ export interface ShopContextValue {
   refreshShops: () => Promise<void>;
   isAuthorizedForShop: (shopId: string) => boolean;
   updateActiveShop: (updates: ShopUpdateInput) => Promise<Shop>;
+  createShop?: (input: CreateShopInput) => Promise<Shop>;
 }
 
 export class CrossShopAccessError extends Error {

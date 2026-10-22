@@ -8,6 +8,7 @@
 import React, { useEffect } from 'react';
 import { useAuth } from './auth-context';
 import type { RouteGuardProps } from './types';
+import { isAuthPath, createLoginRedirectUrl } from './route-guard-utils';
 
 export function RouteGuard({ children, requiredRole = 'shop_owner', fallback }: RouteGuardProps) {
   const { status, profile, isLoading, signOut } = useAuth();
@@ -15,8 +16,9 @@ export function RouteGuard({ children, requiredRole = 'shop_owner', fallback }: 
   useEffect(() => {
     if (!isLoading && status === 'unauthenticated' && typeof window !== 'undefined') {
       const currentPath = window.location.pathname;
-      if (currentPath !== '/login') {
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      if (!isAuthPath(currentPath)) {
+        const fullPath = window.location.pathname + window.location.search;
+        window.location.href = createLoginRedirectUrl(fullPath);
       }
     }
   }, [isLoading, status]);

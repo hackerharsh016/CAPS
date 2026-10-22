@@ -5,3 +5,4 @@ export * from './route-guard-utils';
 export * from './auth-context';
 export * from './RouteGuard';
 export * from './components/LoginForm';
+export * from './components/RegisterForm';
