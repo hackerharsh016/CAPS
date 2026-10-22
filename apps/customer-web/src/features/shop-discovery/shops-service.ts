@@ -6,6 +6,7 @@
 import type { Shop, ShopDiscoveryResponse, ShopFilterOptions } from './types';
 import { MOCK_SHOPS } from './fixtures';
 import { calculateHaversineDistance } from './geo-utils';
+import { getSupabaseEnv } from '../../lib/supabase';
 
 export function resolveEndpoint(path: string): string {
   const raw =
@@ -71,11 +72,17 @@ export function mapCloudShopToCustomerShop(raw: Record<string, any>): Shop {
   };
 }
 
+export interface ShopsServiceOptions {
+  isOffline?: boolean;
+  customFetch?: typeof fetch;
+}
+
 export class ShopsService {
   private shopsStore: Shop[];
   private isOfflineStore: boolean;
+  private readonly fetchFn: typeof fetch;
 
-  constructor(initialShops?: Shop[], options?: { isOffline?: boolean }) {
+  constructor(initialShops?: Shop[], options?: ShopsServiceOptions) {
     if (initialShops !== undefined) {
       this.shopsStore = [...initialShops];
       this.isOfflineStore = options?.isOffline ?? true;
@@ -83,6 +90,11 @@ export class ShopsService {
       this.shopsStore = [];
       this.isOfflineStore = options?.isOffline ?? false;
     }
+    this.fetchFn =
+      options?.customFetch ??
+      (typeof fetch !== 'undefined'
+        ? fetch.bind(globalThis)
+        : (undefined as unknown as typeof fetch));
   }
 
   public setShops(shops: Shop[]): void {
@@ -109,6 +121,7 @@ export class ShopsService {
     } = options;
 
     if (!this.isOfflineStore) {
+      let fetchedFromCloud = false;
       try {
         const endpoint = resolveEndpoint('/api/v1/shops');
         const url = new URL(endpoint);
@@ -120,16 +133,52 @@ export class ShopsService {
         }
         url.searchParams.set('limit', '100');
 
-        const res = await fetch(url.toString(), { method: 'GET' });
+        const res = await this.fetchFn(url.toString(), { method: 'GET' });
         if (res.ok) {
           const json = await res.json();
           const rawShops = Array.isArray(json.data) ? json.data : Array.isArray(json) ? json : [];
           this.shopsStore = rawShops.map(mapCloudShopToCustomerShop);
+          fetchedFromCloud = true;
         } else if (res.status === 404) {
           this.shopsStore = [];
+          fetchedFromCloud = true;
         }
-      } catch {
-        // Offline / dev fallback: preserve existing store without injecting mock fixtures
+      } catch (err) {
+        console.warn('Cloud API /api/v1/shops unreachable, attempting Supabase direct query:', err);
+      }
+
+      // If Cloud API failed or returned 0 shops, query Supabase REST directly
+      if (!fetchedFromCloud || this.shopsStore.length === 0) {
+        try {
+          const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+          if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('localhost:54321')) {
+            const params = new URLSearchParams({
+              select: '*',
+              status: 'eq.open'
+            });
+            if (searchQuery && searchQuery.trim()) {
+              const q = searchQuery.trim();
+              params.set('or', `(name.ilike.%${q}%,address.ilike.%${q}%)`);
+            }
+            const sbEndpoint = `${supabaseUrl.replace(/\/+$/, '')}/rest/v1/shops?${params.toString()}`;
+            const sbRes = await this.fetchFn(sbEndpoint, {
+              method: 'GET',
+              headers: {
+                apikey: supabaseAnonKey,
+                Authorization: `Bearer ${supabaseAnonKey}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            if (sbRes.ok) {
+              const rawSbShops = await sbRes.json();
+              if (Array.isArray(rawSbShops)) {
+                this.shopsStore = rawSbShops.map(mapCloudShopToCustomerShop);
+              }
+            }
+          }
+        } catch (sbErr) {
+          console.warn('Supabase direct shop discovery error:', sbErr);
+        }
       }
     }
 
@@ -210,7 +259,7 @@ export class ShopsService {
     if (!this.isOfflineStore) {
       try {
         const endpoint = resolveEndpoint(`/api/v1/shops/${shopId}`);
-        const res = await fetch(endpoint, { method: 'GET' });
+        const res = await this.fetchFn(endpoint, { method: 'GET' });
         if (res.ok) {
           const json = await res.json();
           const rawShop = json.data || json;
@@ -227,8 +276,39 @@ export class ShopsService {
         } else if (res.status === 404) {
           return null;
         }
-      } catch {
-        // Offline fallback: check cached / injected store
+      } catch (err) {
+        console.warn('Cloud API getShopById failed, attempting Supabase direct fallback:', err);
+      }
+
+      // Supabase direct fallback
+      try {
+        const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+        if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('localhost:54321')) {
+          const sbEndpoint = `${supabaseUrl.replace(/\/+$/, '')}/rest/v1/shops?id=eq.${shopId}&select=*`;
+          const sbRes = await this.fetchFn(sbEndpoint, {
+            method: 'GET',
+            headers: {
+              apikey: supabaseAnonKey,
+              Authorization: `Bearer ${supabaseAnonKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (sbRes.ok) {
+            const rawSbShops = await sbRes.json();
+            if (Array.isArray(rawSbShops) && rawSbShops[0]) {
+              const mapped = mapCloudShopToCustomerShop(rawSbShops[0]);
+              const idx = this.shopsStore.findIndex(s => s.id === shopId);
+              if (idx >= 0) {
+                this.shopsStore[idx] = mapped;
+              } else {
+                this.shopsStore.push(mapped);
+              }
+              return mapped;
+            }
+          }
+        }
+      } catch (sbErr) {
+        console.warn('Supabase direct getShopById fallback error:', sbErr);
       }
     }
 

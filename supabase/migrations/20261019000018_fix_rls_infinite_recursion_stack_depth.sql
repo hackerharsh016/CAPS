@@ -23,7 +23,7 @@ AS $$
     );
 $$;
 
--- 2. Redefine current_user_role as SECURITY DEFINER with fast in-memory JWT fallback
+-- 2. Redefine current_user_role as SECURITY DEFINER using profiles or server-controlled app_metadata
 CREATE OR REPLACE FUNCTION public.current_user_role()
 RETURNS public.user_role
 LANGUAGE sql
@@ -34,14 +34,14 @@ AS $$
     SELECT COALESCE(
         (SELECT role FROM public.profiles WHERE id = (SELECT auth.uid())),
         CASE
-            WHEN (SELECT (auth.jwt() -> 'user_metadata' ->> 'role')) = 'shop_owner' THEN 'shop_owner'::public.user_role
-            WHEN (SELECT (auth.jwt() -> 'user_metadata' ->> 'role')) = 'admin' THEN 'admin'::public.user_role
+            WHEN (SELECT (auth.jwt() -> 'app_metadata' ->> 'role')) = 'shop_owner' THEN 'shop_owner'::public.user_role
+            WHEN (SELECT (auth.jwt() -> 'app_metadata' ->> 'role')) = 'admin' THEN 'admin'::public.user_role
             ELSE 'customer'::public.user_role
         END
     );
 $$;
 
--- 3. Redefine is_admin as SECURITY DEFINER
+-- 3. Redefine is_admin as SECURITY DEFINER using app_metadata or profiles table
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -49,13 +49,16 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-    SELECT (
-        (SELECT (auth.jwt() -> 'user_metadata' ->> 'role')) = 'admin'
-        OR (SELECT (auth.jwt() -> 'app_metadata' ->> 'role')) = 'admin'
-        OR EXISTS (
-            SELECT 1 FROM public.profiles
-            WHERE id = (SELECT auth.uid()) AND role = 'admin'::public.user_role
-        )
+    SELECT COALESCE(
+        (SELECT (auth.jwt() -> 'app_metadata' ->> 'role')) = 'admin'
+        OR (
+            (SELECT auth.uid()) IS NOT NULL
+            AND EXISTS (
+                SELECT 1 FROM public.profiles
+                WHERE id = (SELECT auth.uid()) AND role = 'admin'::public.user_role
+            )
+        ),
+        false
     );
 $$;
 
@@ -82,33 +85,41 @@ CREATE POLICY "profiles_select_shop_staff"
         )
     );
 
--- 5. Fix public.shops SELECT policy to prevent recursive function calls
+-- 5. Fix public.shops SELECT policy to prevent recursive function calls and allow anon discovery
 DROP POLICY IF EXISTS "shops_select_discovery" ON public.shops;
 CREATE POLICY "shops_select_discovery"
     ON public.shops
     FOR SELECT
+    TO anon, authenticated
     USING (
         status = 'open'::public.shop_status
-        OR owner_id = (SELECT auth.uid())
-        OR public.is_admin()
-        OR public.is_shop_owner_or_member(id)
+        OR (auth.uid() IS NOT NULL AND (
+            owner_id = (SELECT auth.uid())
+            OR public.is_admin()
+            OR public.is_shop_owner_or_member(id)
+        ))
     );
 
--- 6. Fix public.shops INSERT policy to use JWT metadata and non-recursive checks
+GRANT SELECT ON public.shops TO anon, authenticated;
+
+-- 6. Fix public.shops INSERT policy: use secure app_metadata or profiles table (NEVER user_metadata)
 DROP POLICY IF EXISTS "shops_insert_owner" ON public.shops;
 CREATE POLICY "shops_insert_owner"
     ON public.shops
     FOR INSERT
+    TO authenticated
     WITH CHECK (
         owner_id = (SELECT auth.uid())
         AND (
-            (SELECT (auth.jwt() -> 'user_metadata' ->> 'role')) IN ('shop_owner', 'admin')
-            OR (SELECT (auth.jwt() -> 'app_metadata' ->> 'role')) IN ('shop_owner', 'admin')
-            OR public.current_user_role() IN ('shop_owner'::public.user_role, 'admin'::public.user_role)
+            (SELECT (auth.jwt() -> 'app_metadata' ->> 'role')) IN ('shop_owner', 'admin')
+            OR EXISTS (
+                SELECT 1 FROM public.profiles
+                WHERE id = (SELECT auth.uid()) AND role IN ('shop_owner'::public.user_role, 'admin'::public.user_role)
+            )
         )
     );
 
--- 7. Grant execution privileges to authenticated & service_role
-GRANT EXECUTE ON FUNCTION public.is_shop_owner_or_member(UUID) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.current_user_role() TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated, service_role;
+-- 7. Grant execution privileges to anon, authenticated & service_role
+GRANT EXECUTE ON FUNCTION public.is_shop_owner_or_member(UUID) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.current_user_role() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO anon, authenticated, service_role;

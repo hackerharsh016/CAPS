@@ -178,14 +178,14 @@ describe('ShopsService', () => {
 
   describe('Dynamic Marketplace & Clean State (No Mock Profiles)', () => {
     it('defaults to empty store when initialized without arguments', async () => {
-      const emptyService = new ShopsService();
+      const emptyService = new ShopsService([], { isOffline: true });
       const res = await emptyService.getShops();
       expect(res.shops).toEqual([]);
       expect(res.totalCount).toBe(0);
     });
 
     it('returns null for shop by ID when empty store has no records', async () => {
-      const emptyService = new ShopsService();
+      const emptyService = new ShopsService([], { isOffline: true });
       const shop = await emptyService.getShopById('shop-8888-campus-xerox');
       expect(shop).toBeNull();
     });
