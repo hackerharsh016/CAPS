@@ -57,10 +57,7 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       const env = typeof process !== 'undefined' ? process.env : {};
       const url = options.supabaseUrl || env['SUPABASE_URL'] || 'http://localhost:54321';
       const key =
-        options.supabaseKey ||
-        env['SUPABASE_SERVICE_ROLE_KEY'] ||
-        env['SUPABASE_ANON_KEY'] ||
-        '';
+        options.supabaseKey || env['SUPABASE_SERVICE_ROLE_KEY'] || env['SUPABASE_ANON_KEY'] || '';
       const customFetch = options.customFetch || fetch;
 
       this.client = createDefaultSupabaseClient(url, key, customFetch);
@@ -100,7 +97,9 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create print job in Supabase: ${error.message || JSON.stringify(error)}`);
+      throw new Error(
+        `Failed to create print job in Supabase: ${error.message || JSON.stringify(error)}`
+      );
     }
 
     return mapDbRecordToPrintJob(inserted || record);
@@ -109,17 +108,15 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
   async findById(id: string): Promise<PrintJobRecord | null> {
     const { data, error } = await this.client
       .from('print_jobs')
-      .select('*, customer:profiles(id, full_name, email, phone), document:documents(id, original_filename, file_size_bytes)')
+      .select(
+        '*, customer:profiles(id, full_name, email, phone), document:documents(id, original_filename, file_size_bytes)'
+      )
       .eq('id', id)
       .maybeSingle();
 
     if (error || !data) {
       // Fallback query without joins in case profiles/documents relation differs
-      const fallback = await this.client
-        .from('print_jobs')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      const fallback = await this.client.from('print_jobs').select('*').eq('id', id).maybeSingle();
 
       if (fallback.error || !fallback.data) return null;
       return mapDbRecordToPrintJob(fallback.data);
@@ -312,7 +309,8 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       job_id: row.job_id,
       attempt_id: row.attempt_id || crypto.randomUUID(),
       lease_token: row.lease_token || crypto.randomUUID(),
-      lease_expires_at: row.lease_expires_at || new Date(Date.now() + duration * 1000).toISOString(),
+      lease_expires_at:
+        row.lease_expires_at || new Date(Date.now() + duration * 1000).toISOString(),
       status: 'CLAIMED',
       settings: row.settings,
       document_url: row.document_url,
@@ -343,7 +341,7 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       }
     }
 
-    const normalizedStatus = (params.status.toLowerCase() as JobStatus);
+    const normalizedStatus = params.status.toLowerCase() as JobStatus;
     const updated = await this.update(params.jobId, {
       status: normalizedStatus,
       updated_at: new Date().toISOString()
@@ -404,7 +402,11 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
           action: `STATUS_CHANGE_${event.to_status.toUpperCase()}`,
           actor_id: event.actor_id,
           actor_type: event.actor_type,
-          metadata: { ...event.metadata, from_status: event.from_status, to_status: event.to_status },
+          metadata: {
+            ...event.metadata,
+            from_status: event.from_status,
+            to_status: event.to_status
+          },
           created_at: now
         })
         .catch(() => null);

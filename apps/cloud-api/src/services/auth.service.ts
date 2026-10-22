@@ -10,27 +10,26 @@ import {
   SupabaseJwtVerifier,
   CompositeAuthVerifier,
   AuthUser,
-  AgentAuth,
-  UserRole
+  AgentAuth
 } from '../plugins/auth.js';
 import type { IAgentsRepository } from '../modules/agents/agents.repository.js';
 import type { PairingService } from '../modules/agents/pairing.service.js';
 
 export interface AuthServiceOptions {
-  jwtSecret?: string;
-  jwtVerifier?: ITokenVerifier;
-  agentsRepo?: IAgentsRepository;
-  pairingService?: PairingService;
+  jwtSecret?: string | undefined;
+  jwtVerifier?: ITokenVerifier | undefined;
+  agentsRepo?: IAgentsRepository | undefined;
+  pairingService?: PairingService | undefined;
 }
 
 export class AuthService {
   private readonly jwtVerifier: ITokenVerifier;
-  private readonly agentsRepo?: IAgentsRepository;
+  private readonly agentsRepo?: IAgentsRepository | undefined;
 
   constructor(options: AuthServiceOptions = {}) {
     const secret =
       options.jwtSecret ||
-      process.env.SUPABASE_JWT_SECRET ||
+      process.env['SUPABASE_JWT_SECRET'] ||
       'caps-jwt-secret-dev-and-testing-default-at-least-32-chars';
     this.jwtVerifier = options.jwtVerifier ?? new SupabaseJwtVerifier(secret);
     this.agentsRepo = options.agentsRepo;
@@ -64,7 +63,11 @@ export class AuthService {
     }
 
     if (!this.agentsRepo) {
-      throw new AuthError(401, 'UNAUTHORIZED', 'Agent repository is not configured for authentication.');
+      throw new AuthError(
+        401,
+        'UNAUTHORIZED',
+        'Agent repository is not configured for authentication.'
+      );
     }
 
     const tokenHash = crypto.createHash('sha256').update(secret).digest('hex');
@@ -74,13 +77,17 @@ export class AuthService {
       throw new AuthError(401, 'UNAUTHORIZED', 'Agent device secret is invalid or unregistered.');
     }
 
-    const status = (device.status as string | undefined)?.toUpperCase();
+    const status = ((device as any).status as string | undefined)?.toUpperCase();
     if (device.is_revoked || (status && status !== 'ACTIVE')) {
       throw new AuthError(401, 'UNAUTHORIZED', 'Agent device is revoked or inactive.');
     }
 
     if (expectedShopId && device.shop_id !== expectedShopId) {
-      throw new AuthError(401, 'UNAUTHORIZED', `Agent device does not belong to shop '${expectedShopId}'.`);
+      throw new AuthError(
+        401,
+        'UNAUTHORIZED',
+        `Agent device does not belong to shop '${expectedShopId}'.`
+      );
     }
 
     return {

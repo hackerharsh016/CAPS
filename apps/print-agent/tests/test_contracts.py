@@ -32,15 +32,19 @@ class TestPrintContracts(unittest.TestCase):
         cls.claim_request_schema = load_json(SCHEMA_DIR / "job-claim-request.schema.json")
         cls.claim_response_schema = load_json(SCHEMA_DIR / "job-claim-response.schema.json")
         cls.status_request_schema = load_json(SCHEMA_DIR / "job-status-update-request.schema.json")
-        cls.status_response_schema = load_json(SCHEMA_DIR / "job-status-update-response.schema.json")
+        cls.status_response_schema = load_json(
+            SCHEMA_DIR / "job-status-update-response.schema.json"
+        )
         cls.error_response_schema = load_json(SCHEMA_DIR / "error-response.schema.json")
 
         # Set up registry with common.schema.json
         common_resource = Resource.from_contents(cls.common_schema)
-        cls.registry = Registry().with_resources([
-            ("common.schema.json", common_resource),
-            ("https://caps.internal/schemas/common.schema.json", common_resource)
-        ])
+        cls.registry = Registry().with_resources(
+            [
+                ("common.schema.json", common_resource),
+                ("https://caps.internal/schemas/common.schema.json", common_resource),
+            ]
+        )
 
     def _validate(self, schema: dict, instance: dict):
         validator = jsonschema.Draft202012Validator(schema, registry=self.registry)
@@ -81,15 +85,21 @@ class TestPrintContracts(unittest.TestCase):
         self._validate(self.claim_response_schema, instance)
 
     def test_fixture_v1_valid_claim_response_empty(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "v1.0.0" / "valid-claim-response-empty.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "v1.0.0" / "valid-claim-response-empty.json"
+        )
         self._validate(self.claim_response_schema, instance)
 
     def test_fixture_v1_valid_status_update_completed(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "v1.0.0" / "valid-status-update-completed.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "v1.0.0" / "valid-status-update-completed.json"
+        )
         self._validate(self.status_request_schema, instance)
 
     def test_fixture_v1_valid_status_update_failed(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "v1.0.0" / "valid-status-update-failed.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "v1.0.0" / "valid-status-update-failed.json"
+        )
         self._validate(self.status_request_schema, instance)
 
     def test_fixture_v1_valid_capabilities(self):
@@ -102,22 +112,30 @@ class TestPrintContracts(unittest.TestCase):
 
     # 3. Validation Rejection on Invalid Fixtures
     def test_invalid_claim_request_missing_shop(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "invalid" / "claim-request-missing-shop.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "invalid" / "claim-request-missing-shop.json"
+        )
         with self.assertRaises(jsonschema.ValidationError):
             self._validate(self.claim_request_schema, instance)
 
     def test_invalid_claim_response_bad_checksum(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "invalid" / "claim-response-bad-checksum.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "invalid" / "claim-response-bad-checksum.json"
+        )
         with self.assertRaises(jsonschema.ValidationError):
             self._validate(self.claim_response_schema, instance)
 
     def test_invalid_status_update_unknown_status(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "invalid" / "status-update-invalid-status.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "invalid" / "status-update-invalid-status.json"
+        )
         with self.assertRaises(jsonschema.ValidationError):
             self._validate(self.status_request_schema, instance)
 
     def test_invalid_status_update_negative_pages(self):
-        instance = load_json(EXAMPLES_DIR / "fixtures" / "invalid" / "status-update-negative-pages.json")
+        instance = load_json(
+            EXAMPLES_DIR / "fixtures" / "invalid" / "status-update-negative-pages.json"
+        )
         with self.assertRaises(jsonschema.ValidationError):
             self._validate(self.status_request_schema, instance)
 
@@ -146,7 +164,7 @@ class TestPrintContracts(unittest.TestCase):
             duplex="duplex_long",
             copies=2,
             page_range="1-5",
-            orientation="portrait"
+            orientation="portrait",
         )
 
         # Convert to dictionary matching contract settings (including default binding)
@@ -157,13 +175,13 @@ class TestPrintContracts(unittest.TestCase):
             "copies": agent_settings.copies,
             "page_range": agent_settings.page_range,
             "orientation": agent_settings.orientation,
-            "binding": "none"
+            "binding": "none",
         }
 
         # Validate against common.schema.json PrintSettings definition
         settings_schema = {
             "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "$ref": "common.schema.json#/$defs/PrintSettings"
+            "$ref": "common.schema.json#/$defs/PrintSettings",
         }
         self._validate(settings_schema, contract_dict)
 

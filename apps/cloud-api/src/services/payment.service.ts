@@ -42,7 +42,9 @@ export class PaymentNotFoundError extends PaymentError {
 }
 
 export class AmountTamperingError extends PaymentError {
-  constructor(message = 'Amount tampering detected. Submitted amount does not match authoritative quote.') {
+  constructor(
+    message = 'Amount tampering detected. Submitted amount does not match authoritative quote.'
+  ) {
     super(message, 400, 'AMOUNT_TAMPERING_DETECTED');
     this.name = 'AmountTamperingError';
   }
@@ -206,7 +208,11 @@ export class PaymentService {
       }
     }
 
-    if (!authoritativeAmountPaise || authoritativeAmountPaise <= 0 || !Number.isInteger(authoritativeAmountPaise)) {
+    if (
+      !authoritativeAmountPaise ||
+      authoritativeAmountPaise <= 0 ||
+      !Number.isInteger(authoritativeAmountPaise)
+    ) {
       throw new PaymentError(
         'Order amount must be a positive integer in paise.',
         400,
@@ -294,9 +300,7 @@ export class PaymentService {
       orderEntity?.notes?.print_job_id ??
       payload?.payload?.payment?.entity?.notes?.job_id;
 
-    let shopId: string | undefined =
-      paymentEntity?.notes?.shop_id ??
-      orderEntity?.notes?.shop_id;
+    let shopId: string | undefined = paymentEntity?.notes?.shop_id ?? orderEntity?.notes?.shop_id;
 
     if (!jobId && orderId && this.paymentsRepo) {
       const paymentRecord = await this.paymentsRepo.findByGatewayRef(orderId);
@@ -403,7 +407,8 @@ export class PaymentService {
           acknowledged: true,
           is_idempotent_replay: true,
           status: 'ignored_out_of_order',
-          message: 'Out-of-order payment.failed event safely ignored since payment is already successful.',
+          message:
+            'Out-of-order payment.failed event safely ignored since payment is already successful.',
           order_id: orderId,
           payment_id: paymentId,
           job_id: jobId

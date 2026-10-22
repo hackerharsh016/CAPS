@@ -178,7 +178,7 @@ describe('Task INT-D1-03: Customer Web Checkout & Razorpay Modal Integration', (
 
       const mockDocument = {
         querySelector: vi.fn().mockReturnValue(null),
-        createElement: vi.fn((tag) => {
+        createElement: vi.fn(tag => {
           const el = {
             tagName: tag,
             src: '',
@@ -189,7 +189,7 @@ describe('Task INT-D1-03: Customer Web Checkout & Razorpay Modal Integration', (
           return el;
         }),
         body: {
-          appendChild: vi.fn((el) => {
+          appendChild: vi.fn(el => {
             appendedScript = el;
             setTimeout(() => {
               (globalThis as any).window.Razorpay = vi.fn();
@@ -232,7 +232,7 @@ describe('Task INT-D1-03: Customer Web Checkout & Razorpay Modal Integration', (
         on: vi.fn()
       };
 
-      const mockRazorpayCtor = vi.fn().mockImplementation((opts) => {
+      const mockRazorpayCtor = vi.fn().mockImplementation(opts => {
         capturedOptions = opts;
         return mockInstance;
       });
@@ -288,7 +288,7 @@ describe('Task INT-D1-03: Customer Web Checkout & Razorpay Modal Integration', (
       };
 
       (globalThis as any).window = {
-        Razorpay: vi.fn().mockImplementation((opts) => {
+        Razorpay: vi.fn().mockImplementation(opts => {
           capturedOptions = opts;
           return mockInstance;
         })
@@ -370,7 +370,7 @@ describe('Task INT-D1-03: Customer Web Checkout & Razorpay Modal Integration', (
       };
 
       (globalThis as any).window = {
-        Razorpay: vi.fn().mockImplementation((opts) => {
+        Razorpay: vi.fn().mockImplementation(opts => {
           capturedOptions = opts;
           return mockInstance;
         })
@@ -389,7 +389,7 @@ describe('Task INT-D1-03: Customer Web Checkout & Razorpay Modal Integration', (
       });
 
       // Let microtasks tick to complete fetch
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Verify modal opened
       expect(mockInstance.open).toHaveBeenCalledTimes(1);

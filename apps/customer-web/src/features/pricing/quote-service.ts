@@ -71,12 +71,15 @@ export class QuoteService {
 
     // Try live Cloud API authoritative quote calculation
     try {
-      const res = await fetch(`${apiUrl}/api/v1/quotes`, {
+      const init: RequestInit = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(req),
-        signal
-      });
+        body: JSON.stringify(req)
+      };
+      if (signal) {
+        init.signal = signal;
+      }
+      const res = await fetch(`${apiUrl}/api/v1/quotes`, init);
       if (res.ok) {
         const json = await res.json();
         const liveQuote = json.data || json;

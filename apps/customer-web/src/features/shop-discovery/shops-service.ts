@@ -9,7 +9,11 @@ import { calculateHaversineDistance } from './geo-utils';
 
 export function mapCloudShopToCustomerShop(raw: Record<string, any>): Shop {
   const pricing = raw['pricing_config'] || {};
-  const a4 = pricing['A4'] || { bw_single_paise: 200, color_single_paise: 1000, bw_double_paise: 350 };
+  const a4 = pricing['A4'] || {
+    bw_single_paise: 200,
+    color_single_paise: 1000,
+    bw_double_paise: 350
+  };
   const binding = pricing['binding_prices_paise'] || { spiral: 3500 };
   const urgent = raw['urgent_surcharge_config'] || { amount: 2000 };
 

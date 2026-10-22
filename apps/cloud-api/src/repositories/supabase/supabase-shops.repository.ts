@@ -29,10 +29,7 @@ export class SupabaseShopsRepository implements IShopsRepository {
       const env = typeof process !== 'undefined' ? process.env : {};
       const url = options.supabaseUrl || env['SUPABASE_URL'] || 'http://localhost:54321';
       const key =
-        options.supabaseKey ||
-        env['SUPABASE_SERVICE_ROLE_KEY'] ||
-        env['SUPABASE_ANON_KEY'] ||
-        '';
+        options.supabaseKey || env['SUPABASE_SERVICE_ROLE_KEY'] || env['SUPABASE_ANON_KEY'] || '';
       const customFetch = options.customFetch || fetch;
 
       this.client = createDefaultSupabaseClient(url, key, customFetch);
@@ -40,11 +37,7 @@ export class SupabaseShopsRepository implements IShopsRepository {
   }
 
   async findById(id: string): Promise<Shop | null> {
-    const { data, error } = await this.client
-      .from('shops')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+    const { data, error } = await this.client.from('shops').select('*').eq('id', id).maybeSingle();
 
     if (error || !data) return null;
     return mapDbRecordToShop(data);
@@ -119,14 +112,12 @@ export class SupabaseShopsRepository implements IShopsRepository {
       updated_at: now
     };
 
-    const { data, error } = await this.client
-      .from('shops')
-      .insert(dbRecord)
-      .select()
-      .single();
+    const { data, error } = await this.client.from('shops').insert(dbRecord).select().single();
 
     if (error) {
-      throw new Error(`Failed to insert shop in Supabase: ${error.message || JSON.stringify(error)}`);
+      throw new Error(
+        `Failed to insert shop in Supabase: ${error.message || JSON.stringify(error)}`
+      );
     }
 
     return mapDbRecordToShop(data || dbRecord);
@@ -140,17 +131,19 @@ export class SupabaseShopsRepository implements IShopsRepository {
       updated_at: new Date().toISOString()
     };
 
-    if (dto.name !== undefined) updates.name = dto.name;
-    if (dto.address !== undefined) updates.address = dto.address;
-    if (dto.geo_lat !== undefined) updates.geo_lat = dto.geo_lat;
-    if (dto.geo_lng !== undefined) updates.geo_lng = dto.geo_lng;
-    if (dto.status !== undefined) updates.status = dto.status;
-    if (dto.pricing_config !== undefined) updates.pricing_config = dto.pricing_config;
+    if (dto.name !== undefined) updates['name'] = dto.name;
+    if (dto.address !== undefined) updates['address'] = dto.address;
+    if (dto.geo_lat !== undefined) updates['geo_lat'] = dto.geo_lat;
+    if (dto.geo_lng !== undefined) updates['geo_lng'] = dto.geo_lng;
+    if (dto.status !== undefined) updates['status'] = dto.status;
+    if (dto.pricing_config !== undefined) updates['pricing_config'] = dto.pricing_config;
     if (dto.urgent_surcharge_config !== undefined) {
-      updates.urgent_surcharge_config = dto.urgent_surcharge_config;
+      updates['urgent_surcharge_config'] = dto.urgent_surcharge_config;
     }
-    if (dto.auto_print_enabled !== undefined) updates.auto_print_enabled = dto.auto_print_enabled;
-    if (dto.allow_pay_at_counter !== undefined) updates.allow_pay_at_counter = dto.allow_pay_at_counter;
+    if (dto.auto_print_enabled !== undefined)
+      updates['auto_print_enabled'] = dto.auto_print_enabled;
+    if (dto.allow_pay_at_counter !== undefined)
+      updates['allow_pay_at_counter'] = dto.allow_pay_at_counter;
 
     const { data, error } = await this.client
       .from('shops')
@@ -160,7 +153,9 @@ export class SupabaseShopsRepository implements IShopsRepository {
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Failed to update shop in Supabase: ${error.message || JSON.stringify(error)}`);
+      throw new Error(
+        `Failed to update shop in Supabase: ${error.message || JSON.stringify(error)}`
+      );
     }
 
     return data ? mapDbRecordToShop(data) : null;

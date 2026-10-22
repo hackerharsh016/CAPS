@@ -7,14 +7,8 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import type {
-  QueueItem,
-  QueueFilter
-} from '../../types/queue';
-import {
-  CANONICAL_JOB_STATUSES,
-  JOB_STATUS_CONFIG
-} from '../../types/queue';
+import type { QueueItem, QueueFilter } from '../../types/queue';
+import { CANONICAL_JOB_STATUSES, JOB_STATUS_CONFIG } from '../../types/queue';
 import type { QueueService } from '../../services/api/queue.service';
 
 export interface QueueTableProps {
@@ -108,16 +102,12 @@ export function QueueTable({
         } else if (queueService && shopId) {
           const res = await queueService.approveJob(shopId, jobId);
           if (res.success) {
-            setItems(prev =>
-              prev.map(item => (item.id === jobId ? res.job : item))
-            );
+            setItems(prev => prev.map(item => (item.id === jobId ? res.job : item)));
           }
         } else {
           // Optimistic local update to OWNER_CONFIRMED
           setItems(prev =>
-            prev.map(item =>
-              item.id === jobId ? { ...item, status: 'OWNER_CONFIRMED' } : item
-            )
+            prev.map(item => (item.id === jobId ? { ...item, status: 'OWNER_CONFIRMED' } : item))
           );
         }
       } catch (err: unknown) {
@@ -142,7 +132,9 @@ export function QueueTable({
   );
 
   return (
-    <div className={`space-y-4 bg-white rounded-xl shadow-sm border border-slate-200 p-6 ${className}`}>
+    <div
+      className={`space-y-4 bg-white rounded-xl shadow-sm border border-slate-200 p-6 ${className}`}
+    >
       {/* Header and Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -166,7 +158,10 @@ export function QueueTable({
       </div>
 
       {actionError && (
-        <div role="alert" className="p-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg">
+        <div
+          role="alert"
+          className="p-3 text-sm text-rose-700 bg-rose-50 border border-rose-200 rounded-lg"
+        >
           {actionError}
         </div>
       )}
@@ -212,13 +207,27 @@ export function QueueTable({
         <table className="w-full text-left text-sm text-slate-600" data-testid="queue-table">
           <thead className="text-xs uppercase bg-slate-50 text-slate-700 border-b border-slate-200">
             <tr>
-              <th scope="col" className="px-4 py-3">Queue # / Token</th>
-              <th scope="col" className="px-4 py-3">Customer</th>
-              <th scope="col" className="px-4 py-3">Document & Settings</th>
-              <th scope="col" className="px-4 py-3">Priority</th>
-              <th scope="col" className="px-4 py-3">Status</th>
-              <th scope="col" className="px-4 py-3">Price</th>
-              <th scope="col" className="px-4 py-3 text-right">Actions</th>
+              <th scope="col" className="px-4 py-3">
+                Queue # / Token
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Customer
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Document & Settings
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Priority
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3">
+                Price
+              </th>
+              <th scope="col" className="px-4 py-3 text-right">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -263,9 +272,7 @@ export function QueueTable({
 
                     {/* Customer */}
                     <td className="px-4 py-3.5">
-                      <div className="font-medium text-slate-900 text-xs">
-                        {item.customer_name}
-                      </div>
+                      <div className="font-medium text-slate-900 text-xs">{item.customer_name}</div>
                       {item.customer_phone && (
                         <div className="text-[11px] text-slate-400 font-mono">
                           {item.customer_phone}

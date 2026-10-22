@@ -64,7 +64,9 @@ class TestVersionInfoMetadata(unittest.TestCase):
         self.version_path = PACKAGING_DIR / "version_info.txt"
 
     def test_version_info_exists(self) -> None:
-        self.assertTrue(self.version_path.exists(), f"version_info.txt not found at {self.version_path}")
+        self.assertTrue(
+            self.version_path.exists(), f"version_info.txt not found at {self.version_path}"
+        )
 
     def test_version_info_fields(self) -> None:
         with open(self.version_path, encoding="utf-8") as f:
@@ -89,7 +91,9 @@ class TestBuildScript(unittest.TestCase):
         self.build_ps1_path = SCRIPTS_DIR / "build.ps1"
 
     def test_build_script_exists(self) -> None:
-        self.assertTrue(self.build_ps1_path.exists(), f"build.ps1 not found at {self.build_ps1_path}")
+        self.assertTrue(
+            self.build_ps1_path.exists(), f"build.ps1 not found at {self.build_ps1_path}"
+        )
 
     def test_build_script_parameters_and_safety(self) -> None:
         with open(self.build_ps1_path, encoding="utf-8") as f:

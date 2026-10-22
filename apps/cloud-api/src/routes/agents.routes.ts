@@ -279,7 +279,11 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
       const claimResult = await agentClaimService.claimJob(request.user!, parsed.data);
 
       let finalJob = claimResult.job;
-      if (finalJob && (request.url.includes('/agent/jobs/claim') || request.url.includes('/agent/claim')) && finalJob.download_url.startsWith('/')) {
+      if (
+        finalJob &&
+        (request.url.includes('/agent/jobs/claim') || request.url.includes('/agent/claim')) &&
+        finalJob.download_url.startsWith('/')
+      ) {
         const host = request.headers.host || '127.0.0.1:4000';
         const protocol = request.protocol || 'http';
         finalJob = {
@@ -332,11 +336,7 @@ export const agentsRoutes: FastifyPluginAsync<AgentsRoutesOptions> = async (fast
   };
 
   for (const path of routeAliases('/agents/download-grant', '/agent/download-grant')) {
-    fastify.post(
-      path,
-      { preHandler: handleDownloadGrant.preHandler },
-      handleDownloadGrant.handler
-    );
+    fastify.post(path, { preHandler: handleDownloadGrant.preHandler }, handleDownloadGrant.handler);
   }
 
   /**

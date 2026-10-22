@@ -54,6 +54,7 @@ except ImportError:
                 return False
             return self.release == other.release
 
+
 from caps_agent import __version__
 from caps_agent.utils.signing import SignatureVerificationResult, verify_authenticode_signature
 
@@ -166,7 +167,10 @@ class UpdatePolicyEngine:
                 )
 
             if not sig_result.is_trusted:
-                logger.error("Installer signature is invalid or untrusted (%s). Update rejected.", sig_result.status)
+                logger.error(
+                    "Installer signature is invalid or untrusted (%s). Update rejected.",
+                    sig_result.status,
+                )
                 return UpdateVerificationOutcome(
                     allowed=False,
                     status_code="SIGNATURE_UNTRUSTED",

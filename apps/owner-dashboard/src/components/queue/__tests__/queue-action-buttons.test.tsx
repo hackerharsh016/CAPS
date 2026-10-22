@@ -64,9 +64,7 @@ describe('Task INT-D2-03: Owner Dashboard 1-Click Print Approval Live Wire', () 
   // ============================================================================
   describe('Rendering', () => {
     it('renders "Approve & Print" button for SUBMITTED print jobs', () => {
-      const html = renderToStaticMarkup(
-        <QueueActionButtons job={sampleJob} shopId={shopId} />
-      );
+      const html = renderToStaticMarkup(<QueueActionButtons job={sampleJob} shopId={shopId} />);
 
       expect(html).toContain('Approve &amp; Print');
       expect(html).toContain('data-testid="approve-print-btn"');
@@ -75,9 +73,7 @@ describe('Task INT-D2-03: Owner Dashboard 1-Click Print Approval Live Wire', () 
 
     it('renders "Queued for Agent" badge when job is already QUEUED', () => {
       const queuedJob: QueueItem = { ...sampleJob, status: 'QUEUED' };
-      const html = renderToStaticMarkup(
-        <QueueActionButtons job={queuedJob} shopId={shopId} />
-      );
+      const html = renderToStaticMarkup(<QueueActionButtons job={queuedJob} shopId={shopId} />);
 
       expect(html).not.toContain('Approve &amp; Print');
       expect(html).toContain('Queued for Agent');
@@ -86,9 +82,7 @@ describe('Task INT-D2-03: Owner Dashboard 1-Click Print Approval Live Wire', () 
 
     it('renders "Printing Live" badge when job is PRINTING', () => {
       const printingJob: QueueItem = { ...sampleJob, status: 'PRINTING' };
-      const html = renderToStaticMarkup(
-        <QueueActionButtons job={printingJob} shopId={shopId} />
-      );
+      const html = renderToStaticMarkup(<QueueActionButtons job={printingJob} shopId={shopId} />);
 
       expect(html).toContain('Printing Live');
       expect(html).toContain('data-testid="printing-status-badge"');
@@ -143,7 +137,7 @@ describe('Task INT-D2-03: Owner Dashboard 1-Click Print Approval Live Wire', () 
   describe('Debounce & Double-Click Protection', () => {
     it('prevents duplicate concurrent submissions when double clicked rapidly', async () => {
       let resolveFirstCall: any;
-      const delayedPromise = new Promise((resolve) => {
+      const delayedPromise = new Promise(resolve => {
         resolveFirstCall = resolve;
       });
 

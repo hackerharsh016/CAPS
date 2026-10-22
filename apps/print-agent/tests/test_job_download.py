@@ -12,19 +12,17 @@ from __future__ import annotations
 
 import hashlib
 import io
-import os
 import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from api_client import AgentApiClient, JobClaim
 from job_download import (
     DEFAULT_DOWNLOAD_TIMEOUT,
     ChecksumMismatchError,
     CorruptedFileError,
-    DownloadError,
     DownloadTimeoutError,
     ExpiredUrlError,
     SecurePdfDownloader,
@@ -35,7 +33,6 @@ from storage import (
     JobStorageManager,
     StorageSecurityError,
     apply_restricted_acls,
-    sanitize_job_id,
 )
 
 # Standard mock PDF content
@@ -55,7 +52,10 @@ class MockHttpStreamResponse:
     ) -> None:
         self.body = body
         self.status = status
-        self.headers = headers or {"Content-Length": str(len(body)), "Content-Type": "application/pdf"}
+        self.headers = headers or {
+            "Content-Length": str(len(body)),
+            "Content-Type": "application/pdf",
+        }
         self.simulate_timeout = simulate_timeout
         self._io = io.BytesIO(body)
 
@@ -127,9 +127,8 @@ class TestJobStorageManager(unittest.TestCase):
             "   ",
         ]
         for bad_id in malicious_ids:
-            with self.subTest(bad_id=bad_id):
-                with self.assertRaises(StorageSecurityError):
-                    self.storage.get_job_dir(bad_id)
+            with self.subTest(bad_id=bad_id), self.assertRaises(StorageSecurityError):
+                self.storage.get_job_dir(bad_id)
 
     def test_purge_file_and_job_dir(self) -> None:
         doc_path = self.storage.get_document_path("job-to-purge")
@@ -173,7 +172,9 @@ class TestSecurePdfDownloader(unittest.TestCase):
             custom_opener=self.mock_opener,
         )
 
-        self.sample_url = "https://mock-supabase.local/storage/v1/object/customer-documents/uploads/test.pdf"
+        self.sample_url = (
+            "https://mock-supabase.local/storage/v1/object/customer-documents/uploads/test.pdf"
+        )
         self.job_id = "job-uuid-101"
         self.attempt_id = "att-101"
         self.lease_token = "lease-token-1234567890"

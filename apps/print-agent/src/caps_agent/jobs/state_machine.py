@@ -36,49 +36,63 @@ class JobState(StrEnum):
 
 
 # Terminal states cannot be transitioned away from
-TERMINAL_STATES: frozenset[JobState] = frozenset({
-    JobState.COMPLETED,
-    JobState.FAILED,
-    JobState.CANCELLED,
-    JobState.UNKNOWN_REQUIRES_REVIEW,
-})
+TERMINAL_STATES: frozenset[JobState] = frozenset(
+    {
+        JobState.COMPLETED,
+        JobState.FAILED,
+        JobState.CANCELLED,
+        JobState.UNKNOWN_REQUIRES_REVIEW,
+    }
+)
 
 
 # Formal allowed transition graph
 ALLOWED_TRANSITIONS: dict[JobState, frozenset[JobState]] = {
-    JobState.QUEUED: frozenset({
-        JobState.CLAIMED,
-        JobState.DOWNLOADING,
-        JobState.VALIDATING,
-        JobState.CANCELLED,
-        JobState.FAILED,
-    }),
-    JobState.CLAIMED: frozenset({
-        JobState.DOWNLOADING,
-        JobState.VALIDATING,
-        JobState.CANCELLED,
-        JobState.FAILED,
-    }),
-    JobState.DOWNLOADING: frozenset({
-        JobState.VALIDATING,
-        JobState.CANCELLED,
-        JobState.FAILED,
-    }),
-    JobState.VALIDATING: frozenset({
-        JobState.RENDERING,
-        JobState.CANCELLED,
-        JobState.FAILED,
-    }),
-    JobState.RENDERING: frozenset({
-        JobState.PRINTING,
-        JobState.CANCELLED,
-        JobState.FAILED,
-    }),
-    JobState.PRINTING: frozenset({
-        JobState.COMPLETED,
-        JobState.FAILED,
-        JobState.UNKNOWN_REQUIRES_REVIEW,
-    }),
+    JobState.QUEUED: frozenset(
+        {
+            JobState.CLAIMED,
+            JobState.DOWNLOADING,
+            JobState.VALIDATING,
+            JobState.CANCELLED,
+            JobState.FAILED,
+        }
+    ),
+    JobState.CLAIMED: frozenset(
+        {
+            JobState.DOWNLOADING,
+            JobState.VALIDATING,
+            JobState.CANCELLED,
+            JobState.FAILED,
+        }
+    ),
+    JobState.DOWNLOADING: frozenset(
+        {
+            JobState.VALIDATING,
+            JobState.CANCELLED,
+            JobState.FAILED,
+        }
+    ),
+    JobState.VALIDATING: frozenset(
+        {
+            JobState.RENDERING,
+            JobState.CANCELLED,
+            JobState.FAILED,
+        }
+    ),
+    JobState.RENDERING: frozenset(
+        {
+            JobState.PRINTING,
+            JobState.CANCELLED,
+            JobState.FAILED,
+        }
+    ),
+    JobState.PRINTING: frozenset(
+        {
+            JobState.COMPLETED,
+            JobState.FAILED,
+            JobState.UNKNOWN_REQUIRES_REVIEW,
+        }
+    ),
     # Terminal states have no outgoing transitions
     JobState.COMPLETED: frozenset(),
     JobState.FAILED: frozenset(),

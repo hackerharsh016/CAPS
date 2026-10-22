@@ -17,10 +17,12 @@ import logging
 import threading
 import time
 from typing import TYPE_CHECKING, Any
-from pathlib import Path
 
-from api_client import AgentApiClient, JobClaim
-from job_download import ChecksumMismatchError, CorruptedFileError, DownloadError, SecurePdfDownloader
+from api_client import AgentApiClient
+from job_download import (
+    DownloadError,
+    SecurePdfDownloader,
+)
 from storage import JobStorageManager
 
 if TYPE_CHECKING:
@@ -166,7 +168,9 @@ class Coordinator:
                             error_message=error_message,
                         )
                     except Exception as report_err:
-                        logger.warning("Failed to report FAILED status for job '%s': %s", job_id, report_err)
+                        logger.warning(
+                            "Failed to report FAILED status for job '%s': %s", job_id, report_err
+                        )
 
                 # Purge local workspace immediately
                 self.storage_manager.purge_job_files(job_id)
@@ -215,7 +219,9 @@ class Coordinator:
                 self.realtime_client.start()
 
             # Start periodic poll fallback if interval > 0
-            if self.poll_interval > 0 and (self._poll_thread is None or not self._poll_thread.is_alive()):
+            if self.poll_interval > 0 and (
+                self._poll_thread is None or not self._poll_thread.is_alive()
+            ):
                 self._poll_thread = threading.Thread(
                     target=self._run_periodic_loop,
                     name="CoordinatorPollLoop",

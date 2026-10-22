@@ -44,6 +44,7 @@ ALLOWED_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "testclient
 
 class DiagnosticsSecurityError(ValueError):
     """Raised when an unauthorized non-loopback host or origin is attempted."""
+
     pass
 
 
@@ -117,8 +118,12 @@ class DiagnosticsRequestHandler(http.server.BaseHTTPRequestHandler):
         # 1. LAN Isolation: Reject connections from non-loopback client IPs
         client_ip = self.client_address[0]
         if not (client_ip.startswith("127.") or client_ip in ("::1", "localhost", "testclient")):
-            logger.warning("Security violation: Rejected connection from non-loopback IP '%s'", client_ip)
-            self._send_json(403, {"error": "Forbidden: Local diagnostics only accessible via loopback"})
+            logger.warning(
+                "Security violation: Rejected connection from non-loopback IP '%s'", client_ip
+            )
+            self._send_json(
+                403, {"error": "Forbidden: Local diagnostics only accessible via loopback"}
+            )
             return False
 
         # 2. Host Header Validation (DNS Rebinding Defense)
@@ -134,15 +139,24 @@ class DiagnosticsRequestHandler(http.server.BaseHTTPRequestHandler):
             # Parse origin hostname
             clean_origin = origin_header.split("://")[-1].split(":")[0].lower()
             if clean_origin not in ("localhost", "127.0.0.1", "::1", "null"):
-                logger.warning("Security violation: Rejected cross-origin request from '%s'", origin_header)
-                self._send_json(403, {"error": f"Forbidden: Cross-origin requests from '{origin_header}' are prohibited"})
+                logger.warning(
+                    "Security violation: Rejected cross-origin request from '%s'", origin_header
+                )
+                self._send_json(
+                    403,
+                    {
+                        "error": f"Forbidden: Cross-origin requests from '{origin_header}' are prohibited"
+                    },
+                )
                 return False
 
         # 4. Local Diagnostics Token Check (if configured)
         if server.local_auth_token:
             provided_token = self.headers.get("X-CAPS-Diagnostics-Token")
             if provided_token != server.local_auth_token:
-                self._send_json(401, {"error": "Unauthorized: Missing or invalid X-CAPS-Diagnostics-Token"})
+                self._send_json(
+                    401, {"error": "Unauthorized: Missing or invalid X-CAPS-Diagnostics-Token"}
+                )
                 return False
 
         return True
@@ -157,9 +171,11 @@ class DiagnosticsRequestHandler(http.server.BaseHTTPRequestHandler):
 
         if path in ("/health", "/api/v1/health"):
             uptime = time.monotonic() - server.start_time
-            queue_depth = sum(
-                q.qsize() for q in server.dispatcher._printer_queues.values()
-            ) if server.dispatcher else 0
+            queue_depth = (
+                sum(q.qsize() for q in server.dispatcher._printer_queues.values())
+                if server.dispatcher
+                else 0
+            )
             active_jobs = len(server.dispatcher._active_jobs) if server.dispatcher else 0
 
             response = {
@@ -312,7 +328,9 @@ class DiagnosticsServer:
                     DiagnosticsRequestHandler,
                 )
             except OSError as err:
-                logger.error("Failed to bind diagnostics server to %s:%d: %s", self.host, self.port, err)
+                logger.error(
+                    "Failed to bind diagnostics server to %s:%d: %s", self.host, self.port, err
+                )
                 raise
 
             # Copy references to server instance for handler access
@@ -331,7 +349,9 @@ class DiagnosticsServer:
                 daemon=True,
             )
             self._server_thread.start()
-            logger.info("Diagnostics loopback server listening on http://%s:%d", self.host, self.port)
+            logger.info(
+                "Diagnostics loopback server listening on http://%s:%d", self.host, self.port
+            )
 
     def _serve_loop(self) -> None:
         if self._httpd:

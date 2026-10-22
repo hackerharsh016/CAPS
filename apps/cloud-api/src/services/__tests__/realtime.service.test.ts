@@ -241,7 +241,7 @@ describe('Jobs & Realtime Routes Integration (INT-D3-05)', () => {
       owner_id: OWNER_ID,
       status: 'open',
       pricing_config: { base_fee_paise: 0, per_page_bw_paise: 200, per_page_color_paise: 500 }
-    });
+    } as any);
 
     // Seed initial job in pending_payment / queued
     const job = await jobsRepo.create({

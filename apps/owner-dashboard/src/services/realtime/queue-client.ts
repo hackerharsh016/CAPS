@@ -15,12 +15,7 @@ import type { QueueItem, CanonicalJobStatus } from '../../types/queue';
 import { normalizeJobStatus } from '../../types/queue';
 
 export type RealtimeConnectionState =
-  | 'connecting'
-  | 'connected'
-  | 'disconnected'
-  | 'reconnecting'
-  | 'fallback_polling'
-  | 'error';
+  'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'fallback_polling' | 'error';
 
 export interface RealtimeQueueEvent {
   event_id: string;
@@ -144,7 +139,11 @@ export class DefaultRealtimeChannel implements SupabaseRealtimeChannel {
     this.supabaseAnonKey = supabaseAnonKey;
   }
 
-  public on(type: 'postgres_changes' | 'broadcast', filter: any, callback: any): SupabaseRealtimeChannel {
+  public on(
+    type: 'postgres_changes' | 'broadcast',
+    filter: any,
+    callback: any
+  ): SupabaseRealtimeChannel {
     if (type === 'postgres_changes') {
       this.postgresChangeListeners.push({ filter, callback });
     } else if (type === 'broadcast') {
@@ -166,9 +165,9 @@ export class DefaultRealtimeChannel implements SupabaseRealtimeChannel {
 
     if (WebSocketCtor) {
       try {
-        const wsUrl = this.supabaseUrl
-          .replace(/^http/, 'ws')
-          .replace(/\/+$/, '') + `/realtime/v1/websocket?apikey=${encodeURIComponent(this.supabaseAnonKey)}&vsn=1.0.0`;
+        const wsUrl =
+          this.supabaseUrl.replace(/^http/, 'ws').replace(/\/+$/, '') +
+          `/realtime/v1/websocket?apikey=${encodeURIComponent(this.supabaseAnonKey)}&vsn=1.0.0`;
 
         this.socket = new WebSocketCtor(wsUrl);
 

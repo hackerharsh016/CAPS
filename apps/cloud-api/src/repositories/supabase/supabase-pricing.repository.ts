@@ -22,10 +22,7 @@ export class SupabasePricingRepository implements IQuotesRepository {
       const env = typeof process !== 'undefined' ? process.env : {};
       const url = options.supabaseUrl || env['SUPABASE_URL'] || 'http://localhost:54321';
       const key =
-        options.supabaseKey ||
-        env['SUPABASE_SERVICE_ROLE_KEY'] ||
-        env['SUPABASE_ANON_KEY'] ||
-        '';
+        options.supabaseKey || env['SUPABASE_SERVICE_ROLE_KEY'] || env['SUPABASE_ANON_KEY'] || '';
       const customFetch = options.customFetch || fetch;
 
       this.client = createDefaultSupabaseClient(url, key, customFetch);
@@ -80,11 +77,7 @@ export class SupabasePricingRepository implements IQuotesRepository {
   }
 
   async findById(id: string): Promise<QuoteRecord | null> {
-    const { data, error } = await this.client
-      .from('quotes')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle();
+    const { data, error } = await this.client.from('quotes').select('*').eq('id', id).maybeSingle();
 
     if (error || !data) return null;
     return data as QuoteRecord;

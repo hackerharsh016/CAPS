@@ -21,12 +21,14 @@ class MockPairingTransport:
         }
 
     def __call__(self, method: str, url: str, headers: dict, payload: dict | None) -> dict:
-        self.recorded_requests.append({
-            "method": method,
-            "url": url,
-            "headers": headers,
-            "body": payload,
-        })
+        self.recorded_requests.append(
+            {
+                "method": method,
+                "url": url,
+                "headers": headers,
+                "body": payload,
+            }
+        )
         return self.response
 
 

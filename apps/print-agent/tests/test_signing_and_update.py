@@ -67,7 +67,9 @@ class TestAuthenticodeSignatureVerification(unittest.TestCase):
             if os.path.exists(temp_path):
                 os.remove(temp_path)
 
-    @unittest.skipUnless(platform.system() == "Windows", "Requires Windows OS for native catalog verification")
+    @unittest.skipUnless(
+        platform.system() == "Windows", "Requires Windows OS for native catalog verification"
+    )
     def test_real_windows_signed_system_binary(self) -> None:
         """Verifies signature extraction against a real Windows signed binary."""
         windir = Path(os.environ.get("WINDIR", "C:\\Windows"))

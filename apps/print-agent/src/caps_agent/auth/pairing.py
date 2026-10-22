@@ -80,7 +80,9 @@ class PairingManager:
                 raise InvalidPairingCodeError("Pairing code cannot be empty")
 
             if self.api_client is None:
-                raise PairingError("CloudApiClient must be configured on PairingManager to execute pairing")
+                raise PairingError(
+                    "CloudApiClient must be configured on PairingManager to execute pairing"
+                )
 
             payload = {
                 "pairing_code": code,
@@ -143,7 +145,9 @@ class PairingManager:
             }
 
             try:
-                response = self.api_client.post_unauthenticated("/api/v1/agent/token/refresh", payload)
+                response = self.api_client.post_unauthenticated(
+                    "/api/v1/agent/token/refresh", payload
+                )
             except Exception as err:
                 logger.error("Token refresh request failed: %s", err)
                 raise TokenRefreshError(f"Token refresh request failed: {err}") from err
@@ -169,7 +173,9 @@ class PairingManager:
             )
 
             self.store.save(updated_creds)
-            logger.info("Device token refreshed successfully for Device '%s'", current_creds.device_id)
+            logger.info(
+                "Device token refreshed successfully for Device '%s'", current_creds.device_id
+            )
             return updated_creds
 
     def revoke_pairing(self) -> None:

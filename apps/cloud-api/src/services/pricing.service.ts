@@ -61,7 +61,12 @@ export class PricingService {
   private readonly config: PricingRuleConfig;
   private readonly supabaseClient?: any | undefined;
 
-  constructor(options: { config?: Partial<PricingRuleConfig> | undefined; supabaseClient?: any | undefined } = {}) {
+  constructor(
+    options: {
+      config?: Partial<PricingRuleConfig> | undefined;
+      supabaseClient?: any | undefined;
+    } = {}
+  ) {
     this.config = {
       ...DEFAULT_PRICING_CONFIG,
       ...options.config

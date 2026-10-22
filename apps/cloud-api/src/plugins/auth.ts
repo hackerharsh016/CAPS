@@ -30,17 +30,19 @@ export interface ITokenVerifier {
 export interface AuthPluginOptions {
   jwtSecret?: string | undefined;
   tokenVerifier?: ITokenVerifier | undefined;
-  agentsRepoProvider?: () => {
-    findDeviceByTokenHash(tokenHash: string): Promise<{
-      id: string;
-      shop_id: string;
-      device_name?: string;
-      is_revoked?: boolean;
-      status?: string;
-      auth_token_hash?: string;
-      device_token_hash?: string;
-    } | null>;
-  } | undefined;
+  agentsRepoProvider?: () =>
+    | {
+        findDeviceByTokenHash(tokenHash: string): Promise<{
+          id: string;
+          shop_id: string;
+          device_name?: string;
+          is_revoked?: boolean;
+          status?: string;
+          auth_token_hash?: string;
+          device_token_hash?: string;
+        } | null>;
+      }
+    | undefined;
 }
 
 declare module 'fastify' {
@@ -210,17 +212,19 @@ export class SupabaseJwtVerifier implements ITokenVerifier {
 export class CompositeAuthVerifier implements ITokenVerifier {
   constructor(
     private readonly jwtVerifier: ITokenVerifier,
-    private readonly agentsRepoProvider?: () => {
-      findDeviceByTokenHash(tokenHash: string): Promise<{
-        id: string;
-        shop_id: string;
-        device_name?: string;
-        is_revoked?: boolean;
-        status?: string;
-        auth_token_hash?: string;
-        device_token_hash?: string;
-      } | null>;
-    } | undefined
+    private readonly agentsRepoProvider?: () =>
+      | {
+          findDeviceByTokenHash(tokenHash: string): Promise<{
+            id: string;
+            shop_id: string;
+            device_name?: string;
+            is_revoked?: boolean;
+            status?: string;
+            auth_token_hash?: string;
+            device_token_hash?: string;
+          } | null>;
+        }
+      | undefined
   ) {}
 
   /**
@@ -346,7 +350,11 @@ export class MockTokenVerifier implements ITokenVerifier {
       throw new AuthError(401, 'UNAUTHORIZED', 'Agent device is revoked or inactive.');
     }
     if (targetShopId && agent.shop_id !== targetShopId) {
-      throw new AuthError(401, 'UNAUTHORIZED', 'Agent device does not belong to the requested shop.');
+      throw new AuthError(
+        401,
+        'UNAUTHORIZED',
+        'Agent device does not belong to the requested shop.'
+      );
     }
     return agent;
   }
@@ -370,23 +378,25 @@ export class MockTokenVerifier implements ITokenVerifier {
  * Helper to inspect and extract target shop ID from request params, query, headers, or body.
  */
 function extractTargetShopId(request: FastifyRequest): string | undefined {
-  const params = request.params as Record<string, string> | undefined;
-  if (params?.shopId) return params.shopId;
-  if (params?.shop_id) return params.shop_id;
+  const params = request.params as Record<string, string | undefined> | undefined;
+  if (params?.['shopId']) return params['shopId'];
+  if (params?.['shop_id']) return params['shop_id'];
 
   const headers = request.headers;
   if (typeof headers?.['x-shop-id'] === 'string' && headers['x-shop-id'].trim()) {
     return headers['x-shop-id'].trim();
   }
 
-  const query = request.query as Record<string, string> | undefined;
-  if (query?.shopId) return query.shopId;
-  if (query?.shop_id) return query.shop_id;
+  const query = request.query as Record<string, string | undefined> | undefined;
+  if (query?.['shopId']) return query['shopId'];
+  if (query?.['shop_id']) return query['shop_id'];
 
-  const body = request.body as Record<string, string> | undefined;
+  const body = request.body as Record<string, unknown> | undefined;
   if (body && typeof body === 'object') {
-    if (typeof body.shop_id === 'string' && body.shop_id.trim()) return body.shop_id.trim();
-    if (typeof body.shopId === 'string' && body.shopId.trim()) return body.shopId.trim();
+    const bodyShopId = body['shop_id'];
+    if (typeof bodyShopId === 'string' && bodyShopId.trim()) return bodyShopId.trim();
+    const bodyAltShopId = body['shopId'];
+    if (typeof bodyAltShopId === 'string' && bodyAltShopId.trim()) return bodyAltShopId.trim();
   }
 
   return undefined;
@@ -394,17 +404,19 @@ function extractTargetShopId(request: FastifyRequest): string | undefined {
 
 export function createAuthHooks(
   verifier: ITokenVerifier,
-  agentsRepoProvider?: () => {
-    findDeviceByTokenHash(tokenHash: string): Promise<{
-      id: string;
-      shop_id: string;
-      device_name?: string;
-      is_revoked?: boolean;
-      status?: string;
-      auth_token_hash?: string;
-      device_token_hash?: string;
-    } | null>;
-  } | undefined
+  agentsRepoProvider?: () =>
+    | {
+        findDeviceByTokenHash(tokenHash: string): Promise<{
+          id: string;
+          shop_id: string;
+          device_name?: string;
+          is_revoked?: boolean;
+          status?: string;
+          auth_token_hash?: string;
+          device_token_hash?: string;
+        } | null>;
+      }
+    | undefined
 ) {
   const authenticate = async (request: FastifyRequest, _reply: FastifyReply): Promise<void> => {
     request.user = null;
@@ -446,7 +458,11 @@ export function createAuthHooks(
         const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
         const device = await repo.findDeviceByTokenHash(tokenHash);
         if (!device) {
-          throw new AuthError(401, 'UNAUTHORIZED', 'Agent device token is invalid or not registered.');
+          throw new AuthError(
+            401,
+            'UNAUTHORIZED',
+            'Agent device token is invalid or not registered.'
+          );
         }
         const status = (device.status as string | undefined)?.toUpperCase();
         if (device.is_revoked === true || (status !== undefined && status !== 'ACTIVE')) {

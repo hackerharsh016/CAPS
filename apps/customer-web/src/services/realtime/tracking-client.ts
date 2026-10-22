@@ -13,21 +13,10 @@
 import { getSupabaseEnv } from '../../lib/supabase';
 
 export type RealtimeConnectionState =
-  | 'connecting'
-  | 'connected'
-  | 'reconnecting'
-  | 'polling'
-  | 'disconnected'
-  | 'error';
+  'connecting' | 'connected' | 'reconnecting' | 'polling' | 'disconnected' | 'error';
 
 export type CanonicalJobStatus =
-  | 'SUBMITTED'
-  | 'OWNER_CONFIRMED'
-  | 'QUEUED'
-  | 'PRINTING'
-  | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED';
+  'SUBMITTED' | 'OWNER_CONFIRMED' | 'QUEUED' | 'PRINTING' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export interface JobStatusBroadcastPayload {
   jobId: string;
@@ -198,7 +187,11 @@ export class DefaultJobRealtimeChannel implements SupabaseRealtimeChannelLike {
     this.supabaseAnonKey = supabaseAnonKey;
   }
 
-  public on(type: 'broadcast' | 'postgres_changes', filter: any, callback: any): SupabaseRealtimeChannelLike {
+  public on(
+    type: 'broadcast' | 'postgres_changes',
+    filter: any,
+    callback: any
+  ): SupabaseRealtimeChannelLike {
     if (type === 'broadcast') {
       this.broadcastListeners.push({ filter, callback });
     } else if (type === 'postgres_changes') {
@@ -330,10 +323,7 @@ export class DefaultJobRealtimeChannel implements SupabaseRealtimeChannelLike {
 /**
  * Creates lightweight Supabase Realtime client.
  */
-export function createClient(
-  supabaseUrl: string,
-  supabaseAnonKey: string
-): SupabaseClientLike {
+export function createClient(supabaseUrl: string, supabaseAnonKey: string): SupabaseClientLike {
   if (supabaseAnonKey && supabaseAnonKey.includes('service_role')) {
     throw new Error(
       'SECURITY VIOLATION: SUPABASE_SERVICE_ROLE_KEY supplied to client bundle! This key must NEVER be exposed to web clients.'
@@ -574,7 +564,8 @@ export class RealtimeTrackingClient {
 
     const totalPages = payload['totalPages'] || payload['total_pages'] || 1;
     this.estimatedMinutesRemaining =
-      payload['estimatedMinutesRemaining'] ?? calculateEstimatedMinutes(canonicalStatus, totalPages);
+      payload['estimatedMinutesRemaining'] ??
+      calculateEstimatedMinutes(canonicalStatus, totalPages);
 
     this.lastUpdatedIso = payload['timestamp'] || new Date().toISOString();
 

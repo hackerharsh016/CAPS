@@ -360,7 +360,10 @@ describe('Owner Dashboard Queue Table & Status Alignment (INT-D2-01)', () => {
 
       vi.stubGlobal('fetch', mockFetch);
 
-      const service = new QueueService({ baseUrl: 'http://localhost:4000', authToken: 'owner-token' });
+      const service = new QueueService({
+        baseUrl: 'http://localhost:4000',
+        authToken: 'owner-token'
+      });
       const result = await service.approveJob('shop-123', 'job-555');
 
       expect(mockFetch).toHaveBeenCalledTimes(1);

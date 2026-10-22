@@ -114,8 +114,7 @@ def _create_minimal_valid_pdf(num_pages: int = 2) -> bytes:
         xref += f"{off:010d} 00000 n \n".encode("ascii")
 
     trailer = (
-        f"trailer\n<< /Size {total_objs} /Root 1 0 R >>\n"
-        f"startxref\n{xref_pos}\n%%EOF\n"
+        f"trailer\n<< /Size {total_objs} /Root 1 0 R >>\nstartxref\n{xref_pos}\n%%EOF\n"
     ).encode("ascii")
 
     return body + xref + trailer
@@ -325,9 +324,7 @@ class TestFakePrintEngine(unittest.TestCase):
         self.assertEqual(engine.simulated_spooler_job_id, 3002)  # was only incremented once
 
     def test_unsupported_settings_simulation(self) -> None:
-        engine = FakePrintEngine(
-            unsupported_settings={"HP LaserJet Pro MFP": {"color", "a3"}}
-        )
+        engine = FakePrintEngine(unsupported_settings={"HP LaserJet Pro MFP": {"color", "a3"}})
 
         color_settings = PrintSettings(
             paper_size="A4",
@@ -386,9 +383,7 @@ class TestWindowsPrintEnginePipeline(unittest.TestCase):
         self.detector = CapabilityDetector(adapter=self.print_adapter)
         # Register capabilities
         self.detector.register_known_printer(SAMPLE_HP_CAPS.name, SAMPLE_HP_CAPS)
-        self.detector.register_known_printer(
-            SAMPLE_CANON_COLOR_CAPS.name, SAMPLE_CANON_COLOR_CAPS
-        )
+        self.detector.register_known_printer(SAMPLE_CANON_COLOR_CAPS.name, SAMPLE_CANON_COLOR_CAPS)
 
         # 3. Setup mock DEVMODE adapter & SettingsMapper
         self.devmode_adapter = FakeDevModeAdapter()

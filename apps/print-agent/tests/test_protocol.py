@@ -39,8 +39,7 @@ class TestPrintEngineProtocol(unittest.TestCase):
 
     def test_fake_print_failure_simulation(self) -> None:
         engine = FakePrintEngine(
-            should_succeed=False,
-            simulated_error="Printer paper jam in tray 2"
+            should_succeed=False, simulated_error="Printer paper jam in tray 2"
         )
         result = engine.print_document(self.doc_path, "Canon LBP2900", self.settings)
 

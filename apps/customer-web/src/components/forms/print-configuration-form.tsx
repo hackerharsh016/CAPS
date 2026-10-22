@@ -61,7 +61,12 @@ export const COLOR_MODE_OPTIONS: { id: ColorMode; label: string; description: st
   { id: 'color', label: 'Full Color', description: 'Vibrant CMYK reproduction' }
 ];
 
-export const DUPLEX_OPTIONS: { id: DuplexMode; sideMode: SideMode; label: string; description: string }[] = [
+export const DUPLEX_OPTIONS: {
+  id: DuplexMode;
+  sideMode: SideMode;
+  label: string;
+  description: string;
+}[] = [
   {
     id: 'simplex',
     sideMode: 'single',
@@ -121,7 +126,9 @@ export function PrintConfigurationForm({
       : 'simplex';
   const [duplex, setDuplex] = useState<DuplexMode>(initialDuplex);
 
-  const [orientation, setOrientation] = useState<Orientation>(initialSettings?.orientation ?? 'portrait');
+  const [orientation, setOrientation] = useState<Orientation>(
+    initialSettings?.orientation ?? 'portrait'
+  );
   const [copies, setCopies] = useState<number>(initialSettings?.copies ?? 1);
   const [pageRange, setPageRange] = useState<string>(initialSettings?.page_range ?? 'all');
   const [binding, setBinding] = useState<BindingType>(initialSettings?.binding ?? 'none');
@@ -131,7 +138,8 @@ export function PrintConfigurationForm({
   // Build harmonized settings object
   const buildCurrentSettings = useCallback(
     (overrides?: Partial<PrintSettings>): HarmonizedPrintSettings => {
-      const currentDuplex = overrides?.duplex ?? (overrides?.sides ? sidesToDuplex(overrides.sides) : duplex);
+      const currentDuplex =
+        overrides?.duplex ?? (overrides?.sides ? sidesToDuplex(overrides.sides) : duplex);
       const currentSides = duplexToSides(currentDuplex);
 
       return createHarmonizedPrintSettings({
@@ -228,7 +236,9 @@ export function PrintConfigurationForm({
             <label
               key={opt.id}
               className={`flex flex-col p-3 border rounded-lg cursor-pointer transition ${
-                paperSize === opt.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
+                paperSize === opt.id
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-slate-200 hover:border-slate-300'
               }`}
             >
               <input
@@ -259,7 +269,9 @@ export function PrintConfigurationForm({
             <label
               key={opt.id}
               className={`flex flex-col p-3 border rounded-lg cursor-pointer transition ${
-                colorMode === opt.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
+                colorMode === opt.id
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-slate-200 hover:border-slate-300'
               }`}
             >
               <input
@@ -293,7 +305,9 @@ export function PrintConfigurationForm({
             <label
               key={opt.id}
               className={`flex items-start p-3 border rounded-lg cursor-pointer transition ${
-                duplex === opt.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
+                duplex === opt.id
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-slate-200 hover:border-slate-300'
               }`}
             >
               <input
@@ -323,7 +337,9 @@ export function PrintConfigurationForm({
             <label
               key={opt.id}
               className={`flex items-center justify-center p-2.5 border rounded-lg cursor-pointer transition text-center ${
-                orientation === opt.id ? 'border-blue-600 bg-blue-50' : 'border-slate-200 hover:border-slate-300'
+                orientation === opt.id
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-slate-200 hover:border-slate-300'
               }`}
             >
               <input
@@ -348,7 +364,10 @@ export function PrintConfigurationForm({
       {/* Copies & Page Range */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label htmlFor={`copies-${formId}`} className="block text-sm font-semibold text-slate-800 mb-1">
+          <label
+            htmlFor={`copies-${formId}`}
+            className="block text-sm font-semibold text-slate-800 mb-1"
+          >
             Copies (1 - 100)
           </label>
           <input
@@ -366,7 +385,10 @@ export function PrintConfigurationForm({
         </div>
 
         <div>
-          <label htmlFor={`page-range-${formId}`} className="block text-sm font-semibold text-slate-800 mb-1">
+          <label
+            htmlFor={`page-range-${formId}`}
+            className="block text-sm font-semibold text-slate-800 mb-1"
+          >
             Page Range
           </label>
           <input
@@ -389,7 +411,10 @@ export function PrintConfigurationForm({
 
       {/* Binding / Finishing */}
       <div>
-        <label htmlFor={`binding-${formId}`} className="block text-sm font-semibold text-slate-800 mb-1">
+        <label
+          htmlFor={`binding-${formId}`}
+          className="block text-sm font-semibold text-slate-800 mb-1"
+        >
           Finishing & Binding
         </label>
         <select

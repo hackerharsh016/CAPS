@@ -45,7 +45,9 @@ describe('Supabase Database Repositories & Transactional RPC Wiring (INT-D3-03)'
           job_id: eligibleJob.id,
           agent_device_id: params.p_agent_device_id,
           lease_token: leaseToken,
-          lease_expires_at: new Date(Date.now() + (params.p_lease_duration_seconds || 120) * 1000).toISOString(),
+          lease_expires_at: new Date(
+            Date.now() + (params.p_lease_duration_seconds || 120) * 1000
+          ).toISOString(),
           status: 'claimed'
         };
         const attempts = mockTables['job_attempts'] || [];
@@ -137,7 +139,9 @@ describe('Supabase Database Repositories & Transactional RPC Wiring (INT-D3-03)'
               resultData = matched[0] || null;
             }
 
-            return Promise.resolve(onfulfilled({ data: resultData, count: matched.length, error: null }));
+            return Promise.resolve(
+              onfulfilled({ data: resultData, count: matched.length, error: null })
+            );
           }
         };
         return builder;
@@ -296,10 +300,10 @@ describe('Supabase Database Repositories & Transactional RPC Wiring (INT-D3-03)'
 
       const queue = await repo.findQueueByShop('shop-001');
       expect(queue).toHaveLength(2);
-      expect(queue[0].id).toBe('job-urg');
-      expect(queue[0].queue_position).toBe(1);
-      expect(queue[1].id).toBe('job-flex');
-      expect(queue[1].queue_position).toBe(2);
+      expect(queue[0]!.id).toBe('job-urg');
+      expect(queue[0]!.queue_position).toBe(1);
+      expect(queue[1]!.id).toBe('job-flex');
+      expect(queue[1]!.queue_position).toBe(2);
     });
   });
 

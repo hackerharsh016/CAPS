@@ -16,7 +16,10 @@ import {
   createHarmonizedPrintSettings,
   toValidationPrintSettings
 } from '../../../../../../packages/types/dist/index.js';
-import type { PrintSettings, HarmonizedPrintSettings } from '../../../../../../packages/types/dist/index.js';
+import type {
+  PrintSettings,
+  HarmonizedPrintSettings
+} from '../../../../../../packages/types/dist/index.js';
 import { PrintSettingsSchema } from '../../../../../../packages/validation/dist/index.js';
 import { QuoteService, PrintJobService } from '../../../services/api/quote.service';
 

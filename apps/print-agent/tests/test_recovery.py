@@ -36,7 +36,9 @@ class TestStartupCrashRecovery:
         journal = LocalStateJournal(":memory:")
         mock_adapter = FakeWin32JobQueryAdapter()
         cleaner = ArtifactCleaner(base_dir=tmp_path)
-        coordinator = StartupRecoveryCoordinator(journal, query_adapter=mock_adapter, cleaner=cleaner)
+        coordinator = StartupRecoveryCoordinator(
+            journal, query_adapter=mock_adapter, cleaner=cleaner
+        )
 
         # Job 1 interrupted during downloading
         journal.record_claim("job-pre-1", "att-pre-1", "Printer_A", "lease-1")
@@ -72,7 +74,9 @@ class TestStartupCrashRecovery:
         journal = LocalStateJournal(":memory:")
         mock_adapter = FakeWin32JobQueryAdapter()
         cleaner = ArtifactCleaner(base_dir=tmp_path)
-        coordinator = StartupRecoveryCoordinator(journal, query_adapter=mock_adapter, cleaner=cleaner)
+        coordinator = StartupRecoveryCoordinator(
+            journal, query_adapter=mock_adapter, cleaner=cleaner
+        )
 
         journal.record_claim("job-spool-ok", "att-spool-ok", "Laser_Office", "lease-ok")
         journal.update_status("att-spool-ok", JobState.PRINTING)
@@ -106,7 +110,9 @@ class TestStartupCrashRecovery:
         journal = LocalStateJournal(":memory:")
         mock_adapter = FakeWin32JobQueryAdapter()  # Empty: job 777 does not exist in spooler
         cleaner = ArtifactCleaner(base_dir=tmp_path)
-        coordinator = StartupRecoveryCoordinator(journal, query_adapter=mock_adapter, cleaner=cleaner)
+        coordinator = StartupRecoveryCoordinator(
+            journal, query_adapter=mock_adapter, cleaner=cleaner
+        )
 
         journal.record_claim("job-missing", "att-missing", "Laser_Office", "lease-miss")
         journal.update_status("att-missing", JobState.PRINTING)
@@ -138,7 +144,9 @@ class TestStartupCrashRecovery:
         mock_adapter = FakeWin32JobQueryAdapter()
         mgr = TempFileManager(tmp_path / "spool")
         cleaner = ArtifactCleaner(temp_manager=mgr)
-        coordinator = StartupRecoveryCoordinator(journal, query_adapter=mock_adapter, cleaner=cleaner)
+        coordinator = StartupRecoveryCoordinator(
+            journal, query_adapter=mock_adapter, cleaner=cleaner
+        )
 
         # Create crash attempt with physical files
         journal.record_claim("job-residue", "att-residue", "Printer_A", "lease-r")

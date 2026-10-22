@@ -78,7 +78,9 @@ class TestDiagnosticsEndpoints(unittest.TestCase):
         test_logger = logging.getLogger("caps_agent.test")
         test_logger.addHandler(cls.log_buffer)
         test_logger.setLevel(logging.INFO)
-        test_logger.info("Connecting with Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.secret and token=abc123456789")
+        test_logger.info(
+            "Connecting with Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.secret and token=abc123456789"
+        )
 
         cls.operator_stop_called = False
 

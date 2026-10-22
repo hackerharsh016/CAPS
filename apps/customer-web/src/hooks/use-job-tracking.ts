@@ -30,7 +30,8 @@ export interface UseJobTrackingOptions {
   enablePollingFallback?: boolean | undefined;
   pollingIntervalMs?: number | undefined; // 10 seconds
   customClient?: RealtimeTrackingClient | undefined;
-  onStatusChange?: ((status: CanonicalJobStatus, payload: JobStatusBroadcastPayload) => void) | undefined;
+  onStatusChange?:
+    ((status: CanonicalJobStatus, payload: JobStatusBroadcastPayload) => void) | undefined;
   onPoll?: (() => Promise<void> | void) | undefined;
 }
 
@@ -42,10 +43,20 @@ export interface TrackingStepMeta {
 }
 
 export const TRACKING_STEPS: TrackingStepMeta[] = [
-  { id: 'submitted', name: 'Order Submitted', description: 'Document uploaded & verified', stepIndex: 0 },
+  {
+    id: 'submitted',
+    name: 'Order Submitted',
+    description: 'Document uploaded & verified',
+    stepIndex: 0
+  },
   { id: 'queued', name: 'In Queue', description: 'Queued at shop printer station', stepIndex: 1 },
   { id: 'printing', name: 'Printing', description: 'Actively printing on hardware', stepIndex: 2 },
-  { id: 'ready', name: 'Ready for Pickup', description: 'Completed and ready at counter', stepIndex: 3 }
+  {
+    id: 'ready',
+    name: 'Ready for Pickup',
+    description: 'Completed and ready at counter',
+    stepIndex: 3
+  }
 ];
 
 export interface UseJobTrackingResult {
@@ -95,15 +106,12 @@ export function TrackingConnectionBadge({
       { className: 'relative flex h-2 w-2' },
       isConnected &&
         React.createElement('span', {
-          className: 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75'
+          className:
+            'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75'
         }),
       React.createElement('span', {
         className: `relative inline-flex rounded-full h-2 w-2 ${
-          isConnected
-            ? 'bg-emerald-500'
-            : isPolling
-              ? 'bg-amber-500 animate-pulse'
-              : 'bg-zinc-400'
+          isConnected ? 'bg-emerald-500' : isPolling ? 'bg-amber-500 animate-pulse' : 'bg-zinc-400'
         }`
       })
     ),
@@ -153,7 +161,10 @@ export function useJobTracking(
       if (payload.pagesPrinted !== undefined) {
         setPagesPrinted(payload.pagesPrinted);
       }
-      if (payload.estimatedMinutesRemaining !== undefined && payload.estimatedMinutesRemaining !== null) {
+      if (
+        payload.estimatedMinutesRemaining !== undefined &&
+        payload.estimatedMinutesRemaining !== null
+      ) {
         setEstimatedMinutesRemaining(payload.estimatedMinutesRemaining);
       } else {
         const mins = calculateEstimatedMinutes(newStatus, payload.totalPages || totalPages);
@@ -216,7 +227,15 @@ export function useJobTracking(
       client.unsubscribe();
       clientRef.current = null;
     };
-  }, [jobId, customerId, options.customClient, options.enablePollingFallback, options.pollingIntervalMs, refresh, handleStatusUpdate]);
+  }, [
+    jobId,
+    customerId,
+    options.customClient,
+    options.enablePollingFallback,
+    options.pollingIntervalMs,
+    refresh,
+    handleStatusUpdate
+  ]);
 
   return {
     jobId,

@@ -14,21 +14,16 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import tempfile
-import threading
 import time
 import unittest
-from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 
-from api_client import AgentApiClient, JobClaim
+from api_client import JobClaim
 from coordinator import Coordinator
 from job_download import SecurePdfDownloader
 from realtime_client import (
-    DEFAULT_BASE_BACKOFF,
-    DEFAULT_MAX_BACKOFF,
     MockRealtimeTransport,
     RealtimeClient,
     RealtimeConnectionError,

@@ -13,7 +13,6 @@ import logging
 import platform
 import urllib.error
 import urllib.request
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any

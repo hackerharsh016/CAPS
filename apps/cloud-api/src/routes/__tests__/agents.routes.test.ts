@@ -16,7 +16,11 @@ import { PairingService } from '../../modules/agents/pairing.service.js';
 import type { ITokenVerifier, AuthUser } from '../../plugins/auth.js';
 
 const require = createRequire(import.meta.url);
-const { validateContract, validators, openApiV1 } = require('../../../../../packages/print-contracts/dist/index.js');
+const {
+  validateContract,
+  validators,
+  openApiV1
+} = require('../../../../../packages/print-contracts/dist/index.js');
 
 class TestTokenVerifier implements ITokenVerifier {
   private users = new Map<string, AuthUser>();

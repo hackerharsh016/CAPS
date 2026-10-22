@@ -12,10 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type {
-  PaymentOrderData,
-  RazorpayPaymentSuccess
-} from '../../services/api/checkout.service';
+import type { PaymentOrderData, RazorpayPaymentSuccess } from '../../services/api/checkout.service';
 import { CheckoutService } from '../../services/api/checkout.service';
 
 export interface CustomerDetails {
@@ -52,7 +49,7 @@ export function RazorpayModal({
 
   // Preload Razorpay checkout script on mount
   useEffect(() => {
-    service.loadRazorpayScript().catch((err) => {
+    service.loadRazorpayScript().catch(err => {
       console.warn('Failed to pre-load Razorpay script:', err);
     });
   }, [service]);
@@ -153,9 +150,7 @@ export function RazorpayModal({
           <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 flex items-center justify-between">
             <div>
               <p className="text-xs font-medium text-slate-500 uppercase">Total Amount</p>
-              <p className="text-2xl font-black text-slate-900">
-                ₹{amountRupees}
-              </p>
+              <p className="text-2xl font-black text-slate-900">₹{amountRupees}</p>
             </div>
             <div className="text-right">
               <p className="text-xs text-slate-400">Currency: {order.currency}</p>
@@ -180,7 +175,11 @@ export function RazorpayModal({
               role="alert"
               className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start gap-2"
             >
-              <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-4 h-4 text-red-500 mt-0.5 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -231,7 +230,12 @@ export function RazorpayModal({
                 <>
                   <span>Pay ₹{amountRupees} with Razorpay</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    />
                   </svg>
                 </>
               )}
@@ -251,7 +255,11 @@ export function RazorpayModal({
           <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-4 text-xs text-slate-400">
             <span className="flex items-center gap-1">
               <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               256-bit SSL Secured
             </span>

@@ -60,11 +60,11 @@ class PdfRenderError(PdfError):
 
 # Standard paper dimensions in points (1 point = 1/72 inch)
 STANDARD_PAPER_SIZES_PTS: dict[str, tuple[float, float]] = {
-    "A4": (595.28, 841.89),       # 210 x 297 mm
-    "A3": (841.89, 1190.55),     # 297 x 420 mm
-    "A5": (419.53, 595.28),      # 148 x 210 mm
-    "LETTER": (612.0, 792.0),    # 8.5 x 11.0 in
-    "LEGAL": (612.0, 1008.0),    # 8.5 x 14.0 in
+    "A4": (595.28, 841.89),  # 210 x 297 mm
+    "A3": (841.89, 1190.55),  # 297 x 420 mm
+    "A5": (419.53, 595.28),  # 148 x 210 mm
+    "LETTER": (612.0, 792.0),  # 8.5 x 11.0 in
+    "LEGAL": (612.0, 1008.0),  # 8.5 x 14.0 in
     "TABLOID": (792.0, 1224.0),  # 11.0 x 17.0 in
 }
 
@@ -735,8 +735,7 @@ class PdfiumBackend:
 class PdfBackend(Protocol):
     """Protocol for pluggable PDF inspection and rendering backends."""
 
-    def validate(self, path: Path) -> PdfValidationResult:
-        ...
+    def validate(self, path: Path) -> PdfValidationResult: ...
 
     def render_page(
         self,
@@ -745,8 +744,7 @@ class PdfBackend(Protocol):
         dpi: int = 300,
         color_mode: str = "bw",
         scaling: ScalingResult | None = None,
-    ) -> RenderedPage:
-        ...
+    ) -> RenderedPage: ...
 
 
 class PdfRenderer:

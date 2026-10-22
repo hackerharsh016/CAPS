@@ -504,7 +504,9 @@ class TestMarginAndScalingPolicies(unittest.TestCase):
         self.assertEqual(summary["duplex_mode"], "duplex_long")
         self.assertEqual(summary["copies"], 2)
         self.assertEqual(summary["page_count"], 3)
-        self.assertEqual(summary["sheets_required"], 4)  # (3 pages + 1)//2 = 2 sheets * 2 copies = 4
+        self.assertEqual(
+            summary["sheets_required"], 4
+        )  # (3 pages + 1)//2 = 2 sheets * 2 copies = 4
         self.assertIn("devmode", summary)
         self.assertEqual(summary["devmode"]["dmPaperSize"], DMPAPER_A4)
 

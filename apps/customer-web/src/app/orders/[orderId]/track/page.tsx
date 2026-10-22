@@ -12,10 +12,7 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  useJobTracking,
-  TrackingConnectionBadge
-} from '../../../../hooks/use-job-tracking';
+import { useJobTracking, TrackingConnectionBadge } from '../../../../hooks/use-job-tracking';
 
 export default function OrderTrackingPage() {
   const params = useParams<{ orderId: string }>();
@@ -114,11 +111,17 @@ export default function OrderTrackingPage() {
                   Est. Completion
                 </span>
                 <p className="text-lg font-bold text-slate-900">
-                  {estimatedMinutesRemaining > 0 ? `~${estimatedMinutesRemaining} mins` : 'Any moment'}
+                  {estimatedMinutesRemaining > 0
+                    ? `~${estimatedMinutesRemaining} mins`
+                    : 'Any moment'}
                 </p>
                 {estimatedPickupAt && (
                   <p className="text-xs text-slate-500">
-                    By {new Date(estimatedPickupAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    By{' '}
+                    {new Date(estimatedPickupAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
                   </p>
                 )}
               </div>

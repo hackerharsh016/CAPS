@@ -9,13 +9,7 @@
 import { getSupabaseBrowserClient } from '../../lib/supabase';
 
 export type HardwareErrorState =
-  | 'NONE'
-  | 'OFFLINE'
-  | 'PAPER_OUT'
-  | 'JAMMED'
-  | 'DOOR_OPEN'
-  | 'LOW_TONER'
-  | 'ERROR';
+  'NONE' | 'OFFLINE' | 'PAPER_OUT' | 'JAMMED' | 'DOOR_OPEN' | 'LOW_TONER' | 'ERROR';
 
 export interface PrinterTelemetry {
   id: string;
@@ -26,11 +20,13 @@ export interface PrinterTelemetry {
   toner_level?: number | undefined; // 0 - 100 percentage
   error_state?: HardwareErrorState | undefined;
   error_message?: string | undefined;
-  capabilities?: {
-    color_modes?: string[] | undefined;
-    paper_sizes?: string[] | undefined;
-    duplex_supported?: boolean | undefined;
-  } | undefined;
+  capabilities?:
+    | {
+        color_modes?: string[] | undefined;
+        paper_sizes?: string[] | undefined;
+        duplex_supported?: boolean | undefined;
+      }
+    | undefined;
   last_heartbeat_at?: string | undefined;
 }
 
@@ -223,16 +219,29 @@ export class PrinterApiService {
         (payload: { payload?: Record<string, any>; [key: string]: any }) => {
           const data = payload?.payload || payload;
           if (data) {
-            callback({
-              id: data.printer_id || data.id,
-              name: data.printer_name || data.name,
-              status: data.status?.toUpperCase(),
-              is_online: data.is_online !== undefined ? Boolean(data.is_online) : undefined,
-              toner_level: data.toner_level !== undefined ? Number(data.toner_level) : undefined,
-              error_state: data.error_state?.toUpperCase() as HardwareErrorState,
-              error_message: data.error_message,
-              last_heartbeat_at: data.timestamp || new Date().toISOString()
-            });
+            const update: Partial<PrinterTelemetry> = {};
+            const id = data['printer_id'] || data['id'];
+            if (id) update.id = String(id);
+            const name = data['printer_name'] || data['name'];
+            if (name) update.name = String(name);
+            if (data['status']) {
+              update.status = String(data['status']).toUpperCase() as PrinterTelemetry['status'];
+            }
+            if (data['is_online'] !== undefined) {
+              update.is_online = Boolean(data['is_online']);
+            }
+            if (data['toner_level'] !== undefined) {
+              update.toner_level = Number(data['toner_level']);
+            }
+            if (data['error_state']) {
+              update.error_state = String(data['error_state']).toUpperCase() as HardwareErrorState;
+            }
+            if (data['error_message'] !== undefined) {
+              update.error_message = String(data['error_message']);
+            }
+            update.last_heartbeat_at = String(data['timestamp'] || new Date().toISOString());
+
+            callback(update);
           }
         }
       );

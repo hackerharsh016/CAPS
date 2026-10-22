@@ -74,7 +74,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
   let mockFetch: any;
 
   beforeEach(() => {
-    mockFetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    mockFetch = vi.fn().mockImplementation(async (url: string, _init?: RequestInit) => {
       if (url.includes('/printers')) {
         return {
           ok: true,
@@ -109,7 +109,10 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
 
   describe('PrinterApiService', () => {
     it('fetches live printers via GET /api/v1/shops/:shopId/printers', async () => {
-      const apiService = new PrinterApiService({ baseUrl: 'http://localhost:4000', authToken: 'token-abc' });
+      const apiService = new PrinterApiService({
+        baseUrl: 'http://localhost:4000',
+        authToken: 'token-abc'
+      });
       const printers = await apiService.getPrinters(shopId);
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -197,11 +200,7 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
   describe('Failed Jobs & Retry Action', () => {
     it('renders failed jobs list with error codes and Retry Print buttons', () => {
       const html = renderToStaticMarkup(
-        <PrinterStatusPanel
-          shopId={shopId}
-          printers={mockPrinters}
-          failedJobs={mockFailedJobs}
-        />
+        <PrinterStatusPanel shopId={shopId} printers={mockPrinters} failedJobs={mockFailedJobs} />
       );
 
       expect(html).toContain('Failed Print Jobs (2)');
@@ -213,7 +212,6 @@ describe('Owner Dashboard Hardware Status & Alerting Panel (INT-D2-04)', () => {
     });
 
     it('invokes retry callback when Retry Print is triggered', async () => {
-      const retrySpy = vi.fn().mockResolvedValue(undefined);
       const apiService = new PrinterApiService();
 
       // Test retry action through service directly

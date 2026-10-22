@@ -127,7 +127,11 @@ class PrinterCapabilities:
     def is_duplex_supported(self, duplex: str | bool) -> bool:
         """Check if duplex mode is supported."""
         if isinstance(duplex, bool):
-            return "duplex_long" in self.supported_duplex if duplex else "simplex" in self.supported_duplex
+            return (
+                "duplex_long" in self.supported_duplex
+                if duplex
+                else "simplex" in self.supported_duplex
+            )
         val = duplex.strip().lower()
         return val in self.supported_duplex
 
@@ -201,12 +205,16 @@ def map_color_modes(
     if color_device == 1:
         return ["bw", "color"], unknown, reasons
     if color_device == 0:
-        reasons.append("Driver reports monochrome device only (DC_COLORDEVICE=0); color printing is disabled")
+        reasons.append(
+            "Driver reports monochrome device only (DC_COLORDEVICE=0); color printing is disabled"
+        )
         return ["bw"], unknown, reasons
 
     # Unknown or failed query
     unknown.append("color")
-    reasons.append("Driver did not report DC_COLORDEVICE; defaulting to monochrome ['bw'] for safety")
+    reasons.append(
+        "Driver did not report DC_COLORDEVICE; defaulting to monochrome ['bw'] for safety"
+    )
     return ["bw"], unknown, reasons
 
 
@@ -220,12 +228,16 @@ def map_duplex_modes(
     if duplex_support == 1:
         return ["simplex", "duplex_long", "duplex_short"], unknown, reasons
     if duplex_support == 0:
-        reasons.append("Duplex unit absent or not reported (DC_DUPLEX=0); limited to single-sided ['simplex']")
+        reasons.append(
+            "Duplex unit absent or not reported (DC_DUPLEX=0); limited to single-sided ['simplex']"
+        )
         return ["simplex"], unknown, reasons
 
     # Unknown or failed query
     unknown.append("duplex")
-    reasons.append("Driver did not report DC_DUPLEX; defaulting to single-sided ['simplex'] for safety")
+    reasons.append(
+        "Driver did not report DC_DUPLEX; defaulting to single-sided ['simplex'] for safety"
+    )
     return ["simplex"], unknown, reasons
 
 
@@ -267,9 +279,7 @@ class CapabilityDetector:
     def adapter(self) -> Win32PrintAdapter:
         return self._adapter
 
-    def register_known_printer(
-        self, printer_name: str, capabilities: PrinterCapabilities
-    ) -> None:
+    def register_known_printer(self, printer_name: str, capabilities: PrinterCapabilities) -> None:
         """Register pre-computed capabilities for a printer device."""
         self._known_printers[printer_name] = capabilities
 
@@ -400,7 +410,7 @@ CANON_IR2006_CAPABILITIES = {
     DC_PAPERS: (DMPAPER_A3, DMPAPER_A4, DMPAPER_LETTER),
     DC_PAPERNAMES: ("A3", "A4", "Letter"),
     DC_COLORDEVICE: 0,  # Monochrome only
-    DC_DUPLEX: 1,       # Duplex supported
+    DC_DUPLEX: 1,  # Duplex supported
     DC_BINNAMES: ("Auto Select", "Drawer 1", "Drawer 2", "Bypass Tray"),
     DC_COPIES: 99,
     DC_COLLATE: 1,
@@ -410,7 +420,7 @@ EPSON_L805_CAPABILITIES = {
     DC_PAPERS: (DMPAPER_LETTER, DMPAPER_A4),
     DC_PAPERNAMES: ("Letter", "A4"),
     DC_COLORDEVICE: 1,  # Color supported
-    DC_DUPLEX: 0,       # Simplex only
+    DC_DUPLEX: 0,  # Simplex only
     DC_BINNAMES: ("Rear Paper Feed",),
     DC_COPIES: 99,
     DC_COLLATE: 1,
@@ -420,7 +430,7 @@ HP_LASERJET_P1102_CAPABILITIES = {
     DC_PAPERS: (DMPAPER_LETTER, DMPAPER_LEGAL, DMPAPER_A4),
     DC_PAPERNAMES: ("Letter", "Legal", "A4"),
     DC_COLORDEVICE: 0,  # Monochrome only
-    DC_DUPLEX: 0,       # Simplex only (no auto duplex)
+    DC_DUPLEX: 0,  # Simplex only (no auto duplex)
     DC_BINNAMES: ("Main Tray", "Priority Feed Slot"),
     DC_COPIES: 99,
     DC_COLLATE: 0,

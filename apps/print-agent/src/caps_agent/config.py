@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
 class ConfigurationError(ValueError):
     """Raised when agent configuration is missing or malformed."""
+
     pass
 
 
@@ -30,11 +31,15 @@ class AgentConfig:
     device_token: str | None = None
     local_diagnostics_host: str = "127.0.0.1"
     local_diagnostics_port: int = 9099
-    temp_dir: Path = field(default_factory=lambda: Path(os.environ.get("TEMP", "/tmp")) / "caps_spool")
+    temp_dir: Path = field(
+        default_factory=lambda: Path(os.environ.get("TEMP", "/tmp")) / "caps_spool"
+    )
     db_path: Path = field(
-        default_factory=lambda: Path(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", "/tmp")))
-        / "caps_agent"
-        / "state.db"
+        default_factory=lambda: (
+            Path(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", "/tmp")))
+            / "caps_agent"
+            / "state.db"
+        )
     )
     temp_cleanup_max_age_seconds: int = 3600
     log_level: str = "INFO"

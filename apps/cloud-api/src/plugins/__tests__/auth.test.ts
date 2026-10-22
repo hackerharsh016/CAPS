@@ -5,9 +5,7 @@ import {
   createAuthHooks,
   createTestJwt,
   SupabaseJwtVerifier,
-  CompositeAuthVerifier,
-  MockTokenVerifier,
-  authPlugin
+  CompositeAuthVerifier
 } from '../auth.js';
 import { registerErrorHandlers } from '../error-handler.js';
 import { MockAgentsRepository } from '../../modules/agents/agents.repository.js';
@@ -71,16 +69,12 @@ describe('Task INT-D3-02: Composite Agent Device Secret & Supabase JWT Verifier'
     app.decorate('authorize', authorize);
 
     // Protected Test Endpoints
-    app.get(
-      '/api/v1/auth/inspect',
-      { preHandler: [app.authenticate] },
-      async (req, reply) => {
-        return reply.status(200).send({
-          user: req.user,
-          agent: req.agent
-        });
-      }
-    );
+    app.get('/api/v1/auth/inspect', { preHandler: [app.authenticate] }, async (req, reply) => {
+      return reply.status(200).send({
+        user: req.user,
+        agent: req.agent
+      });
+    });
 
     app.get(
       '/api/v1/shops/:shopId/agent-check',
@@ -96,7 +90,7 @@ describe('Task INT-D3-02: Composite Agent Device Secret & Supabase JWT Verifier'
     app.get(
       '/api/v1/agent-only',
       { preHandler: [app.authenticate, app.authorize(['PRINT_AGENT'])] },
-      async (req, reply) => {
+      async (_req, reply) => {
         return reply.status(200).send({ access: 'granted', role: 'PRINT_AGENT' });
       }
     );
@@ -104,7 +98,7 @@ describe('Task INT-D3-02: Composite Agent Device Secret & Supabase JWT Verifier'
     app.get(
       '/api/v1/owner-only',
       { preHandler: [app.authenticate, app.authorize(['shop_owner'])] },
-      async (req, reply) => {
+      async (_req, reply) => {
         return reply.status(200).send({ access: 'granted', role: 'shop_owner' });
       }
     );

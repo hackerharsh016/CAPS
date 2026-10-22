@@ -27,10 +27,14 @@ export type Env = z.infer<typeof envSchema>;
 export function validateEnv(rawEnv: Record<string, string | undefined> = process.env): Env {
   const normalized: Record<string, string | undefined> = {
     ...rawEnv,
-    ...(rawEnv.HOST === undefined && rawEnv.API_HOST !== undefined ? { HOST: rawEnv.API_HOST } : {}),
-    ...(rawEnv.PORT === undefined && rawEnv.API_PORT !== undefined ? { PORT: rawEnv.API_PORT } : {}),
-    ...(rawEnv.CORS_ORIGINS === undefined && rawEnv.API_CORS_ORIGINS !== undefined
-      ? { CORS_ORIGINS: rawEnv.API_CORS_ORIGINS }
+    ...(rawEnv['HOST'] === undefined && rawEnv['API_HOST'] !== undefined
+      ? { HOST: rawEnv['API_HOST'] }
+      : {}),
+    ...(rawEnv['PORT'] === undefined && rawEnv['API_PORT'] !== undefined
+      ? { PORT: rawEnv['API_PORT'] }
+      : {}),
+    ...(rawEnv['CORS_ORIGINS'] === undefined && rawEnv['API_CORS_ORIGINS'] !== undefined
+      ? { CORS_ORIGINS: rawEnv['API_CORS_ORIGINS'] }
       : {})
   };
   const result = envSchema.safeParse(normalized);

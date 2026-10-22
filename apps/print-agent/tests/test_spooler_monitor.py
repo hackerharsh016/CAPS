@@ -93,7 +93,11 @@ class TestSpoolerMonitorHappyPath(unittest.TestCase):
 
         # Test JOB_STATUS_COMPLETE
         self.adapter.set_job(
-            PRINTER_NAME, JOB_ID + 1, status_flags=JOB_STATUS_COMPLETE, pages_printed=1, total_pages=1
+            PRINTER_NAME,
+            JOB_ID + 1,
+            status_flags=JOB_STATUS_COMPLETE,
+            pages_printed=1,
+            total_pages=1,
         )
         status2 = self.monitor.poll_job_status(PRINTER_NAME, JOB_ID + 1)
         self.assertEqual(status2.outcome, SpoolerOutcome.COMPLETED)

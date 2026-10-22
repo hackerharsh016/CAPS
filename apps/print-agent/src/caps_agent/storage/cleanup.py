@@ -93,13 +93,21 @@ class ArtifactCleaner:
                         f.flush()
                         os.fsync(f.fileno())
                 except Exception as wipe_err:
-                    logger.debug("Secure wipe failed for '%s' (will attempt direct unlink): %s", file_path, wipe_err)
+                    logger.debug(
+                        "Secure wipe failed for '%s' (will attempt direct unlink): %s",
+                        file_path,
+                        wipe_err,
+                    )
 
             file_path.unlink(missing_ok=True)
             return bytes_freed
         except PermissionError as perm_err:
             # Common on Windows if spooler or antivirus has an open handle
-            logger.warning("File '%s' is locked by another process (will defer cleanup): %s", file_path, perm_err)
+            logger.warning(
+                "File '%s' is locked by another process (will defer cleanup): %s",
+                file_path,
+                perm_err,
+            )
             raise
         except Exception as err:
             logger.warning("Failed to delete file '%s': %s", file_path, err)
@@ -183,7 +191,9 @@ class ArtifactCleaner:
                             break
 
                     if job_prefix_match:
-                        logger.debug("Skipping active job directory '%s' during orphan scrub", entry.name)
+                        logger.debug(
+                            "Skipping active job directory '%s' during orphan scrub", entry.name
+                        )
                         continue
 
                     stat_info = entry.stat()
@@ -201,7 +211,9 @@ class ArtifactCleaner:
                         try:
                             shutil.rmtree(entry, ignore_errors=True)
                             report.dirs_deleted += 1
-                            logger.info("Cleaned stale job directory: %s (age: %.1fs)", entry.name, dir_age)
+                            logger.info(
+                                "Cleaned stale job directory: %s (age: %.1fs)", entry.name, dir_age
+                            )
                         except Exception as e:
                             report.errors.append(f"Stale dir {entry.name}: {e}")
 
@@ -214,7 +226,9 @@ class ArtifactCleaner:
                             b = self.wipe_and_unlink(entry, secure=secure)
                             report.files_deleted += 1
                             report.bytes_freed += b
-                            logger.info("Cleaned stale spool file: %s (age: %.1fs)", entry.name, file_age)
+                            logger.info(
+                                "Cleaned stale spool file: %s (age: %.1fs)", entry.name, file_age
+                            )
                         except Exception as e:
                             report.errors.append(f"Stale file {entry.name}: {e}")
 

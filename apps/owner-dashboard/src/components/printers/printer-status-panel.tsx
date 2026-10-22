@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { PrinterTelemetry, HardwareErrorState } from '../../services/api/printer.service';
+import type { PrinterTelemetry } from '../../services/api/printer.service';
 import { PrinterApiService } from '../../services/api/printer.service';
 
 export interface FailedJobItem {
@@ -94,15 +94,22 @@ export function PrinterStatusPanel({
           return prevPrinters;
         }
 
+        const existing = prevPrinters[index];
+        if (!existing) return prevPrinters;
+
         const updated = [...prevPrinters];
-        updated[index] = {
-          ...updated[index],
+        const nextPrinter: PrinterTelemetry = {
+          ...existing,
           ...update,
-          status: update.status || updated[index].status,
-          is_online: update.is_online !== undefined ? update.is_online : updated[index].is_online,
-          error_state: update.error_state || updated[index].error_state,
-          toner_level: update.toner_level !== undefined ? update.toner_level : updated[index].toner_level
+          id: existing.id,
+          shop_id: existing.shop_id,
+          name: update.name || existing.name,
+          status: update.status || existing.status,
+          is_online: update.is_online !== undefined ? update.is_online : existing.is_online,
+          error_state: update.error_state || existing.error_state,
+          toner_level: update.toner_level !== undefined ? update.toner_level : existing.toner_level
         };
+        updated[index] = nextPrinter;
         return updated;
       });
     });
@@ -150,7 +157,8 @@ export function PrinterStatusPanel({
   }> = [];
 
   printers.forEach(printer => {
-    const isOffline = !printer.is_online || printer.status === 'OFFLINE' || printer.error_state === 'OFFLINE';
+    const isOffline =
+      !printer.is_online || printer.status === 'OFFLINE' || printer.error_state === 'OFFLINE';
     const isPaperOut = printer.error_state === 'PAPER_OUT';
     const isJammed = printer.error_state === 'JAMMED';
     const isLowToner =
@@ -285,7 +293,9 @@ export function PrinterStatusPanel({
             <div
               key={printer.id}
               className={`p-5 rounded-xl border bg-white shadow-sm flex flex-col justify-between transition-all ${
-                isOffline ? 'border-gray-300 bg-gray-50/60' : 'border-gray-200 hover:border-gray-300'
+                isOffline
+                  ? 'border-gray-300 bg-gray-50/60'
+                  : 'border-gray-200 hover:border-gray-300'
               }`}
               data-testid={`printer-card-${printer.id}`}
             >
@@ -293,15 +303,17 @@ export function PrinterStatusPanel({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="font-semibold text-gray-900 text-base">{printer.name}</h3>
-                    <p className="text-xs text-gray-500 font-mono mt-0.5">ID: {printer.id.slice(0, 8)}</p>
+                    <p className="text-xs text-gray-500 font-mono mt-0.5">
+                      ID: {printer.id.slice(0, 8)}
+                    </p>
                   </div>
                   <span
                     className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       printer.status === 'ONLINE'
                         ? 'bg-emerald-100 text-emerald-800'
                         : printer.status === 'BUSY'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-red-100 text-red-800'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-red-100 text-red-800'
                     }`}
                   >
                     <span
@@ -345,8 +357,8 @@ export function PrinterStatusPanel({
                             toner > 50
                               ? 'bg-emerald-500'
                               : toner > 20
-                              ? 'bg-amber-500'
-                              : 'bg-red-500'
+                                ? 'bg-amber-500'
+                                : 'bg-red-500'
                           }`}
                           style={{ width: `${toner}%` }}
                         />
@@ -384,7 +396,8 @@ export function PrinterStatusPanel({
                 </span>
               </h3>
               <p className="text-xs text-gray-500">
-                Jobs that failed due to printer offline, paper jam, or spooler timeout. Review hardware before retrying.
+                Jobs that failed due to printer offline, paper jam, or spooler timeout. Review
+                hardware before retrying.
               </p>
             </div>
           </div>
@@ -409,7 +422,9 @@ export function PrinterStatusPanel({
                     </div>
                     <div className="text-xs text-red-600 flex items-center gap-1.5">
                       <span>Error:</span>
-                      <span className="font-mono font-bold">{job.error_code || 'PRINTER_ERROR'}</span>
+                      <span className="font-mono font-bold">
+                        {job.error_code || 'PRINTER_ERROR'}
+                      </span>
                       {job.error_message && <span>— {job.error_message}</span>}
                     </div>
                   </div>

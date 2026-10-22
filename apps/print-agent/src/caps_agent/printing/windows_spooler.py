@@ -110,26 +110,19 @@ class SpoolerSubmissionResult:
 class Win32SpoolerAdapter(Protocol):
     """Protocol for abstracting low-level Windows Spooler API calls."""
 
-    def open_printer(self, printer_name: str, devmode: Any = None) -> Any:
-        ...
+    def open_printer(self, printer_name: str, devmode: Any = None) -> Any: ...
 
-    def start_doc_printer(self, h_printer: Any, job_title: str, data_type: str = "RAW") -> int:
-        ...
+    def start_doc_printer(self, h_printer: Any, job_title: str, data_type: str = "RAW") -> int: ...
 
-    def start_page_printer(self, h_printer: Any) -> None:
-        ...
+    def start_page_printer(self, h_printer: Any) -> None: ...
 
-    def write_printer(self, h_printer: Any, data: bytes) -> int:
-        ...
+    def write_printer(self, h_printer: Any, data: bytes) -> int: ...
 
-    def end_page_printer(self, h_printer: Any) -> None:
-        ...
+    def end_page_printer(self, h_printer: Any) -> None: ...
 
-    def end_doc_printer(self, h_printer: Any) -> None:
-        ...
+    def end_doc_printer(self, h_printer: Any) -> None: ...
 
-    def close_printer(self, h_printer: Any) -> None:
-        ...
+    def close_printer(self, h_printer: Any) -> None: ...
 
 
 class FakeWin32SpoolerAdapter:
@@ -346,10 +339,14 @@ class WindowsSpooler:
             )
         except PermissionError as err:
             logger.error("Access denied opening printer '%s': %s", printer_name, err)
-            raise PrinterAccessDeniedError(f"Access denied for printer '{printer_name}': {err}") from err
+            raise PrinterAccessDeniedError(
+                f"Access denied for printer '{printer_name}': {err}"
+            ) from err
         except (ConnectionError, OSError) as err:
             logger.error("Printer '%s' is unavailable or offline: %s", printer_name, err)
-            raise PrinterOfflineError(f"Printer '{printer_name}' offline/unavailable: {err}") from err
+            raise PrinterOfflineError(
+                f"Printer '{printer_name}' offline/unavailable: {err}"
+            ) from err
         except Exception as err:
             logger.error("Failed to open printer '%s': %s", printer_name, err)
             raise SpoolerSubmissionError(f"OpenPrinter failed for '{printer_name}': {err}") from err

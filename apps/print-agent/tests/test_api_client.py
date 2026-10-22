@@ -28,7 +28,9 @@ def load_schema_validator(schema_name: str) -> jsonschema.Draft202012Validator:
         target_schema = json.load(f)
 
     res_common = Resource.from_contents(common_schema)
-    registry = Registry().with_resource("https://caps.internal/schemas/common.schema.json", res_common)
+    registry = Registry().with_resource(
+        "https://caps.internal/schemas/common.schema.json", res_common
+    )
     registry = registry.with_resource("common.schema.json", res_common)
 
     return jsonschema.Draft202012Validator(target_schema, registry=registry)
@@ -44,13 +46,17 @@ class MockHttpTransport:
     def queue_response(self, data: dict[str, Any]) -> None:
         self.responses.append(data)
 
-    def __call__(self, method: str, url: str, headers: dict[str, str], payload: dict[str, Any] | None) -> dict[str, Any]:
-        self.recorded_requests.append({
-            "method": method,
-            "url": url,
-            "headers": headers,
-            "body": payload,
-        })
+    def __call__(
+        self, method: str, url: str, headers: dict[str, str], payload: dict[str, Any] | None
+    ) -> dict[str, Any]:
+        self.recorded_requests.append(
+            {
+                "method": method,
+                "url": url,
+                "headers": headers,
+                "body": payload,
+            }
+        )
         if self.responses:
             return self.responses.pop(0)
         return {"status": "ok"}

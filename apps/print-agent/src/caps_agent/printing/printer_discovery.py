@@ -223,9 +223,7 @@ class Win32PrintAdapter(Protocol):
         """Return detailed printer properties for the named device."""
         ...
 
-    def device_capabilities(
-        self, printer_name: str, port_name: str, capability: int
-    ) -> Any:
+    def device_capabilities(self, printer_name: str, port_name: str, capability: int) -> Any:
         """Query documented DeviceCapabilities for printer and port."""
         ...
 
@@ -250,29 +248,33 @@ class PyWin32PrintAdapter(Win32PrintAdapter):
             for item in raw_printers:
                 # EnumPrinters level 2 returns a tuple of 21 elements or dictionary
                 if isinstance(item, dict):
-                    results.append({
-                        "server_name": item.get("pServerName"),
-                        "printer_name": item.get("pPrinterName", ""),
-                        "port_name": item.get("pPortName"),
-                        "driver_name": item.get("pDriverName"),
-                        "comment": item.get("pComment"),
-                        "location": item.get("pLocation"),
-                        "attributes": item.get("Attributes", 0),
-                        "status": item.get("Status", 0),
-                        "jobs_count": item.get("cJobs", 0),
-                    })
+                    results.append(
+                        {
+                            "server_name": item.get("pServerName"),
+                            "printer_name": item.get("pPrinterName", ""),
+                            "port_name": item.get("pPortName"),
+                            "driver_name": item.get("pDriverName"),
+                            "comment": item.get("pComment"),
+                            "location": item.get("pLocation"),
+                            "attributes": item.get("Attributes", 0),
+                            "status": item.get("Status", 0),
+                            "jobs_count": item.get("cJobs", 0),
+                        }
+                    )
                 elif isinstance(item, (tuple, list)) and len(item) >= 19:
-                    results.append({
-                        "server_name": item[0],
-                        "printer_name": item[1] or "",
-                        "port_name": item[3],
-                        "driver_name": item[4],
-                        "comment": item[5],
-                        "location": item[6],
-                        "attributes": item[13] if len(item) > 13 else 0,
-                        "status": item[18] if len(item) > 18 else 0,
-                        "jobs_count": item[19] if len(item) > 19 else 0,
-                    })
+                    results.append(
+                        {
+                            "server_name": item[0],
+                            "printer_name": item[1] or "",
+                            "port_name": item[3],
+                            "driver_name": item[4],
+                            "comment": item[5],
+                            "location": item[6],
+                            "attributes": item[13] if len(item) > 13 else 0,
+                            "status": item[18] if len(item) > 18 else 0,
+                            "jobs_count": item[19] if len(item) > 19 else 0,
+                        }
+                    )
             return results
         except Exception as err:
             logger.error("Failed to enumerate Win32 printers: %s", err)
@@ -304,13 +306,9 @@ class PyWin32PrintAdapter(Win32PrintAdapter):
                 with contextlib.suppress(Exception):
                     self._win32print.ClosePrinter(handle)
 
-    def device_capabilities(
-        self, printer_name: str, port_name: str, capability: int
-    ) -> Any:
+    def device_capabilities(self, printer_name: str, port_name: str, capability: int) -> Any:
         try:
-            return self._win32print.DeviceCapabilities(
-                printer_name, port_name or "", capability
-            )
+            return self._win32print.DeviceCapabilities(printer_name, port_name or "", capability)
         except Exception as err:
             logger.debug(
                 "DeviceCapabilities(%s, %s, %s) failed: %s",
@@ -367,24 +365,24 @@ class FakeWin32PrintAdapter(Win32PrintAdapter):
         comment: str | None = None,
         location: str | None = None,
     ) -> None:
-        self.printers.append({
-            "printer_name": name,
-            "port_name": port,
-            "driver_name": driver,
-            "attributes": attributes,
-            "status": status,
-            "comment": comment,
-            "location": location,
-            "jobs_count": 0,
-        })
+        self.printers.append(
+            {
+                "printer_name": name,
+                "port_name": port,
+                "driver_name": driver,
+                "attributes": attributes,
+                "status": status,
+                "comment": comment,
+                "location": location,
+                "jobs_count": 0,
+            }
+        )
 
     def set_capability(self, printer_name: str, capability: int, value: Any) -> None:
         """Configure mock capability response for a printer and DC_* index."""
         self.capabilities[(printer_name, capability)] = value
 
-    def device_capabilities(
-        self, printer_name: str, port_name: str, capability: int
-    ) -> Any:
+    def device_capabilities(self, printer_name: str, port_name: str, capability: int) -> Any:
         if self.simulated_error:
             raise self.simulated_error
         key = (printer_name, capability)
@@ -411,9 +409,7 @@ class PrinterDiscovery:
             try:
                 self._adapter = PyWin32PrintAdapter()
             except Win32PrintNotAvailableError:
-                logger.warning(
-                    "pywin32 not available; falling back to empty FakeWin32PrintAdapter"
-                )
+                logger.warning("pywin32 not available; falling back to empty FakeWin32PrintAdapter")
                 self._adapter = FakeWin32PrintAdapter()
 
     @property

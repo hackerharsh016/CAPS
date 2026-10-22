@@ -7,6 +7,7 @@ and handles immediate purge and failure reporting on corruption.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import http.client
 import logging
@@ -14,7 +15,6 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -37,7 +37,9 @@ CHUNK_SIZE = 65536  # 64 KB streaming buffer
 class DownloadError(Exception):
     """Base exception for document download failures."""
 
-    def __init__(self, message: str, error_code: str = "DOWNLOAD_FAILED", status_code: int | None = None) -> None:
+    def __init__(
+        self, message: str, error_code: str = "DOWNLOAD_FAILED", status_code: int | None = None
+    ) -> None:
         super().__init__(message)
         self.message = message
         self.error_code = error_code
@@ -64,7 +66,9 @@ class CorruptedFileError(DownloadError):
 class ExpiredUrlError(DownloadError):
     """Raised when presigned download URL has expired (HTTP 403 or 410)."""
 
-    def __init__(self, message: str = "Download URL has expired or is forbidden", status_code: int = 403) -> None:
+    def __init__(
+        self, message: str = "Download URL has expired or is forbidden", status_code: int = 403
+    ) -> None:
         super().__init__(message, error_code="DOWNLOAD_FAILED", status_code=status_code)
 
 
@@ -131,7 +135,9 @@ class SecurePdfDownloader:
                     total_pages=1,
                 )
             except Exception as notify_err:
-                logger.warning("Failed to report DOWNLOADING status for job '%s': %s", job_id, notify_err)
+                logger.warning(
+                    "Failed to report DOWNLOADING status for job '%s': %s", job_id, notify_err
+                )
 
         hasher = hashlib.sha256()
         bytes_received = 0
@@ -174,10 +180,8 @@ class SecurePdfDownloader:
                 content_length_hdr = response.headers.get("Content-Length")
                 header_expected_len = None
                 if content_length_hdr:
-                    try:
+                    with contextlib.suppress(ValueError):
                         header_expected_len = int(content_length_hdr)
-                    except ValueError:
-                        pass
 
                 # Stream chunks into destination file
                 with open(dest, "wb") as out_file:
@@ -209,11 +213,14 @@ class SecurePdfDownloader:
 
             # 4. Check Content-Length completeness
             target_expected_len = expected_size_bytes or header_expected_len
-            if target_expected_len is not None and target_expected_len > 0:
-                if bytes_received < target_expected_len:
-                    raise CorruptedFileError(
-                        f"Truncated download: received {bytes_received}/{target_expected_len} bytes"
-                    )
+            if (
+                target_expected_len is not None
+                and target_expected_len > 0
+                and bytes_received < target_expected_len
+            ):
+                raise CorruptedFileError(
+                    f"Truncated download: received {bytes_received}/{target_expected_len} bytes"
+                )
 
             # 5. Check valid PDF signature (%PDF-)
             with open(dest, "rb") as verify_f:

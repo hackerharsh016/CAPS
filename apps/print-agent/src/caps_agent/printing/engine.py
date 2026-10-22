@@ -365,15 +365,18 @@ class WindowsPrintEngine:
                     details={"agent_shop_id": self.shop_id, "request_shop_id": shop_id},
                 )
 
-            if self.authorized_printers is not None and printer_name not in self.authorized_printers:
-                    raise ShopAuthorizationError(
-                        f"Printer '{printer_name}' is not authorized for shop '{effective_shop}'.",
-                        details={
-                            "printer_name": printer_name,
-                            "shop_id": effective_shop,
-                            "authorized_printers": list(self.authorized_printers),
-                        },
-                    )
+            if (
+                self.authorized_printers is not None
+                and printer_name not in self.authorized_printers
+            ):
+                raise ShopAuthorizationError(
+                    f"Printer '{printer_name}' is not authorized for shop '{effective_shop}'.",
+                    details={
+                        "printer_name": printer_name,
+                        "shop_id": effective_shop,
+                        "authorized_printers": list(self.authorized_printers),
+                    },
+                )
 
             # 3. Document File Existence & PDF Validation
             doc_path = Path(pdf_path)
@@ -414,7 +417,9 @@ class WindowsPrintEngine:
                 and printer_name in self.capability_detector._known_printers
             ):
                 is_known = True
-                raw_status = getattr(self.capability_detector._known_printers[printer_name], "status", 0)
+                raw_status = getattr(
+                    self.capability_detector._known_printers[printer_name], "status", 0
+                )
 
             if not is_known and hasattr(self.capability_detector, "adapter"):
                 try:
@@ -431,7 +436,9 @@ class WindowsPrintEngine:
             try:
                 capabilities = self.capability_detector.detect_capabilities(printer_name)
             except Exception as err:
-                logger.error("Failed to detect capabilities for printer '%s': %s", printer_name, err)
+                logger.error(
+                    "Failed to detect capabilities for printer '%s': %s", printer_name, err
+                )
                 raise PrinterNotFoundError(
                     f"Printer '{printer_name}' could not be queried: {err}",
                     details={"printer_name": printer_name},
@@ -481,7 +488,10 @@ class WindowsPrintEngine:
             except PageCountMismatchError as err:
                 raise InvalidPageRangeError(
                     str(err),
-                    details={"page_range": settings.page_range, "total_pages": val_result.total_pages},
+                    details={
+                        "page_range": settings.page_range,
+                        "total_pages": val_result.total_pages,
+                    },
                 ) from err
             except SettingsError as err:
                 raise InvalidSettingError(str(err)) from err

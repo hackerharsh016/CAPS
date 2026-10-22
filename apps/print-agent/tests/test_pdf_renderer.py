@@ -73,9 +73,7 @@ def _generate_synthetic_pdf(
     if encrypted:
         enc_obj_num = num_pages + 3
         objects.append(
-            f"{enc_obj_num} 0 obj\n"
-            f"<< /Filter /Standard /V 2 /R 3 /P -4 >>\n"
-            f"endobj".encode("ascii")
+            f"{enc_obj_num} 0 obj\n<< /Filter /Standard /V 2 /R 3 /P -4 >>\nendobj".encode("ascii")
         )
 
     # Assemble objects with xref table
@@ -97,9 +95,7 @@ def _generate_synthetic_pdf(
 
     encrypt_ref = f" /Encrypt {num_pages + 3} 0 R" if encrypted else ""
     trailer = (
-        f"trailer\n"
-        f"<< /Size {total_objs} /Root 1 0 R{encrypt_ref} >>\n"
-        f"startxref\n{xref_start}\n"
+        f"trailer\n<< /Size {total_objs} /Root 1 0 R{encrypt_ref} >>\nstartxref\n{xref_start}\n"
     ).encode("ascii")
 
     if not corrupt_eof:
@@ -497,9 +493,7 @@ class TestAdrDocumentation(unittest.TestCase):
 
     def test_adr_file_exists_and_contains_licensing_rationale(self) -> None:
         """ADR 001 must document PDFium (Apache 2.0) vs MuPDF (AGPL-3.0)."""
-        adr_path = (
-            Path(__file__).resolve().parents[1] / "docs" / "ADR_001_PDF_RENDERER_CHOICE.md"
-        )
+        adr_path = Path(__file__).resolve().parents[1] / "docs" / "ADR_001_PDF_RENDERER_CHOICE.md"
         self.assertTrue(adr_path.exists(), f"ADR 001 not found at {adr_path}")
 
         content = adr_path.read_text(encoding="utf-8")

@@ -4,7 +4,11 @@
  * and job creation with backend endpoints (POST /api/v1/quotes/calculate and POST /api/v1/print-jobs).
  */
 
-import type { QuoteRequest, QuoteResponse, PrintSettings } from '../../../../../packages/types/dist/index.js';
+import type {
+  QuoteRequest,
+  QuoteResponse,
+  PrintSettings
+} from '../../../../../packages/types/dist/index.js';
 import { normalizePrintSettings } from '../../../../../packages/types/dist/index.js';
 
 export interface QuoteServiceOptions {
@@ -69,7 +73,7 @@ export class QuoteService {
         const json = await res.json();
         return json.data || json;
       }
-    } catch (err: unknown) {
+    } catch {
       if (signal?.aborted) {
         throw new DOMException('Quote request aborted', 'AbortError');
       }

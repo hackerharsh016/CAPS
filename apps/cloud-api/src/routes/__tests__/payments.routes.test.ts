@@ -269,7 +269,7 @@ describe('Task INT-D3-06: Razorpay Webhook Verification & Idempotent Payment Rou
 
       // Listen for realtime broadcast
       const broadcastEvents: any[] = [];
-      realtimeService.subscribe(`caps:shop:${sampleShopId}`, (msg) => {
+      realtimeService.subscribe(`caps:shop:${sampleShopId}`, msg => {
         broadcastEvents.push(msg);
       });
 

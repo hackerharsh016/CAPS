@@ -121,10 +121,7 @@ describe('CAPS Live Cross-Track System Integration', () => {
       JWT_SECRET
     );
 
-    customerToken = createTestJwt(
-      { sub: customerUserId, role: 'customer' },
-      JWT_SECRET
-    );
+    customerToken = createTestJwt({ sub: customerUserId, role: 'customer' }, JWT_SECRET);
   });
 
   afterAll(async () => {
@@ -245,7 +242,7 @@ describe('CAPS Live Cross-Track System Integration', () => {
 
     expect(res.status).toBe(200);
     const data = await res.json();
-    const queue = Array.isArray(data.data) ? data.data : (data.data?.queue || data.queue || []);
+    const queue = Array.isArray(data.data) ? data.data : data.data?.queue || data.queue || [];
 
     expect(Array.isArray(queue)).toBe(true);
     expect(queue.length).toBeGreaterThanOrEqual(1);
@@ -264,7 +261,7 @@ describe('CAPS Live Cross-Track System Integration', () => {
     const queueData = await queueRes.json();
     const queue = Array.isArray(queueData.data)
       ? queueData.data
-      : (queueData.data?.queue || queueData.queue || []);
+      : queueData.data?.queue || queueData.queue || [];
     const targetJob = queue[0];
     expect(targetJob).toBeDefined();
 
@@ -322,9 +319,7 @@ describe('CAPS Live Cross-Track System Integration', () => {
         agent_id: deviceId,
         shop_id: testShopId,
         status: 'online',
-        printers: [
-          { printer_id: 'p1', name: 'Canon imageRUNNER', status: 'online' }
-        ]
+        printers: [{ printer_id: 'p1', name: 'Canon imageRUNNER', status: 'online' }]
       })
     });
     expect(heartbeatRes.status).toBe(200);

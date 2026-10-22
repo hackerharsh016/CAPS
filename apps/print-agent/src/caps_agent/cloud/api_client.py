@@ -39,7 +39,9 @@ logger = logging.getLogger("caps_agent.cloud.api_client")
 class CloudApiError(Exception):
     """Base exception for all Cloud API errors."""
 
-    def __init__(self, message: str, status_code: int | None = None, error_code: str = "CLOUD_API_ERROR"):
+    def __init__(
+        self, message: str, status_code: int | None = None, error_code: str = "CLOUD_API_ERROR"
+    ):
         super().__init__(message)
         self.message = message
         self.status_code = status_code
@@ -49,14 +51,18 @@ class CloudApiError(Exception):
 class AuthenticationError(CloudApiError):
     """Raised on HTTP 401 Unauthorized or invalid device credentials."""
 
-    def __init__(self, message: str = "Authentication failed; invalid or expired device credentials"):
+    def __init__(
+        self, message: str = "Authentication failed; invalid or expired device credentials"
+    ):
         super().__init__(message, status_code=401, error_code="AUTHENTICATION_FAILED")
 
 
 class TenantMismatchError(CloudApiError):
     """Raised on HTTP 403 Forbidden or when response shop_id conflicts with agent shop_id."""
 
-    def __init__(self, message: str = "Tenant authorization mismatch: wrong shop or access forbidden"):
+    def __init__(
+        self, message: str = "Tenant authorization mismatch: wrong shop or access forbidden"
+    ):
         super().__init__(message, status_code=403, error_code="TENANT_MISMATCH")
 
 
@@ -120,8 +126,7 @@ class HttpTransport(Protocol):
         headers: dict[str, str],
         body: bytes | None = None,
         timeout: float = 10.0,
-    ) -> HttpResponse:
-        ...
+    ) -> HttpResponse: ...
 
 
 class UrllibHttpTransport:
@@ -157,7 +162,9 @@ class UrllibHttpTransport:
             raise NetworkTimeoutError(f"HTTP request to {url} timed out: {t_err}") from t_err
         except urllib.error.URLError as url_err:
             if isinstance(url_err.reason, TimeoutError):
-                raise NetworkTimeoutError(f"HTTP request to {url} timed out: {url_err}") from url_err
+                raise NetworkTimeoutError(
+                    f"HTTP request to {url} timed out: {url_err}"
+                ) from url_err
             raise CloudApiError(f"Network error connecting to {url}: {url_err.reason}") from url_err
 
 
@@ -265,7 +272,9 @@ class CloudApiClient:
 
                 # 1. Handle 401 Unauthorized with token refresh (once per request)
                 if resp.status_code == 401 and not unauthenticated and not refreshed_on_401:
-                    logger.warning("Received 401 Unauthorized from %s; attempting token refresh", path)
+                    logger.warning(
+                        "Received 401 Unauthorized from %s; attempting token refresh", path
+                    )
                     if self.token_refresh_hook:
                         try:
                             self.credentials = self.token_refresh_hook()
@@ -274,7 +283,9 @@ class CloudApiClient:
                             continue
                         except Exception as ref_err:
                             logger.error("Token refresh failed: %s", ref_err)
-                            raise AuthenticationError("Token refresh failed following 401 Unauthorized") from ref_err
+                            raise AuthenticationError(
+                                "Token refresh failed following 401 Unauthorized"
+                            ) from ref_err
                     raise AuthenticationError("401 Unauthorized; no refresh hook configured")
 
                 # 2. Handle 403 Forbidden / Tenant Mismatch
@@ -284,7 +295,9 @@ class CloudApiClient:
 
                 # 3. Handle Transient Server Errors (502, 503, 504) with backoff
                 if resp.status_code in (502, 503, 504) and attempt <= self.max_retries:
-                    sleep_sec = (self.backoff_factor * (2 ** (attempt - 1))) + random.uniform(0.01, 0.1)
+                    sleep_sec = (self.backoff_factor * (2 ** (attempt - 1))) + random.uniform(
+                        0.01, 0.1
+                    )
                     logger.warning(
                         "Transient HTTP %d from %s; retrying attempt %d/%d after %.2fs",
                         resp.status_code,
@@ -300,8 +313,16 @@ class CloudApiClient:
 
             except NetworkTimeoutError:
                 if attempt <= self.max_retries:
-                    sleep_sec = (self.backoff_factor * (2 ** (attempt - 1))) + random.uniform(0.01, 0.1)
-                    logger.warning("Network timeout accessing %s; retry %d/%d after %.2fs", path, attempt, self.max_retries, sleep_sec)
+                    sleep_sec = (self.backoff_factor * (2 ** (attempt - 1))) + random.uniform(
+                        0.01, 0.1
+                    )
+                    logger.warning(
+                        "Network timeout accessing %s; retry %d/%d after %.2fs",
+                        path,
+                        attempt,
+                        self.max_retries,
+                        sleep_sec,
+                    )
                     time.sleep(sleep_sec)
                     continue
                 raise
@@ -311,8 +332,15 @@ class CloudApiClient:
 
             except Exception as err:
                 if attempt <= self.max_retries:
-                    sleep_sec = (self.backoff_factor * (2 ** (attempt - 1))) + random.uniform(0.01, 0.1)
-                    logger.warning("Unexpected error connecting to %s: %s; retrying in %.2fs", path, err, sleep_sec)
+                    sleep_sec = (self.backoff_factor * (2 ** (attempt - 1))) + random.uniform(
+                        0.01, 0.1
+                    )
+                    logger.warning(
+                        "Unexpected error connecting to %s: %s; retrying in %.2fs",
+                        path,
+                        err,
+                        sleep_sec,
+                    )
                     time.sleep(sleep_sec)
                     continue
                 raise CloudApiError(f"Request failed: {err}") from err
@@ -397,7 +425,9 @@ class CloudApiClient:
         lease_expires_at = job_data.get("lease_expires_at") or resp.get("lease_expires_at")
         checksum = job_data.get("checksum_sha256") or resp.get("checksum_sha256")
 
-        if not (job_id and attempt_id and lease_id and download_url and settings and lease_expires_at):
+        if not (
+            job_id and attempt_id and lease_id and download_url and settings and lease_expires_at
+        ):
             raise ContractValidationError(
                 f"Cloud returned incomplete JobClaimResponse: missing fields in {list(resp.keys())}"
             )
@@ -478,9 +508,14 @@ class CloudApiClient:
             headers = {"User-Agent": "CAPS-Print-Agent/0.1.0"}
 
         try:
-            resp = self.transport.request("GET", download_url, headers=headers, timeout=self.timeout)
+            resp = self.transport.request(
+                "GET", download_url, headers=headers, timeout=self.timeout
+            )
             if resp.status_code != 200:
-                raise CloudApiError(f"Document download failed with HTTP {resp.status_code}", status_code=resp.status_code)
+                raise CloudApiError(
+                    f"Document download failed with HTTP {resp.status_code}",
+                    status_code=resp.status_code,
+                )
 
             # Write content and compute hash
             sha256_hasher.update(resp.body)
@@ -494,7 +529,9 @@ class CloudApiClient:
                     dest.unlink(missing_ok=True)
                     raise ChecksumMismatchError(expected=clean_expected, actual=computed_sha256)
 
-            logger.info("Document successfully downloaded to %s (sha256: %s)", dest, computed_sha256[:12])
+            logger.info(
+                "Document successfully downloaded to %s (sha256: %s)", dest, computed_sha256[:12]
+            )
             return dest
 
         except Exception as err:

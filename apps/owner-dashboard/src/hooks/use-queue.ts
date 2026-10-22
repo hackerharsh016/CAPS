@@ -12,11 +12,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type {
-  QueueItem,
-  QueueFilter,
-  CanonicalJobStatus
-} from '../types/queue';
+import type { QueueItem, QueueFilter, CanonicalJobStatus } from '../types/queue';
 import { QueueService } from '../services/api/queue.service';
 import {
   RealtimeQueueClient,
@@ -78,15 +74,12 @@ export function LiveConnectionIndicator({
       { className: 'relative flex h-2 w-2' },
       isConnected &&
         React.createElement('span', {
-          className: 'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75'
+          className:
+            'animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75'
         }),
       React.createElement('span', {
         className: `relative inline-flex rounded-full h-2 w-2 ${
-          isConnected
-            ? 'bg-emerald-500'
-            : isPending
-              ? 'bg-amber-500 animate-pulse'
-              : 'bg-zinc-400'
+          isConnected ? 'bg-emerald-500' : isPending ? 'bg-amber-500 animate-pulse' : 'bg-zinc-400'
         }`
       })
     ),
@@ -110,10 +103,7 @@ export function useQueue(options: UseQueueOptions | string = {}): UseQueueResult
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const queueService = useMemo(
-    () => opts.queueService || new QueueService(),
-    [opts.queueService]
-  );
+  const queueService = useMemo(() => opts.queueService || new QueueService(), [opts.queueService]);
 
   const clientRef = useRef<RealtimeQueueClient | null>(null);
 

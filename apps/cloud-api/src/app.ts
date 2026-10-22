@@ -202,7 +202,10 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
 
   const isSupabaseConfigured =
     Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) ||
-    Boolean(process.env['DATABASE_URL'] && (env.SUPABASE_SERVICE_ROLE_KEY || process.env['SUPABASE_SERVICE_ROLE_KEY']));
+    Boolean(
+      process.env['DATABASE_URL'] &&
+      (env.SUPABASE_SERVICE_ROLE_KEY || process.env['SUPABASE_SERVICE_ROLE_KEY'])
+    );
 
   const supabaseRepoOpts = isSupabaseConfigured
     ? {

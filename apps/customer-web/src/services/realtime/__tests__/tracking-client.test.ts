@@ -8,10 +8,7 @@ import {
   calculateEstimatedMinutes,
   normalizeCanonicalStatus
 } from '../tracking-client';
-import {
-  useJobTracking,
-  TrackingConnectionBadge
-} from '../../../hooks/use-job-tracking';
+import { useJobTracking, TrackingConnectionBadge } from '../../../hooks/use-job-tracking';
 
 describe('RealtimeTrackingClient — Order Tracking Realtime Wire (INT-D1-02)', () => {
   const jobId = 'job-tracking-uuid-001';

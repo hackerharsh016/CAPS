@@ -91,7 +91,9 @@ class MockApiClient:
 
         dest = Path(destination_path)
         dest.parent.mkdir(parents=True, exist_ok=True)
-        content = self.download_files.get(download_url, b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF")
+        content = self.download_files.get(
+            download_url, b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF"
+        )
 
         if expected_sha256:
             actual_sha = hashlib.sha256(content).hexdigest().lower()
@@ -199,7 +201,9 @@ class TestRealtimeClaimCoordinator(unittest.TestCase):
         self.assertGreaterEqual(len(self.mock_api.recorded_claims), 1)
 
         # Verify lifecycle status updates sent to cloud
-        statuses = [u["status"] for u in self.mock_api.recorded_status_updates if u["job_id"] == "job-101"]
+        statuses = [
+            u["status"] for u in self.mock_api.recorded_status_updates if u["job_id"] == "job-101"
+        ]
         self.assertIn("downloading", statuses)
         self.assertIn("printing", statuses)
         self.assertIn("completed", statuses)
@@ -342,7 +346,9 @@ class TestRealtimeClaimCoordinator(unittest.TestCase):
 
         # Wait for background loop to connect and reconcile
         start = datetime.now(UTC)
-        while not self.transport.is_connected() and (datetime.now(UTC) - start).total_seconds() < 3.0:
+        while (
+            not self.transport.is_connected() and (datetime.now(UTC) - start).total_seconds() < 3.0
+        ):
             threading.Event().wait(0.05)
 
         self.assertTrue(self.transport.is_connected())
@@ -376,7 +382,8 @@ class TestRealtimeClaimCoordinator(unittest.TestCase):
 
         # Status 'failed' must be reported to cloud
         failed_updates = [
-            u for u in self.mock_api.recorded_status_updates
+            u
+            for u in self.mock_api.recorded_status_updates
             if u["job_id"] == "job-bad-dl" and u["status"] == "failed"
         ]
         self.assertEqual(len(failed_updates), 1)
@@ -428,7 +435,9 @@ class TestRealtimeClaimCoordinator(unittest.TestCase):
         try:
             claim = self._create_claim_response("job-sec-1", "att-sec-1")
             self.mock_api.queue_claim(claim)
-            self.coordinator.handle_event({"event": "wake", "shop_id": self.shop_id, "job_id": "job-sec-1"})
+            self.coordinator.handle_event(
+                {"event": "wake", "shop_id": self.shop_id, "job_id": "job-sec-1"}
+            )
 
             for msg in captured_logs:
                 self.assertNotIn("secret_token_12345", msg)

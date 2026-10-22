@@ -7,7 +7,6 @@ Enforces strict Windows ACLs restricting read/write access to the current Window
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import os
 import re
@@ -24,6 +23,7 @@ SAFE_ID_REGEX = re.compile(r"^[a-zA-Z0-9_\-]+$")
 
 class StorageSecurityError(ValueError):
     """Raised when an identifier or path violates security invariants."""
+
     pass
 
 
@@ -89,8 +89,8 @@ def apply_restricted_acls(path: Path | str) -> bool:
 
         # Fallback to pywin32 if icacls is unavailable or fails
         try:
-            import win32security  # type: ignore
             import ntsecuritycon as con  # type: ignore
+            import win32security  # type: ignore
 
             user_sid, _, _ = win32security.LookupAccountName(None, username or "")
             system_sid = win32security.CreateWellKnownSid(win32security.WinLocalSystemSid)
@@ -103,7 +103,8 @@ def apply_restricted_acls(path: Path | str) -> bool:
             sd.SetSecurityDescriptorDacl(1, dacl, 0)
             win32security.SetFileSecurity(
                 str(target),
-                win32security.DACL_SECURITY_INFORMATION | win32security.PROTECTED_DACL_SECURITY_INFORMATION,
+                win32security.DACL_SECURITY_INFORMATION
+                | win32security.PROTECTED_DACL_SECURITY_INFORMATION,
                 sd,
             )
             logger.debug("Applied restricted ACLs to %s via win32security", target)

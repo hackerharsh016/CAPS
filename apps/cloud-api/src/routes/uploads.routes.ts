@@ -104,7 +104,8 @@ export const uploadsRoutes: FastifyPluginAsync<UploadsPluginOptions> = async (fa
       return reply.status(401).send({
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Authentication or customer identification required to request presigned upload URL.'
+          message:
+            'Authentication or customer identification required to request presigned upload URL.'
         }
       });
     }
@@ -211,7 +212,9 @@ export const uploadsRoutes: FastifyPluginAsync<UploadsPluginOptions> = async (fa
 
       // Check active attempt in attempts repository
       if (!authorized && attemptsRepo && agentDeviceId && jobsRepo) {
-        const jobsResult = agentShopId ? await jobsRepo.findAll({ shop_id: agentShopId }) : { jobs: [] };
+        const jobsResult = agentShopId
+          ? await jobsRepo.findAll({ shop_id: agentShopId })
+          : { jobs: [] };
         const shopJobs: PrintJobRecord[] = jobsResult.jobs;
         const matchedJob = shopJobs.find(j => j.document_id === doc.id || j.id === doc.id);
         if (matchedJob) {
@@ -228,7 +231,9 @@ export const uploadsRoutes: FastifyPluginAsync<UploadsPluginOptions> = async (fa
           const jobsResult = await jobsRepo.findAll({ shop_id: agentShopId });
           const shopJobs: PrintJobRecord[] = jobsResult.jobs;
           const job = shopJobs.find(
-            j => (j.document_id === doc.id || j.id === doc.id) && j.claimed_by_agent_id === agentDeviceId
+            j =>
+              (j.document_id === doc.id || j.id === doc.id) &&
+              j.claimed_by_agent_id === agentDeviceId
           );
           if (job) {
             authorized = true;

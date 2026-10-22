@@ -49,7 +49,9 @@ export interface HarmonizedPrintSettings {
 /**
  * Normalizes SideMode or any string representation to canonical DuplexMode.
  */
-export function sidesToDuplex(sides: SideMode | DuplexMode | string | undefined | null): DuplexMode {
+export function sidesToDuplex(
+  sides: SideMode | DuplexMode | string | undefined | null
+): DuplexMode {
   if (!sides || sides === 'single' || sides === 'simplex') {
     return 'simplex';
   }

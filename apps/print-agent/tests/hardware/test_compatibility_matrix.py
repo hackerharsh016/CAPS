@@ -163,21 +163,49 @@ class TestDriverCompatibilityMatrix(unittest.TestCase):
     def test_basic_mono_matrix_permutations(self) -> None:
         """Basic mono printer accepts A4/Letter BW simplex; rejects color, duplex, A3, Legal."""
         # Accepted permutations
-        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "simplex").status, "ACCEPTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "letter", "bw", "simplex").status, "ACCEPTED")
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "simplex").status, "ACCEPTED"
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_BASIC_MONO, "letter", "bw", "simplex").status, "ACCEPTED"
+        )
 
         # Rejected permutations
-        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "color", "simplex").status, "REJECTED_UNSUPPORTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "duplex_long").status, "REJECTED_UNSUPPORTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "a3", "bw", "simplex").status, "REJECTED_UNSUPPORTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_BASIC_MONO, "legal", "bw", "simplex").status, "REJECTED_UNSUPPORTED")
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "color", "simplex").status,
+            "REJECTED_UNSUPPORTED",
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_BASIC_MONO, "a4", "bw", "duplex_long").status,
+            "REJECTED_UNSUPPORTED",
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_BASIC_MONO, "a3", "bw", "simplex").status,
+            "REJECTED_UNSUPPORTED",
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_BASIC_MONO, "legal", "bw", "simplex").status,
+            "REJECTED_UNSUPPORTED",
+        )
 
     def test_office_duplex_mono_matrix_permutations(self) -> None:
         """Office duplex mono printer accepts A4/Legal duplex; rejects color and A3."""
-        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "simplex").status, "ACCEPTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_long").status, "ACCEPTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_short").status, "ACCEPTED")
-        self.assertEqual(evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "legal", "bw", "duplex_long").status, "ACCEPTED")
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "simplex").status,
+            "ACCEPTED",
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_long").status,
+            "ACCEPTED",
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "a4", "bw", "duplex_short").status,
+            "ACCEPTED",
+        )
+        self.assertEqual(
+            evaluate_matrix_vector(PROFILE_OFFICE_DUPLEX_MONO, "legal", "bw", "duplex_long").status,
+            "ACCEPTED",
+        )
 
         # Color and A3 rejected
         self.assertEqual(
@@ -203,7 +231,9 @@ class TestDriverCompatibilityMatrix(unittest.TestCase):
         ]
         for p_size, c_mode, dup in test_cases:
             res = evaluate_matrix_vector(PROFILE_ENTERPRISE_COLOR_MFP, p_size, c_mode, dup)
-            self.assertEqual(res.status, "ACCEPTED", f"Failed for {p_size}/{c_mode}/{dup}: {res.error_reason}")
+            self.assertEqual(
+                res.status, "ACCEPTED", f"Failed for {p_size}/{c_mode}/{dup}: {res.error_reason}"
+            )
 
 
 class TestHighVolumeStressGate(unittest.TestCase):
@@ -264,7 +294,9 @@ class TestHighVolumeStressGate(unittest.TestCase):
         # Assert every single job reached COMPLETED in both dispatcher and SQLite journal
         for i, jid in enumerate(job_ids):
             state = dispatcher.get_job_state(jid)
-            self.assertEqual(state, JobState.COMPLETED, f"Job {jid} did not complete; state={state}")
+            self.assertEqual(
+                state, JobState.COMPLETED, f"Job {jid} did not complete; state={state}"
+            )
 
             rec = journal.get_attempt(f"stress-att-{i}")
             self.assertIsNotNone(rec)
@@ -300,7 +332,9 @@ class TestRealDeviceHardwareVerification(unittest.TestCase):
         """Physical hardware verification: A4, B&W, Simplex."""
         self.assertIsNotNone(TEST_PRINTER_NAME)
         assert TEST_PRINTER_NAME is not None
-        pdf_path = write_sample_pdf(self.tmp_path / "matrix_a4_bw.pdf", pages=1, title="A4 BW Simplex")
+        pdf_path = write_sample_pdf(
+            self.tmp_path / "matrix_a4_bw.pdf", pages=1, title="A4 BW Simplex"
+        )
 
         settings = PrintSettings(
             paper_size="a4",
@@ -344,9 +378,13 @@ class TestRealDeviceHardwareVerification(unittest.TestCase):
         caps = detector.get_capabilities(TEST_PRINTER_NAME)
 
         if not (caps and caps.supports_duplex):
-            raise unittest.SkipTest(f"Designated printer '{TEST_PRINTER_NAME}' does not support hardware duplex.")
+            raise unittest.SkipTest(
+                f"Designated printer '{TEST_PRINTER_NAME}' does not support hardware duplex."
+            )
 
-        pdf_path = write_sample_pdf(self.tmp_path / "matrix_duplex.pdf", pages=2, title="A4 Duplex Test")
+        pdf_path = write_sample_pdf(
+            self.tmp_path / "matrix_duplex.pdf", pages=2, title="A4 Duplex Test"
+        )
 
         settings = PrintSettings(
             paper_size="a4",

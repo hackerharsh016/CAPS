@@ -164,7 +164,8 @@ function createDefaultStorageClient(
             };
           } catch (err) {
             // Offline/simulation fallback with HMAC
-            const exp = Math.floor(Date.now() / 1000) + (options?.expiresIn ?? DEFAULT_UPLOAD_EXPIRY_SECONDS);
+            const exp =
+              Math.floor(Date.now() / 1000) + (options?.expiresIn ?? DEFAULT_UPLOAD_EXPIRY_SECONDS);
             const token = crypto
               .createHmac('sha256', apiKey || 'caps-storage-secret')
               .update(`${bucket}:${cleanPath}:${exp}:upload`)

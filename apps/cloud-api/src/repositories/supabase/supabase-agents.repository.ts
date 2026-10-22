@@ -28,10 +28,7 @@ export class SupabaseAgentsRepository implements IAgentsRepository {
       const env = typeof process !== 'undefined' ? process.env : {};
       const url = options.supabaseUrl || env['SUPABASE_URL'] || 'http://localhost:54321';
       const key =
-        options.supabaseKey ||
-        env['SUPABASE_SERVICE_ROLE_KEY'] ||
-        env['SUPABASE_ANON_KEY'] ||
-        '';
+        options.supabaseKey || env['SUPABASE_SERVICE_ROLE_KEY'] || env['SUPABASE_ANON_KEY'] || '';
       const customFetch = options.customFetch || fetch;
 
       this.client = createDefaultSupabaseClient(url, key, customFetch);

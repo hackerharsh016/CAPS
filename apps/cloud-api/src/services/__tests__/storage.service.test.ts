@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import Fastify, { FastifyInstance } from 'fastify';
-import crypto from 'node:crypto';
 import {
   StorageService,
   StorageError,
-  DEFAULT_STORAGE_BUCKET,
   MAX_FILE_SIZE_BYTES,
   DEFAULT_DOWNLOAD_EXPIRY_SECONDS,
   DEFAULT_UPLOAD_EXPIRY_SECONDS
@@ -13,7 +11,6 @@ import { uploadsRoutes } from '../../routes/uploads.routes.js';
 import { MockDocumentsRepository } from '../../modules/documents/documents.repository.js';
 import { MockPrintJobsRepository } from '../../modules/print-jobs/print-jobs.repository.js';
 import { MockJobAttemptsRepository } from '../../modules/agents/attempts.repository.js';
-import type { PrintJobRecord } from '../../modules/print-jobs/print-jobs.types.js';
 
 describe('StorageService (Task INT-D3-04)', () => {
   let mockBucket: any;
@@ -22,8 +19,7 @@ describe('StorageService (Task INT-D3-04)', () => {
 
   beforeEach(() => {
     mockBucket = {
-      createSignedUploadUrl: vi.fn(async (path: string, options?: { expiresIn?: number }) => {
-        const expiresIn = options?.expiresIn ?? 900;
+      createSignedUploadUrl: vi.fn(async (path: string, _options?: { expiresIn?: number }) => {
         return {
           data: {
             signedUrl: `https://mock-supabase.local/storage/v1/object/upload/sign/customer-documents/${path}?token=upload-token-xyz`,
@@ -48,7 +44,7 @@ describe('StorageService (Task INT-D3-04)', () => {
 
     mockSupabaseClient = {
       storage: {
-        from: vi.fn((bucket: string) => {
+        from: vi.fn((_bucket: string) => {
           return mockBucket;
         })
       }
@@ -149,9 +145,7 @@ describe('StorageService (Task INT-D3-04)', () => {
 
   describe('createSignedDownloadUrl', () => {
     it('generates 5-minute (300s) signed download URL by default', async () => {
-      const result = await storageService.createSignedDownloadUrl(
-        'uploads/cust-1234/test-doc.pdf'
-      );
+      const result = await storageService.createSignedDownloadUrl('uploads/cust-1234/test-doc.pdf');
 
       expect(mockSupabaseClient.storage.from).toHaveBeenCalledWith('customer-documents');
       expect(mockBucket.createSignedUrl).toHaveBeenCalledWith(
@@ -186,7 +180,8 @@ describe('StorageService (Task INT-D3-04)', () => {
 
   describe('Built-in REST Fallback Mode', () => {
     it('functions with customFetch when SDK client is omitted', async () => {
-      const customFetch = vi.fn(async (url: string, init?: any) => {
+      const customFetch = vi.fn(async (input: string | URL | Request, _init?: any) => {
+        const url = typeof input === 'string' ? input : input.toString();
         if (url.includes('/upload/sign/')) {
           return {
             ok: true,
@@ -202,12 +197,13 @@ describe('StorageService (Task INT-D3-04)', () => {
             ok: true,
             status: 200,
             json: async () => ({
-              signedURL: '/storage/v1/object/customer-documents/uploads/test.pdf?token=rest-download-token'
+              signedURL:
+                '/storage/v1/object/customer-documents/uploads/test.pdf?token=rest-download-token'
             })
           } as any;
         }
         return { ok: false, status: 404, text: async () => 'Not Found' } as any;
-      });
+      }) as unknown as typeof fetch;
 
       const restStorageService = new StorageService({
         supabaseUrl: 'https://test-project.supabase.co',
@@ -216,10 +212,17 @@ describe('StorageService (Task INT-D3-04)', () => {
       });
 
       const uploadResult = await restStorageService.createSignedUploadUrl('uploads/test.pdf', 600);
-      expect(uploadResult.uploadUrl).toContain('https://test-project.supabase.co/storage/v1/object/upload/sign');
+      expect(uploadResult.uploadUrl).toContain(
+        'https://test-project.supabase.co/storage/v1/object/upload/sign'
+      );
 
-      const downloadResult = await restStorageService.createSignedDownloadUrl('uploads/test.pdf', 300);
-      expect(downloadResult.downloadUrl).toContain('https://test-project.supabase.co/storage/v1/object/customer-documents');
+      const downloadResult = await restStorageService.createSignedDownloadUrl(
+        'uploads/test.pdf',
+        300
+      );
+      expect(downloadResult.downloadUrl).toContain(
+        'https://test-project.supabase.co/storage/v1/object/customer-documents'
+      );
     });
   });
 });
@@ -230,8 +233,6 @@ describe('Uploads & Document Download Routes (INT-D3-04)', () => {
   let jobsRepo: MockPrintJobsRepository;
   let attemptsRepo: MockJobAttemptsRepository;
   let storageService: StorageService;
-
-  const TEST_JWT_SECRET = 'caps-test-jwt-secret-at-least-32-chars-long';
 
   beforeEach(async () => {
     documentsRepo = new MockDocumentsRepository();
@@ -349,7 +350,9 @@ describe('Uploads & Document Download Routes (INT-D3-04)', () => {
       expect(res.statusCode).toBe(200);
       const body = res.json();
       expect(body.data).toBeDefined();
-      expect(body.data.upload_url).toContain('https://storage.supabase.local/customer-documents/uploads/cust-rahul-001');
+      expect(body.data.upload_url).toContain(
+        'https://storage.supabase.local/customer-documents/uploads/cust-rahul-001'
+      );
       expect(body.data.storage_key).toMatch(/^uploads\/cust-rahul-001\/[a-f0-9-]+-syllabus\.pdf$/);
       expect(body.data.bucket).toBe('customer-documents');
       expect(body.data.expires_in_seconds).toBe(900);
@@ -481,9 +484,13 @@ describe('Uploads & Document Download Routes (INT-D3-04)', () => {
       expect(res.statusCode).toBe(200);
       const body = res.json();
       expect(body.data.document_id).toBe(rahulDocId);
-      expect(body.data.download_url).toContain('https://storage.supabase.local/customer-documents/uploads/cust-rahul-001/doc-final_thesis.pdf');
+      expect(body.data.download_url).toContain(
+        'https://storage.supabase.local/customer-documents/uploads/cust-rahul-001/doc-final_thesis.pdf'
+      );
       expect(body.data.expires_in_seconds).toBe(300);
-      expect(body.data.checksum_sha256).toBe('9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08');
+      expect(body.data.checksum_sha256).toBe(
+        '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'
+      );
       expect(body.data.content_type).toBe('application/pdf');
     });
 
@@ -534,7 +541,9 @@ describe('Uploads & Document Download Routes (INT-D3-04)', () => {
 
       expect(res.statusCode).toBe(403);
       expect(res.json().error.code).toBe('FORBIDDEN');
-      expect(res.json().error.message).toContain('Forbidden: Agent does not possess an active claim lease');
+      expect(res.json().error.message).toContain(
+        'Forbidden: Agent does not possess an active claim lease'
+      );
     });
 
     it('returns 404 NOT_FOUND for non-existent document ID', async () => {

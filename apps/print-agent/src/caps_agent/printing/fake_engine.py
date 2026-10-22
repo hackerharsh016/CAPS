@@ -76,18 +76,22 @@ class FakePrintEngine(PrintEngine):
         title = job_title or f"CAPS Print {doc_path.name}"
 
         # 1. Log invocation
-        self.submission_log.append({
-            "pdf_path": str(doc_path),
-            "printer_name": printer_name,
-            "settings": settings,
-            "job_title": title,
-            "attempt_id": attempt_id,
-            "shop_id": shop_id,
-        })
+        self.submission_log.append(
+            {
+                "pdf_path": str(doc_path),
+                "printer_name": printer_name,
+                "settings": settings,
+                "job_title": title,
+                "attempt_id": attempt_id,
+                "shop_id": shop_id,
+            }
+        )
 
         # 2. Duplicate / Replayed Attempt Handling (Idempotency)
         if attempt_id and attempt_id in self.recorded_attempts:
-            logger.info("FakePrintEngine: Duplicate attempt '%s' returning recorded result.", attempt_id)
+            logger.info(
+                "FakePrintEngine: Duplicate attempt '%s' returning recorded result.", attempt_id
+            )
             return self.recorded_attempts[attempt_id]
 
         # 3. Shop / Tenant Authorization Check
@@ -146,7 +150,11 @@ class FakePrintEngine(PrintEngine):
             if (
                 settings.color_mode.lower() in unsupported
                 or settings.paper_size.lower() in unsupported
-                or (isinstance(settings.duplex, bool) and settings.duplex and "duplex" in unsupported)
+                or (
+                    isinstance(settings.duplex, bool)
+                    and settings.duplex
+                    and "duplex" in unsupported
+                )
                 or (isinstance(settings.duplex, str) and settings.duplex.lower() in unsupported)
             ):
                 err = UnsupportedSettingError(

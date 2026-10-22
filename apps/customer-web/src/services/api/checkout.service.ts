@@ -41,20 +41,26 @@ export interface RazorpayCheckoutOptions {
   description?: string | undefined;
   image?: string | undefined;
   order_id: string;
-  prefill?: {
-    name?: string | undefined;
-    email?: string | undefined;
-    contact?: string | undefined;
-  } | undefined;
+  prefill?:
+    | {
+        name?: string | undefined;
+        email?: string | undefined;
+        contact?: string | undefined;
+      }
+    | undefined;
   notes?: Record<string, string> | undefined;
-  theme?: {
-    color?: string | undefined;
-  } | undefined;
-  modal?: {
-    ondismiss?: () => void;
-    escape?: boolean | undefined;
-    backdropclose?: boolean | undefined;
-  } | undefined;
+  theme?:
+    | {
+        color?: string | undefined;
+      }
+    | undefined;
+  modal?:
+    | {
+        ondismiss?: () => void;
+        escape?: boolean | undefined;
+        backdropclose?: boolean | undefined;
+      }
+    | undefined;
   handler?: (response: RazorpayPaymentSuccess) => void;
 }
 
@@ -115,7 +121,7 @@ export class CheckoutService {
     let res: Response;
     try {
       res = await fetch(`${apiUrl}/api/v1/payments/razorpay/order`, init);
-    } catch (err: unknown) {
+    } catch {
       if (signal?.aborted) {
         throw new DOMException('Payment order request aborted', 'AbortError');
       }
@@ -134,8 +140,7 @@ export class CheckoutService {
       }
       const errBody = await res.json().catch(() => null);
       const errMsg =
-        errBody?.error?.message ||
-        `Failed to create Razorpay payment order: HTTP ${res.status}`;
+        errBody?.error?.message || `Failed to create Razorpay payment order: HTTP ${res.status}`;
       throw new Error(errMsg);
     }
 
@@ -162,7 +167,7 @@ export class CheckoutService {
     // Check if script element already exists
     const existing = document.querySelector(`script[src="${scriptUrl}"]`);
     if (existing) {
-      return new Promise<boolean>((resolve) => {
+      return new Promise<boolean>(resolve => {
         if ((window as any).Razorpay) {
           return resolve(true);
         }
@@ -171,7 +176,7 @@ export class CheckoutService {
       });
     }
 
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       const script = document.createElement('script');
       script.src = scriptUrl;
       script.async = true;
@@ -187,11 +192,13 @@ export class CheckoutService {
    */
   public async launchRazorpayModal(options: {
     order: PaymentOrderData;
-    customerDetails?: {
-      name?: string | undefined;
-      email?: string | undefined;
-      phone?: string | undefined;
-    } | undefined;
+    customerDetails?:
+      | {
+          name?: string | undefined;
+          email?: string | undefined;
+          phone?: string | undefined;
+        }
+      | undefined;
     notes?: Record<string, string> | undefined;
     themeColor?: string | undefined;
     onDismiss?: (() => void) | undefined;
@@ -270,11 +277,13 @@ export class CheckoutService {
   public async checkoutAndPay(params: {
     printJobId: string;
     amountPaise?: number | undefined;
-    customerDetails?: {
-      name?: string | undefined;
-      email?: string | undefined;
-      phone?: string | undefined;
-    } | undefined;
+    customerDetails?:
+      | {
+          name?: string | undefined;
+          email?: string | undefined;
+          phone?: string | undefined;
+        }
+      | undefined;
     notes?: Record<string, string> | undefined;
     onDismiss?: () => void;
   }): Promise<{

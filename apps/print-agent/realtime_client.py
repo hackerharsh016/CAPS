@@ -18,8 +18,6 @@ import random
 import threading
 import time
 from collections.abc import Callable
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
 
 logger = logging.getLogger("caps_agent.realtime_client")
@@ -143,8 +141,8 @@ class MockRealtimeTransport:
             if isinstance(item, Exception):
                 raise item
             return item
-        except queue.Empty:
-            raise TimeoutError("No message available")
+        except queue.Empty as err:
+            raise TimeoutError("No message available") from err
 
 
 # ==============================================================================
@@ -342,14 +340,18 @@ class RealtimeClient:
         # Check for immediate wake-up signals: job.approved or job.created
         wake_events = {"job.approved", "job.created", "job_approved", "job_created", "INSERT"}
         if event_name in wake_events:
-            logger.info("Realtime wake-up signal received: %s for shop %s", event_name, self.shop_id)
+            logger.info(
+                "Realtime wake-up signal received: %s for shop %s", event_name, self.shop_id
+            )
 
             # Trigger immediate coordinator poll and execution
             if self.coordinator and hasattr(self.coordinator, "poll_and_execute_now"):
                 try:
                     self.coordinator.poll_and_execute_now()
                 except Exception as coord_err:
-                    logger.error("Coordinator poll_and_execute_now failed on wake-up: %s", coord_err)
+                    logger.error(
+                        "Coordinator poll_and_execute_now failed on wake-up: %s", coord_err
+                    )
 
             # Trigger custom on_wake callback if configured
             if self.on_wake:
