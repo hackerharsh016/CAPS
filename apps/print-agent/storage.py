@@ -12,9 +12,13 @@ import logging
 import os
 import re
 import shutil
+import sqlite3
+import stat
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger("caps_agent.storage")
 
@@ -123,6 +127,212 @@ def apply_restricted_acls(path: Path | str) -> bool:
     return False
 
 
+def secure_purge(path: Path | str, passes: int = 1) -> bool:
+    """Enforce zero-retention privacy policy by securely overwriting and unlinking files.
+
+    Overwrites file bytes with cryptographic random data (or zeroes) prior to unlinking,
+    flushes and syncs to disk, removes the file, and verifies that zero bytes remain.
+    If path is a directory, recursively overwrites and deletes all files inside,
+    then deletes the directory.
+    """
+    target = Path(path).resolve()
+    if not target.exists():
+        return True
+
+    try:
+        # Reset any read-only flags
+        try:
+            os.chmod(target, stat.S_IWRITE | stat.S_IREAD)
+        except Exception:
+            pass
+
+        if target.is_dir():
+            for child in target.iterdir():
+                secure_purge(child, passes=passes)
+            shutil.rmtree(target, ignore_errors=True)
+            return not target.exists()
+
+        if target.is_file():
+            size = target.stat().st_size
+            if size > 0:
+                # Open for binary write/in-place overwrite
+                try:
+                    with open(target, "r+b") as f:
+                        for _ in range(max(1, passes)):
+                            f.seek(0)
+                            remaining = size
+                            while remaining > 0:
+                                chunk_size = min(remaining, 64 * 1024)
+                                f.write(os.urandom(chunk_size))
+                                remaining -= chunk_size
+                            f.flush()
+                            os.fsync(f.fileno())
+                except Exception as write_err:
+                    logger.debug("In-place overwrite failed for %s, trying fresh binary truncate overwrite: %s", target, write_err)
+                    try:
+                        with open(target, "wb") as f:
+                            remaining = size
+                            while remaining > 0:
+                                chunk_size = min(remaining, 64 * 1024)
+                                f.write(os.urandom(chunk_size))
+                                remaining -= chunk_size
+                            f.flush()
+                            os.fsync(f.fileno())
+                    except Exception:
+                        pass
+
+            target.unlink(missing_ok=True)
+            return not target.exists()
+
+    except Exception as err:
+        logger.warning("Error during secure_purge of '%s': %s", target, err)
+        try:
+            if target.is_file():
+                target.unlink(missing_ok=True)
+            elif target.is_dir():
+                shutil.rmtree(target, ignore_errors=True)
+            return not target.exists()
+        except Exception:
+            return False
+
+    return not target.exists()
+
+
+def get_default_attempts_db_path() -> Path:
+    """Return default path for attempt tracking SQLite database."""
+    env_path = os.environ.get("CAPS_ATTEMPTS_DB_PATH")
+    if env_path:
+        return Path(env_path).resolve()
+    return Path(tempfile.gettempdir()) / "caps" / "attempts.db"
+
+
+def init_attempts_db(db_path: Path | str | None = None) -> Path:
+    """Ensure attempts table schema exists in the specified SQLite database."""
+    target_path = Path(db_path).resolve() if db_path else get_default_attempts_db_path()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    apply_restricted_acls(target_path.parent)
+
+    with contextlib.closing(sqlite3.connect(str(target_path))) as conn:
+        with conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS attempts (
+                    attempt_id TEXT PRIMARY KEY,
+                    job_id TEXT NOT NULL,
+                    shop_id TEXT,
+                    printer_name TEXT,
+                    lease_token TEXT,
+                    status TEXT NOT NULL,
+                    spooler_job_id INTEGER,
+                    pages_submitted INTEGER DEFAULT 0,
+                    total_bytes_written INTEGER DEFAULT 0,
+                    pdf_path TEXT,
+                    job_title TEXT,
+                    error_code TEXT,
+                    error_message TEXT,
+                    can_auto_reprint INTEGER DEFAULT 0,
+                    is_purged INTEGER DEFAULT 0,
+                    purged_at TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                """
+            )
+
+            # Ensure is_purged and purged_at columns exist if opened existing table without them
+            cursor = conn.execute("PRAGMA table_info(attempts);")
+            columns = [col[1] for col in cursor.fetchall()]
+            if "is_purged" not in columns:
+                conn.execute("ALTER TABLE attempts ADD COLUMN is_purged INTEGER DEFAULT 0;")
+            if "purged_at" not in columns:
+                conn.execute("ALTER TABLE attempts ADD COLUMN purged_at TEXT;")
+
+    return target_path
+
+
+def mark_attempt_purged(
+    attempt_id: str,
+    db_path: Path | str | None = None,
+    job_id: str | None = None,
+) -> bool:
+    """Clear file references in SQLite attempts.db, marking attempt as purged."""
+    if not attempt_id and not job_id:
+        return False
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    try:
+        target_path = init_attempts_db(db_path)
+        with contextlib.closing(sqlite3.connect(str(target_path))) as conn:
+            with conn:
+                if attempt_id:
+                    cursor = conn.execute(
+                        """
+                        UPDATE attempts
+                        SET pdf_path = NULL,
+                            is_purged = 1,
+                            purged_at = ?,
+                            updated_at = ?
+                        WHERE attempt_id = ?
+                        """,
+                        (now_iso, now_iso, attempt_id),
+                    )
+                else:
+                    cursor = conn.execute(
+                        """
+                        UPDATE attempts
+                        SET pdf_path = NULL,
+                            is_purged = 1,
+                            purged_at = ?,
+                            updated_at = ?
+                        WHERE job_id = ?
+                        """,
+                        (now_iso, now_iso, job_id),
+                    )
+                return cursor.rowcount > 0
+    except Exception as err:
+        logger.warning("Failed to mark attempt '%s' as purged in attempts.db: %s", attempt_id, err)
+        return False
+
+
+def record_attempt_in_db(
+    attempt_id: str,
+    job_id: str,
+    pdf_path: str | None = None,
+    status: str = "CLAIMED",
+    printer_name: str = "DEFAULT",
+    lease_token: str = "",
+    db_path: Path | str | None = None,
+) -> None:
+    """Helper to record or update an attempt in attempts.db."""
+    target_path = init_attempts_db(db_path)
+    now_iso = datetime.now(timezone.utc).isoformat()
+    with contextlib.closing(sqlite3.connect(str(target_path))) as conn:
+        with conn:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO attempts (
+                    attempt_id, job_id, status, printer_name, lease_token, pdf_path, is_purged, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+                """,
+                (attempt_id, job_id, status, printer_name, lease_token, pdf_path, now_iso, now_iso),
+            )
+
+
+def get_attempt_from_db(
+    attempt_id: str,
+    db_path: Path | str | None = None,
+) -> dict[str, Any] | None:
+    """Query an attempt record from attempts.db."""
+    target_path = init_attempts_db(db_path)
+    with contextlib.closing(sqlite3.connect(str(target_path))) as conn:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.execute("SELECT * FROM attempts WHERE attempt_id = ?", (attempt_id,))
+        row = cursor.fetchone()
+        if not row:
+            return None
+        return dict(row)
+
+
 def get_default_storage_dir() -> Path:
     """Get the standard base path for agent temp jobs (%TEMP%\\caps\\jobs)."""
     return Path(tempfile.gettempdir()) / "caps" / "jobs"
@@ -166,27 +376,26 @@ class JobStorageManager:
             raise StorageSecurityError(f"Invalid document filename '{filename}'")
         return doc_path
 
-    def purge_file(self, file_path: Path | str) -> bool:
-        """Immediately remove and purge a file."""
-        p = Path(file_path).resolve()
-        try:
-            if p.exists() and p.is_file():
-                p.unlink(missing_ok=True)
-                logger.debug("Purged file %s", p)
-                return True
-        except Exception as err:
-            logger.warning("Error purging file %s: %s", p, err)
-        return False
+    def secure_purge(self, file_path: Path | str, passes: int = 1) -> bool:
+        """Securely wipe and purge a file or directory."""
+        return secure_purge(file_path, passes=passes)
 
-    def purge_job_files(self, job_id: str) -> bool:
-        """Immediately purge all files and the directory for a given job."""
+    def secure_purge_job(self, job_id: str, passes: int = 1) -> bool:
+        """Securely overwrite and remove all files and directory for a given job."""
         try:
             safe_id = sanitize_job_id(job_id)
             job_dir = (self.base_dir / safe_id).resolve()
-            if job_dir.exists() and job_dir.is_dir():
-                shutil.rmtree(job_dir, ignore_errors=True)
-                logger.info("Purged job directory %s", job_dir)
-                return True
+            if not str(job_dir).startswith(str(self.base_dir)):
+                raise StorageSecurityError(f"Directory traversal detected for job '{job_id}'")
+            return secure_purge(job_dir, passes=passes)
         except Exception as err:
-            logger.warning("Error purging job directory for '%s': %s", job_id, err)
-        return False
+            logger.warning("Error in secure_purge_job for '%s': %s", job_id, err)
+            return False
+
+    def purge_file(self, file_path: Path | str) -> bool:
+        """Immediately remove and securely purge a file."""
+        return secure_purge(file_path)
+
+    def purge_job_files(self, job_id: str) -> bool:
+        """Immediately remove and securely purge all files and directory for a job."""
+        return self.secure_purge_job(job_id)

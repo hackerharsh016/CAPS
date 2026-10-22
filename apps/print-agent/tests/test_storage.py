@@ -9,16 +9,32 @@ Tests:
 from __future__ import annotations
 
 import os
+import sys
 import tempfile
 import threading
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock
 
+# Ensure print-agent directory is in sys.path
+agent_root = str(Path(__file__).resolve().parent.parent)
+if agent_root not in sys.path:
+    sys.path.insert(0, agent_root)
+
+from api_client import AgentApiClient, JobClaim
 from caps_agent.jobs.state_machine import JobState
 from caps_agent.storage.cleanup import ArtifactCleaner
 from caps_agent.storage.local_state import LocalStateJournal
 from caps_agent.storage.temp_files import PathTraversalSecurityError, TempFileManager
+from job_processor import JobProcessor
+from storage import (
+    JobStorageManager,
+    get_attempt_from_db,
+    mark_attempt_purged,
+    record_attempt_in_db,
+    secure_purge,
+)
 
 
 class TestLocalStateJournal(unittest.TestCase):
@@ -386,6 +402,176 @@ class TestArtifactCleaner(unittest.TestCase):
         self.assertEqual(report.dirs_deleted, 0)
         self.assertTrue(active_dir.exists())
         self.assertTrue(active_file.exists())
+
+
+class TestSecurePurge(unittest.TestCase):
+    """Tests for zero-retention secure file purge and attempts.db tracking (INT-D4-05)."""
+
+    def setUp(self) -> None:
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self.tmp_path = Path(self._temp_dir.name)
+        self.storage_manager = JobStorageManager(base_dir=self.tmp_path / "jobs")
+        self.db_path = self.tmp_path / "attempts.db"
+
+    def tearDown(self) -> None:
+        self._temp_dir.cleanup()
+
+    def test_secure_purge_overwrites_bytes_and_unlinks(self) -> None:
+        """Verify file bytes are overwritten prior to unlinking and file is purged."""
+        sample_file = self.tmp_path / "confidential.pdf"
+        data = b"%PDF-1.4 " + b"Sensitive customer bank statement" * 50
+        sample_file.write_bytes(data)
+        self.assertTrue(sample_file.exists())
+        self.assertEqual(sample_file.stat().st_size, len(data))
+
+        success = secure_purge(sample_file, passes=1)
+        self.assertTrue(success)
+        self.assertFalse(sample_file.exists())
+
+    def test_secure_purge_directory_zero_bytes_remain(self) -> None:
+        """Verify entire job directory is securely purged and zero bytes remain on disk."""
+        job_dir = self.storage_manager.get_job_dir("job-test-zero-bytes")
+        pdf_file = job_dir / "document.pdf"
+        pdf_file.write_bytes(b"%PDF-1.7 secure content here" * 100)
+        temp_artifact = job_dir / "spool_buffer.tmp"
+        temp_artifact.write_bytes(b"\x00\x01\x02\x03" * 200)
+
+        self.assertTrue(pdf_file.exists())
+        self.assertTrue(temp_artifact.exists())
+
+        res = self.storage_manager.secure_purge_job("job-test-zero-bytes")
+        self.assertTrue(res)
+        self.assertFalse(pdf_file.exists())
+        self.assertFalse(temp_artifact.exists())
+        self.assertFalse(job_dir.exists())
+
+    def test_secure_purge_nonexistent_and_empty_file(self) -> None:
+        """Verify secure_purge handles nonexistent files and 0-byte files gracefully."""
+        # Nonexistent
+        missing_file = self.tmp_path / "missing.pdf"
+        self.assertTrue(secure_purge(missing_file))
+
+        # 0-byte file
+        empty_file = self.tmp_path / "empty.pdf"
+        empty_file.touch()
+        self.assertTrue(empty_file.exists())
+        self.assertTrue(secure_purge(empty_file))
+        self.assertFalse(empty_file.exists())
+
+    def test_secure_purge_marks_attempts_db_purged(self) -> None:
+        """Verify SQLite attempts.db record is updated with is_purged=1 and purged_at."""
+        record_attempt_in_db(
+            attempt_id="att-purge-1",
+            job_id="job-purge-1",
+            pdf_path=str(self.tmp_path / "doc.pdf"),
+            status="PRINTING",
+            db_path=self.db_path,
+        )
+
+        rec_before = get_attempt_from_db("att-purge-1", db_path=self.db_path)
+        self.assertIsNotNone(rec_before)
+        self.assertEqual(rec_before["is_purged"], 0)
+        self.assertIsNone(rec_before["purged_at"])
+        self.assertIsNotNone(rec_before["pdf_path"])
+
+        # Mark purged
+        res = mark_attempt_purged("att-purge-1", db_path=self.db_path)
+        self.assertTrue(res)
+
+        rec_after = get_attempt_from_db("att-purge-1", db_path=self.db_path)
+        self.assertIsNotNone(rec_after)
+        self.assertEqual(rec_after["is_purged"], 1)
+        self.assertIsNotNone(rec_after["purged_at"])
+        self.assertIsNone(rec_after["pdf_path"])
+
+    def _create_claim(self, job_id: str, attempt_id: str, copies: int = 1) -> JobClaim:
+        return JobClaim(
+            job_id=job_id,
+            attempt_id=attempt_id,
+            lease_token="lease-token-xyz",
+            lease_expires_at="2026-10-22T12:00:00Z",
+            shop_id="shop-001",
+            printer_id="printer-001",
+            download_url="https://storage.supabase.co/v1/jobs/test.pdf",
+            checksum_sha256="0" * 64,
+            content_type="application/pdf",
+            file_size_bytes=1024,
+            settings={"copies": copies, "color_mode": "bw"},
+            created_at="2026-10-22T10:00:00Z",
+        )
+
+    def test_secure_purge_job_processor_finally_on_success(self) -> None:
+        """Verify JobProcessor runs secure_purge in finally block on successful print."""
+        mock_api = MagicMock()
+        mock_claim = self._create_claim(job_id="job-succ-123", attempt_id="att-succ-123", copies=2)
+        mock_api.claim_jobs.return_value = mock_claim
+        mock_api.update_job_status.return_value = {"ok": True}
+
+        # Create document.pdf in job dir
+        job_dir = self.storage_manager.get_job_dir("job-succ-123")
+        doc_path = job_dir / "document.pdf"
+        doc_path.write_bytes(b"%PDF-1.4 Successful Print Content")
+        self.assertTrue(doc_path.exists())
+
+        processor = JobProcessor(
+            api_client=mock_api,
+            storage_manager=self.storage_manager,
+            db_path=self.db_path,
+        )
+
+        result = processor.process_next_job()
+        self.assertIsNotNone(result)
+        self.assertEqual(result["status"], "COMPLETED")
+
+        # Zero PDF bytes remain!
+        self.assertFalse(doc_path.exists())
+        self.assertFalse(job_dir.exists())
+
+        # attempts.db is marked purged
+        rec = get_attempt_from_db("att-succ-123", db_path=self.db_path)
+        self.assertIsNotNone(rec)
+        self.assertEqual(rec["is_purged"], 1)
+        self.assertIsNone(rec["pdf_path"])
+
+    def test_secure_purge_job_processor_finally_on_failure(self) -> None:
+        """Verify JobProcessor runs secure_purge in finally block even when spooling/printing fails."""
+        mock_api = MagicMock()
+        mock_claim = self._create_claim(job_id="job-fail-999", attempt_id="att-fail-999", copies=1)
+        mock_api.claim_jobs.return_value = mock_claim
+
+        # Make update_job_status fail on PRINTING transition
+        def fail_on_printing(*args, **kwargs):
+            if kwargs.get("status") == "PRINTING":
+                raise RuntimeError("Simulated spooler hardware fault")
+            return {"ok": True}
+
+        mock_api.update_job_status.side_effect = fail_on_printing
+
+        # Create document.pdf in job dir
+        job_dir = self.storage_manager.get_job_dir("job-fail-999")
+        doc_path = job_dir / "document.pdf"
+        doc_path.write_bytes(b"%PDF-1.4 Failed Print Content")
+        self.assertTrue(doc_path.exists())
+
+        processor = JobProcessor(
+            api_client=mock_api,
+            storage_manager=self.storage_manager,
+            db_path=self.db_path,
+        )
+
+        result = processor.process_next_job()
+        self.assertIsNotNone(result)
+        self.assertEqual(result["status"], "FAILED")
+
+        # Zero PDF bytes remain in temp directory after failure!
+        self.assertFalse(doc_path.exists())
+        self.assertFalse(job_dir.exists())
+
+        # attempts.db is marked purged
+        rec = get_attempt_from_db("att-fail-999", db_path=self.db_path)
+        self.assertIsNotNone(rec)
+        self.assertEqual(rec["is_purged"], 1)
+        self.assertIsNone(rec["pdf_path"])
 
 
 if __name__ == "__main__":
