@@ -119,6 +119,27 @@ export class PrinterService {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    try {
+      const apiRes = await this.fetchFn(`${apiUrl}/api/v1/shops/${shopId}/printers`, {
+        method: 'GET',
+        headers
+      });
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        const printers = json.data?.printers || json.data || json;
+        if (Array.isArray(printers) && printers.length > 0) {
+          return printers as Printer[];
+        }
+      }
+    } catch {
+      // Fall through to Supabase REST
+    }
+
     try {
       const endpoint = `${this.supabaseUrl}/rest/v1/printers?shop_id=eq.${shopId}&select=*,device:agent_devices(*)&order=name.asc`;
       const res = await this.fetchFn(endpoint, { method: 'GET', headers });
@@ -147,6 +168,27 @@ export class PrinterService {
     };
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    try {
+      const apiRes = await this.fetchFn(`${apiUrl}/api/v1/shops/${shopId}/agents`, {
+        method: 'GET',
+        headers
+      });
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        const devices = json.data?.devices || json.data || json;
+        if (Array.isArray(devices) && devices.length > 0) {
+          return devices as AgentDevice[];
+        }
+      }
+    } catch {
+      // Fall through to Supabase REST
     }
 
     try {

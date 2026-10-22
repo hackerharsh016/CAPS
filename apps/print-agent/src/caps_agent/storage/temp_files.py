@@ -23,6 +23,7 @@ SAFE_ID_REGEX = re.compile(r"^[a-zA-Z0-9_\-]+$")
 
 class PathTraversalSecurityError(ValueError):
     """Raised when an identifier contains directory traversal or forbidden characters."""
+
     pass
 
 
@@ -71,7 +72,9 @@ class TempFileManager:
                         "/grant:r",
                         "SYSTEM:(OI)(CI)F",
                     ]
-                    res = subprocess.run(cmd, capture_output=True, text=True, timeout=5, check=False)
+                    res = subprocess.run(
+                        cmd, capture_output=True, text=True, timeout=5, check=False
+                    )
                     if res.returncode != 0:
                         logger.debug("icacls returned %d: %s", res.returncode, res.stderr.strip())
                 except Exception as exc:
@@ -113,7 +116,9 @@ class TempFileManager:
 
         # Strict containment check to prevent breakout
         if not str(job_dir).startswith(str(self.base_dir)):
-            raise PathTraversalSecurityError(f"Job directory '{job_dir}' escaped base dir '{self.base_dir}'")
+            raise PathTraversalSecurityError(
+                f"Job directory '{job_dir}' escaped base dir '{self.base_dir}'"
+            )
 
         job_dir.mkdir(parents=True, exist_ok=True)
         if self.secure_permissions:

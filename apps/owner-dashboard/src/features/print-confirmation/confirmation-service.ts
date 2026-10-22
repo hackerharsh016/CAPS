@@ -233,30 +233,54 @@ export class PrintConfirmationService {
       );
     }
 
-    // 4. Atomic confirmation via RPC approve_print_job or fallback PATCH
+    // 4. Atomic confirmation via Cloud API, Supabase RPC approve_print_job, or fallback PATCH
     const now = new Date().toISOString();
     let rpcDone = false;
 
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
     try {
-      const rpcUrl = `${this.supabaseUrl}/rest/v1/rpc/approve_print_job`;
-      const rpcRes = await this.fetchFn(rpcUrl, {
+      const approveUrl = `${apiUrl}/api/v1/shops/${shopId}/jobs/${jobId}/approve`;
+      const approveRes = await this.fetchFn(approveUrl, {
         method: 'POST',
         headers: {
-          ...headers,
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           'Idempotency-Key': idempotencyKey
-        },
-        body: JSON.stringify({
-          p_job_id: jobId,
-          p_shop_id: shopId,
-          p_idempotency_key: idempotencyKey
-        })
+        }
       });
-
-      if (rpcRes.ok) {
+      if (approveRes.ok) {
         rpcDone = true;
       }
     } catch {
-      rpcDone = false;
+      // Fall through to Supabase RPC / PATCH
+    }
+
+    if (!rpcDone) {
+      try {
+        const rpcUrl = `${this.supabaseUrl}/rest/v1/rpc/approve_print_job`;
+        const rpcRes = await this.fetchFn(rpcUrl, {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'Idempotency-Key': idempotencyKey
+          },
+          body: JSON.stringify({
+            p_job_id: jobId,
+            p_shop_id: shopId,
+            p_idempotency_key: idempotencyKey
+          })
+        });
+
+        if (rpcRes.ok) {
+          rpcDone = true;
+        }
+      } catch {
+        rpcDone = false;
+      }
     }
 
     if (!rpcDone) {

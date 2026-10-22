@@ -93,7 +93,8 @@ def verify_authenticode_signature(
                 has_timestamp = bool(data.get("HasTimestamp", False))
 
                 is_signed = status in ("Valid", "HashMismatch", "NotTrusted") or (
-                    bool(thumbprint) and status not in ("NotSigned", "UnknownError", "NotSupportedFileFormat")
+                    bool(thumbprint)
+                    and status not in ("NotSigned", "UnknownError", "NotSupportedFileFormat")
                 )
                 is_trusted = False
 
@@ -114,7 +115,9 @@ def verify_authenticode_signature(
 
                     is_trusted = publisher_ok and thumbprint_ok
                     if not is_trusted:
-                        status_msg = "Signature valid but signer is not in authorized publishers list."
+                        status_msg = (
+                            "Signature valid but signer is not in authorized publishers list."
+                        )
 
                 return SignatureVerificationResult(
                     file_path=str(path),

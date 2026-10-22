@@ -176,9 +176,7 @@ class TestJobDispatcher(unittest.TestCase):
             )
             dispatcher.enqueue_job(job)
 
-        threads = [
-            threading.Thread(target=enqueue_task, args=(i,)) for i in range(num_jobs)
-        ]
+        threads = [threading.Thread(target=enqueue_task, args=(i,)) for i in range(num_jobs)]
         for t in threads:
             t.start()
         for t in threads:
@@ -236,9 +234,7 @@ class TestJobDispatcher(unittest.TestCase):
 
         # Allow slight delay for both workers to engage simultaneously
         time.sleep(0.04)
-        [
-            p for p in (p1, p2) if tracking_engine.active_executions.get(p, 0) > 0
-        ]
+        [p for p in (p1, p2) if tracking_engine.active_executions.get(p, 0) > 0]
 
         dispatcher.wait_all(timeout=4.0)
 

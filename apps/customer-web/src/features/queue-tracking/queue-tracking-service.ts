@@ -76,7 +76,60 @@ export class QueueTrackingService {
       filter: 'all'
     });
 
-    const targetOrder = allCustomerOrders.orders.find(o => o.id === jobId);
+    let targetOrder = allCustomerOrders.orders.find(o => o.id === jobId);
+
+    if (!targetOrder) {
+      const apiUrl =
+        typeof process !== 'undefined'
+          ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+          : 'http://localhost:4000';
+      try {
+        const liveRes = await fetch(`${apiUrl}/api/v1/print-jobs/${jobId}`);
+        if (liveRes.ok) {
+          const liveJson = await liveRes.json();
+          const liveJob = liveJson.data?.job || liveJson.data || liveJson;
+          if (liveJob && liveJob.id) {
+            if (liveJob.customer_id && liveJob.customer_id !== customerId) {
+              throw new QueueTrackingCustomError(
+                'UNAUTHORIZED',
+                'Forbidden: You are not authorized to inspect this print job.'
+              );
+            }
+            const newOrder: CustomerOrder = {
+              id: liveJob.id,
+              token_number: liveJob.token_number || 'T-999',
+              customer_id: customerId,
+              shop_id: liveJob.shop_id,
+              shop_name: liveJob.shop_name || 'CAPS Partner Shop',
+              document_name: liveJob.document_name || 'Document.pdf',
+              file_size_bytes: liveJob.file_size_bytes || 1024,
+              settings: {
+                paper_size: liveJob.settings?.paper_size || 'A4',
+                color_mode: liveJob.settings?.color_mode || 'bw',
+                duplex: liveJob.settings?.sides === 'double',
+                copies: liveJob.settings?.copies || 1,
+                orientation: liveJob.settings?.orientation || 'portrait',
+                page_range: liveJob.settings?.page_range || 'all',
+                pages_per_copy: liveJob.pages || 1,
+                total_pages: (liveJob.pages || 1) * (liveJob.settings?.copies || 1),
+                spiral_binding: liveJob.settings?.binding === 'spiral'
+              },
+              priority_tier: liveJob.priority_tier || 'flexible',
+              amount_paise: liveJob.price_total_paise || 200,
+              status: liveJob.status || 'queued',
+              payment_status: liveJob.payment_status || 'paid',
+              document_deleted: false,
+              document_expires_at: new Date(Date.now() + 86400000).toISOString(),
+              created_at: liveJob.created_at || new Date().toISOString()
+            };
+            this.ordersService.addOrder(newOrder);
+            targetOrder = newOrder;
+          }
+        }
+      } catch (err) {
+        if (err instanceof QueueTrackingCustomError) throw err;
+      }
+    }
 
     if (!targetOrder) {
       // Check if order exists under another customer (Tenant isolation violation check)

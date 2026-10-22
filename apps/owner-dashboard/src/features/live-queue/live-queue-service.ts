@@ -200,6 +200,74 @@ export class LiveQueueService {
       return [];
     }
 
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    // 1. Try live Cloud API priority queue endpoint
+    try {
+      const apiHeaders: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      if (accessToken) {
+        apiHeaders['Authorization'] = `Bearer ${accessToken}`;
+      }
+      const apiRes = await this.fetchFn(`${apiUrl}/api/v1/shops/${shopId}/queue`, {
+        method: 'GET',
+        headers: apiHeaders
+      });
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        const rawItems = (json.data?.queue || json.queue || json.data || json) as any[];
+        if (Array.isArray(rawItems) && rawItems.length > 0) {
+          const mappedItems: QueueItem[] = rawItems.map(item => ({
+            id: item.id,
+            shop_id: item.shop_id || shopId,
+            customer_id: item.customer_id || 'customer-anonymous',
+            customer_name: item.customer_name || 'Customer',
+            customer_phone: item.customer_phone || '',
+            printer_id: item.printer_id,
+            printer_name: item.printer_name,
+            document_name: item.document_name || 'document.pdf',
+            document_storage_key: item.document_storage_key || '',
+            settings: {
+              paper_size: item.settings?.paper_size || 'A4',
+              color_mode: item.settings?.color_mode || 'bw',
+              sides: item.settings?.sides || 'single',
+              orientation: item.settings?.orientation || 'portrait',
+              copies: item.settings?.copies || 1,
+              page_range: item.settings?.page_range || 'all',
+              binding: item.settings?.binding || 'none'
+            },
+            priority_tier: item.priority_tier || 'flexible',
+            price_total_paise: item.price_total_paise || 0,
+            price_breakdown: item.price_breakdown || {
+              base_pages_paise: item.price_total_paise || 0,
+              color_surcharge_paise: 0,
+              duplex_discount_paise: 0,
+              binding_fee_paise: 0,
+              urgent_surcharge_paise: 0,
+              subtotal_paise: item.price_total_paise || 0,
+              gst_paise: 0,
+              total_paise: item.price_total_paise || 0
+            },
+            status: item.status || 'queued',
+            payment_status: item.payment_status || 'paid',
+            queue_position: item.queue_position ?? 0,
+            is_currently_executing: item.status === 'printing' || item.status === 'downloading',
+            estimated_wait_minutes: item.estimated_wait_minutes ?? 0,
+            enqueued_at: item.enqueued_at || item.created_at || new Date().toISOString(),
+            created_at: item.created_at || new Date().toISOString(),
+            updated_at: item.updated_at || new Date().toISOString()
+          }));
+          return computeQueueETAs(calculateQueuePositions(mappedItems));
+        }
+      }
+    } catch {
+      // Continue to Supabase RPC / fallback
+    }
+
     const endpoint = `${this.supabaseUrl}/rest/v1/rpc/get_shop_queue`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

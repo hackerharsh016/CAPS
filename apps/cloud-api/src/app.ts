@@ -4,10 +4,16 @@ import { Env, validateEnv } from './config/env.js';
 import { registerLogger } from './plugins/logger.js';
 import { registerErrorHandlers } from './plugins/error-handler.js';
 import { registerRateLimiter, RateLimiterOptions } from './plugins/rate-limiter.js';
-import { createAuthHooks, ITokenVerifier, SupabaseJwtVerifier } from './plugins/auth.js';
+import {
+  createAuthHooks,
+  ITokenVerifier,
+  SupabaseJwtVerifier,
+  CompositeAuthVerifier
+} from './plugins/auth.js';
 
 // Domain Repositories & Services
 import { MockShopsRepository, IShopsRepository } from './modules/shops/shops.repository.js';
+import { SupabaseShopsRepository } from './repositories/supabase/supabase-shops.repository.js';
 import { ShopsService } from './modules/shops/shops.service.js';
 import { shopsRoutes } from './modules/shops/shops.routes.js';
 
@@ -33,6 +39,7 @@ import { PrivacyRetentionService } from './modules/documents/privacy-retention.s
 import { privacyCleanupRoutes } from './modules/documents/privacy-cleanup.routes.js';
 
 import { MockQuotesRepository, IQuotesRepository } from './modules/pricing/quotes.repository.js';
+import { SupabasePricingRepository } from './repositories/supabase/supabase-pricing.repository.js';
 import { QuotesService } from './modules/pricing/quotes.service.js';
 import { quotesRoutes } from './modules/pricing/quotes.routes.js';
 
@@ -40,6 +47,7 @@ import {
   MockPrintJobsRepository,
   IPrintJobsRepository
 } from './modules/print-jobs/print-jobs.repository.js';
+import { SupabasePrintJobsRepository } from './repositories/supabase/supabase-print-jobs.repository.js';
 import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 import { telemetryRoutes } from './common/telemetry/telemetry.routes.js';
@@ -56,6 +64,7 @@ import {
 } from './modules/queue/realtime-signals.service.js';
 
 import { MockAgentsRepository, IAgentsRepository } from './modules/agents/agents.repository.js';
+import { SupabaseAgentsRepository } from './repositories/supabase/supabase-agents.repository.js';
 import {
   MockJobAttemptsRepository,
   IJobAttemptsRepository
@@ -155,7 +164,8 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const env = options.env ?? validateEnv(process.env);
 
   const app = Fastify({
-    logger: env.NODE_ENV !== 'test'
+    logger: env.NODE_ENV !== 'test',
+    ignoreTrailingSlash: true
   });
 
   // Preserve raw body buffer for secure HMAC-SHA256 webhook signature validation
@@ -190,8 +200,29 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   };
   registerRateLimiter(app, rateLimitOpts);
 
-  // 4. Supabase JWT authentication and role authorization decorators
-  const tokenVerifier = options.tokenVerifier ?? new SupabaseJwtVerifier(env.SUPABASE_JWT_SECRET);
+  const isSupabaseConfigured =
+    Boolean(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) ||
+    Boolean(
+      process.env['DATABASE_URL'] &&
+      (env.SUPABASE_SERVICE_ROLE_KEY || process.env['SUPABASE_SERVICE_ROLE_KEY'])
+    );
+
+  const supabaseRepoOpts = isSupabaseConfigured
+    ? {
+        supabaseUrl: env.SUPABASE_URL || 'http://localhost:54321',
+        supabaseKey: env.SUPABASE_SERVICE_ROLE_KEY || process.env['SUPABASE_SERVICE_ROLE_KEY']
+      }
+    : undefined;
+
+  // 4. Supabase JWT & Agent Device Secret authentication and role authorization decorators
+  const agentsRepo =
+    options.agentsRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabaseAgentsRepository(supabaseRepoOpts)
+      : new MockAgentsRepository());
+  const tokenVerifier =
+    options.tokenVerifier ??
+    new CompositeAuthVerifier(new SupabaseJwtVerifier(env.SUPABASE_JWT_SECRET), () => agentsRepo);
   const { authenticate, authorize } = createAuthHooks(tokenVerifier);
   app.decorateRequest('user', null);
   app.decorate('tokenVerifier', tokenVerifier);
@@ -205,9 +236,18 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   });
 
   // 6. Initialize repositories
-  const shopsRepo = options.shopsRepo ?? new MockShopsRepository();
+  const shopsRepo =
+    options.shopsRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabaseShopsRepository(supabaseRepoOpts)
+      : new MockShopsRepository());
   const printersRepo = options.printersRepo ?? new MockPrintersRepository();
-  const jobsRepo = options.jobsRepo ?? options.printJobsRepo ?? new MockPrintJobsRepository();
+  const jobsRepo =
+    options.jobsRepo ??
+    options.printJobsRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabasePrintJobsRepository(supabaseRepoOpts)
+      : new MockPrintJobsRepository());
   const printJobsRepo = jobsRepo;
   const paymentsRepo = options.paymentsRepo ?? new MockPaymentsRepository();
   const razorpayClient =
@@ -226,8 +266,11 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   const documentsRepo = options.documentsRepo ?? new MockDocumentsRepository();
   const storageService = options.storageService ?? new MockStorageService();
   const documentConverter = options.documentConverter ?? new TrustedDocumentConverter();
-  const quotesRepo = options.quotesRepo ?? new MockQuotesRepository();
-  const agentsRepo = options.agentsRepo ?? new MockAgentsRepository();
+  const quotesRepo =
+    options.quotesRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabasePricingRepository(supabaseRepoOpts)
+      : new MockQuotesRepository());
   const attemptsRepo = options.attemptsRepo ?? new MockJobAttemptsRepository();
 
   // 7. Initialize domain services

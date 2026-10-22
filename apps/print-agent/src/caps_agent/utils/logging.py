@@ -83,9 +83,7 @@ class StructuredMetadataFormatter(logging.Formatter):
 
 
 def setup_logging(
-    level: str = "INFO",
-    logger_name: str = "caps_agent",
-    use_json: bool = True
+    level: str = "INFO", logger_name: str = "caps_agent", use_json: bool = True
 ) -> logging.Logger:
     """Configure structured, redacting logger."""
     logger = logging.getLogger(logger_name)

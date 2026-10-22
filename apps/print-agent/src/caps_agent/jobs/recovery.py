@@ -83,7 +83,9 @@ class StartupRecoveryCoordinator:
         cleaner: ArtifactCleaner | None = None,
     ) -> None:
         self.journal = journal
-        self.query_adapter = query_adapter if query_adapter is not None else PyWin32JobQueryAdapter()
+        self.query_adapter = (
+            query_adapter if query_adapter is not None else PyWin32JobQueryAdapter()
+        )
         self.cleaner = cleaner or ArtifactCleaner()
 
     def reconcile_startup(

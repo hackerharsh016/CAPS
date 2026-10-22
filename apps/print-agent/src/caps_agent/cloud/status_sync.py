@@ -182,7 +182,13 @@ class StatusSyncJournal:
             item_id = cursor.lastrowid
             conn.commit()
 
-        logger.debug("Enqueued offline status sync #%d: job '%s', attempt '%s', status '%s'", item_id, job_id, attempt_id, status)
+        logger.debug(
+            "Enqueued offline status sync #%d: job '%s', attempt '%s', status '%s'",
+            item_id,
+            job_id,
+            attempt_id,
+            status,
+        )
         return StatusSyncItem(
             id=item_id,
             job_id=job_id,
@@ -311,7 +317,11 @@ class StatusSyncManager:
         with self._lock:
             # 1. Deduplication check
             if self.journal.is_acknowledged_or_queued(attempt_id, normalized_status):
-                logger.debug("Duplicate status '%s' for attempt '%s' suppressed", normalized_status, attempt_id)
+                logger.debug(
+                    "Duplicate status '%s' for attempt '%s' suppressed",
+                    normalized_status,
+                    attempt_id,
+                )
                 return True
 
             # 2. Try direct immediate delivery if queue is empty
@@ -326,7 +336,12 @@ class StatusSyncManager:
                     )
                     # Mark acknowledged
                     self.journal.record_direct_acknowledgement(attempt_id, normalized_status)
-                    logger.info("Directly synced status '%s' for job '%s' (attempt '%s')", normalized_status, job_id, attempt_id)
+                    logger.info(
+                        "Directly synced status '%s' for job '%s' (attempt '%s')",
+                        normalized_status,
+                        job_id,
+                        attempt_id,
+                    )
                     return True
                 except Exception as err:
                     logger.warning(

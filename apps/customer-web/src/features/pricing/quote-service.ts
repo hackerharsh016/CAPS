@@ -64,6 +64,36 @@ export class QuoteService {
       throw new Error(this.config.failureMessage || 'Failed to fetch quote from server');
     }
 
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    // Try live Cloud API authoritative quote calculation
+    try {
+      const init: RequestInit = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req)
+      };
+      if (signal) {
+        init.signal = signal;
+      }
+      const res = await fetch(`${apiUrl}/api/v1/quotes`, init);
+      if (res.ok) {
+        const json = await res.json();
+        const liveQuote = json.data || json;
+        if (liveQuote && liveQuote.price_breakdown) {
+          return liveQuote as QuoteResponse;
+        }
+      }
+    } catch (err: unknown) {
+      if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        throw new DOMException('Quote request aborted', 'AbortError');
+      }
+      // Offline fallback to local calculation
+    }
+
     // Attempt to lookup real shop pricing rates from shop-discovery service
     let customRates: Partial<ShopPricingRates> | undefined;
     if (req.shop_id) {

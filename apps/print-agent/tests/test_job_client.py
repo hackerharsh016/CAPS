@@ -111,7 +111,9 @@ class TestJobClient(unittest.TestCase):
         checksum: str | None = None,
         lease_expires_at: str | None = None,
     ) -> JobClaimResponse:
-        exp = lease_expires_at or (datetime.now(UTC) + timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        exp = lease_expires_at or (datetime.now(UTC) + timedelta(minutes=5)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
         return JobClaimResponse(
             job_id=job_id,
             attempt_id=attempt_id,
@@ -150,7 +152,9 @@ class TestJobClient(unittest.TestCase):
     def test_expired_download_url_403_raises_and_cleans_file(self) -> None:
         """Verify: HTTP 403 on download raises ExpiredDownloadUrlError with no leftover files."""
         url = "https://storage.caps.example.com/files/expired.pdf"
-        self.transport.queue_response(url, status_code=403, body=b"Access Denied / Expired Signature")
+        self.transport.queue_response(
+            url, status_code=403, body=b"Access Denied / Expired Signature"
+        )
         claim = self._sample_claim(download_url=url)
 
         with self.assertRaises(ExpiredDownloadUrlError) as ctx:
@@ -262,7 +266,9 @@ class TestJobClient(unittest.TestCase):
         url = "https://storage.caps.example.com/files/expired-exec.pdf"
         self.transport.queue_response(url, status_code=403, body=b"Expired URL")
 
-        claim = self._sample_claim(job_id="job-exp-exec", attempt_id="att-exp-exec", download_url=url)
+        claim = self._sample_claim(
+            job_id="job-exp-exec", attempt_id="att-exp-exec", download_url=url
+        )
 
         res = self.job_client.execute_job(claim)
         self.assertIsNone(res)
@@ -278,9 +284,13 @@ class TestJobClient(unittest.TestCase):
 
     def test_execute_job_partial_download_reports_failed_status(self) -> None:
         url = "https://storage.caps.example.com/files/partial-exec.pdf"
-        self.transport.queue_response(url, status_code=200, body=b"truncated", headers={"content-length": "1000"})
+        self.transport.queue_response(
+            url, status_code=200, body=b"truncated", headers={"content-length": "1000"}
+        )
 
-        claim = self._sample_claim(job_id="job-part-exec", attempt_id="att-part-exec", download_url=url)
+        claim = self._sample_claim(
+            job_id="job-part-exec", attempt_id="att-part-exec", download_url=url
+        )
 
         res = self.job_client.execute_job(claim)
         self.assertIsNone(res)

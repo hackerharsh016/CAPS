@@ -79,7 +79,9 @@ class TestInstallerBuildScript(unittest.TestCase):
         self.build_script = INFRA_DIR / "build-installer.ps1"
 
     def test_script_exists(self) -> None:
-        self.assertTrue(self.build_script.exists(), f"build-installer.ps1 not found at {self.build_script}")
+        self.assertTrue(
+            self.build_script.exists(), f"build-installer.ps1 not found at {self.build_script}"
+        )
 
     def test_script_parameters(self) -> None:
         with open(self.build_script, encoding="utf-8") as f:
@@ -100,7 +102,9 @@ class TestSigningPolicy(unittest.TestCase):
         self.policy_path = INFRA_DIR / "config" / "signing-policy.json"
 
     def test_policy_file_exists_and_valid_json(self) -> None:
-        self.assertTrue(self.policy_path.exists(), f"signing-policy.json not found at {self.policy_path}")
+        self.assertTrue(
+            self.policy_path.exists(), f"signing-policy.json not found at {self.policy_path}"
+        )
         with open(self.policy_path, encoding="utf-8") as f:
             data = json.load(f)
 

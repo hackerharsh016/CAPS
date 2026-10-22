@@ -47,7 +47,7 @@ DMCOLOR_COLOR = 2
 
 # dmDuplex
 DMDUP_SIMPLEX = 1
-DMDUP_VERTICAL = 2    # Long-edge binding
+DMDUP_VERTICAL = 2  # Long-edge binding
 DMDUP_HORIZONTAL = 3  # Short-edge binding
 
 # dmDefaultSource (Trays / Input Bins)
@@ -462,12 +462,7 @@ class SettingsMapper:
 
         # 7. Construct DEVMODE
         active_fields = (
-            DM_ORIENTATION
-            | DM_PAPERSIZE
-            | DM_COLOR
-            | DM_DUPLEX
-            | DM_COPIES
-            | DM_DEFAULTSOURCE
+            DM_ORIENTATION | DM_PAPERSIZE | DM_COLOR | DM_DUPLEX | DM_COPIES | DM_DEFAULTSOURCE
         )
         if capabilities.supports_collate and copies > 1:
             active_fields |= DM_COLLATE

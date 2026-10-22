@@ -21,7 +21,9 @@ def create_minimal_pdf(pages: int = 1, landscape: bool = False, title: str = "Te
     # Page object IDs will be 3, 5, 7, ...; Content object IDs will be 4, 6, 8, ...
     kids_refs = [f"{3 + i * 2} 0 R".encode() for i in range(pages)]
     kids_str = b" ".join(kids_refs)
-    lines.append(f"2 0 obj <</Type /Pages /Kids [{kids_str.decode()}] /Count {pages}>> endobj".encode())
+    lines.append(
+        f"2 0 obj <</Type /Pages /Kids [{kids_str.decode()}] /Count {pages}>> endobj".encode()
+    )
 
     for i in range(pages):
         page_num = i + 1
@@ -35,7 +37,9 @@ def create_minimal_pdf(pages: int = 1, landscape: bool = False, title: str = "Te
         )
 
         # Content stream
-        stream_text = f"BT /F1 18 Tf 50 {height - 80} Td ({title} - Page {page_num} of {pages}) ET".encode()
+        stream_text = (
+            f"BT /F1 18 Tf 50 {height - 80} Td ({title} - Page {page_num} of {pages}) ET".encode()
+        )
         stream_len = len(stream_text)
         lines.append(
             f"{content_obj_id} 0 obj <</Length {stream_len}>> stream\n".encode()
@@ -61,14 +65,15 @@ def create_minimal_pdf(pages: int = 1, landscape: bool = False, title: str = "Te
     xref_data = b"\n".join(xref_lines) + b"\n"
     startxref = len(body)
     trailer = (
-        f"trailer <</Size {total_objects + 1} /Root 1 0 R>>\n"
-        f"startxref\n{startxref}\n%%EOF\n"
+        f"trailer <</Size {total_objects + 1} /Root 1 0 R>>\nstartxref\n{startxref}\n%%EOF\n"
     ).encode()
 
     return body + xref_data + trailer
 
 
-def write_sample_pdf(path: Path, pages: int = 1, landscape: bool = False, title: str = "Test") -> Path:
+def write_sample_pdf(
+    path: Path, pages: int = 1, landscape: bool = False, title: str = "Test"
+) -> Path:
     """Write sample PDF to disk and return path."""
     content = create_minimal_pdf(pages=pages, landscape=landscape, title=title)
     path.write_bytes(content)

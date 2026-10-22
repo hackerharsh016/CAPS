@@ -41,14 +41,20 @@ logger = logging.getLogger("caps_agent.cloud.job_client")
 class DownloadError(CloudApiError):
     """Base exception for document download failures."""
 
-    def __init__(self, message: str, status_code: int | None = None, error_code: str = "DOWNLOAD_ERROR"):
+    def __init__(
+        self, message: str, status_code: int | None = None, error_code: str = "DOWNLOAD_ERROR"
+    ):
         super().__init__(message, status_code=status_code, error_code=error_code)
 
 
 class ExpiredDownloadUrlError(DownloadError):
     """Raised when a download URL has expired (HTTP 403/410 or pre-expired lease)."""
 
-    def __init__(self, message: str = "Download URL has expired or is forbidden", status_code: int | None = 403):
+    def __init__(
+        self,
+        message: str = "Download URL has expired or is forbidden",
+        status_code: int | None = 403,
+    ):
         super().__init__(message, status_code=status_code, error_code="EXPIRED_DOWNLOAD_URL")
 
 
@@ -94,7 +100,9 @@ class JobClient:
             if sm.is_terminal:
                 try:
                     deleted = self.temp_mgr.cleanup_job_files(sm.job_id)
-                    logger.debug("Cleaned %d temporary file(s) for terminal job '%s'", deleted, sm.job_id)
+                    logger.debug(
+                        "Cleaned %d temporary file(s) for terminal job '%s'", deleted, sm.job_id
+                    )
                 except Exception as err:
                     logger.warning("Error during temp cleanup for job '%s': %s", sm.job_id, err)
 
@@ -171,7 +179,11 @@ class JobClient:
             # Write file and register with temp manager
             dest_path.write_bytes(body_bytes)
             self.temp_mgr.register_file(dest_path, job_id=claim.job_id)
-            logger.info("Successfully downloaded document for job '%s' (%d bytes)", claim.job_id, len(body_bytes))
+            logger.info(
+                "Successfully downloaded document for job '%s' (%d bytes)",
+                claim.job_id,
+                len(body_bytes),
+            )
             return dest_path
 
         except Exception:

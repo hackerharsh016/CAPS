@@ -60,6 +60,12 @@ importers:
 
   apps/customer-web:
     dependencies:
+      '@caps/types':
+        specifier: workspace:*
+        version: link:../../packages/types
+      '@caps/validation':
+        specifier: workspace:*
+        version: link:../../packages/validation
       next:
         specifier: ^15.1.7
         version: 15.5.28(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)

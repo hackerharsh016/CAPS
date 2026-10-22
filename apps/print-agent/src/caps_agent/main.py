@@ -32,7 +32,11 @@ def main(argv: list[str] | None = None) -> int:
     logger.info("Starting CAPS Print Agent v%s", __version__)
     logger.info("Cloud API endpoint: %s", config.cloud_api_url)
     logger.info("Realtime endpoint: %s", config.realtime_url)
-    logger.info("Local diagnostics binding: %s:%d", config.local_diagnostics_host, config.local_diagnostics_port)
+    logger.info(
+        "Local diagnostics binding: %s:%d",
+        config.local_diagnostics_host,
+        config.local_diagnostics_port,
+    )
     logger.info("Spool temporary directory: %s", config.temp_dir)
 
     if config.device_token:

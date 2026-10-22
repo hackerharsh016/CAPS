@@ -77,8 +77,10 @@ def _generate_synthetic_pdf(num_pages: int = 2) -> bytes:
     for off in offsets[1:]:
         xref += f"{off:010d} 00000 n \n".encode("ascii")
     body += xref
-    trailer = f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{startxref}\n%%EOF\n".encode(
-        "ascii"
+    trailer = (
+        f"trailer\n<< /Size {len(offsets)} /Root 1 0 R >>\nstartxref\n{startxref}\n%%EOF\n".encode(
+            "ascii"
+        )
     )
     return body + trailer
 

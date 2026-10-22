@@ -326,9 +326,16 @@ class RealtimeClaimCoordinator:
                         spooler_job_id=spooler_job_id,
                         error_message=failure_reason,
                     )
-                    logger.debug("Synced status '%s' for job '%s' to Cloud API", target_status, sm.job_id)
+                    logger.debug(
+                        "Synced status '%s' for job '%s' to Cloud API", target_status, sm.job_id
+                    )
                 except Exception as err:
-                    logger.warning("Failed to sync status '%s' for job '%s' to Cloud API: %s", target_status, sm.job_id, err)
+                    logger.warning(
+                        "Failed to sync status '%s' for job '%s' to Cloud API: %s",
+                        target_status,
+                        sm.job_id,
+                        err,
+                    )
 
         self.dispatcher.add_status_listener(_on_state_change)
 
@@ -345,7 +352,9 @@ class RealtimeClaimCoordinator:
         """
         with self._lock:
             try:
-                claim = self.api_client.claim_job(lease_duration_seconds=self.lease_duration_seconds)
+                claim = self.api_client.claim_job(
+                    lease_duration_seconds=self.lease_duration_seconds
+                )
             except TenantMismatchError:
                 logger.error("Tenant authorization mismatch claiming job; aborting claim")
                 return None
@@ -361,11 +370,18 @@ class RealtimeClaimCoordinator:
 
             # Deduplicate locally claimed attempt IDs
             if claim.attempt_id in self._claimed_attempts:
-                logger.warning("Attempt '%s' was already claimed locally; skipping", claim.attempt_id)
+                logger.warning(
+                    "Attempt '%s' was already claimed locally; skipping", claim.attempt_id
+                )
                 return claim
             self._claimed_attempts.add(claim.attempt_id)
 
-            logger.info("Atomically claimed Job '%s' (Attempt '%s', Lease '%s')", claim.job_id, claim.attempt_id, claim.lease_id)
+            logger.info(
+                "Atomically claimed Job '%s' (Attempt '%s', Lease '%s')",
+                claim.job_id,
+                claim.attempt_id,
+                claim.lease_id,
+            )
 
             # Update status to 'downloading'
             try:
@@ -375,7 +391,9 @@ class RealtimeClaimCoordinator:
                     status="downloading",
                 )
             except Exception as err:
-                logger.warning("Failed to update status to 'downloading' for job '%s': %s", claim.job_id, err)
+                logger.warning(
+                    "Failed to update status to 'downloading' for job '%s': %s", claim.job_id, err
+                )
 
             # Stream PDF to local temp directory
             job_temp_dir = self.temp_dir / f"job_{claim.job_id}"
@@ -445,7 +463,9 @@ class RealtimeClaimCoordinator:
             claimed_ids.append(claim.job_id)
 
         if claimed_ids:
-            logger.info("Reconciliation sweep claimed %d pending jobs: %s", len(claimed_ids), claimed_ids)
+            logger.info(
+                "Reconciliation sweep claimed %d pending jobs: %s", len(claimed_ids), claimed_ids
+            )
         return claimed_ids
 
     # ==========================================================================
@@ -488,7 +508,9 @@ class RealtimeClaimCoordinator:
 
             self._recent_events[dedup_key] = now
 
-        logger.info("Received valid wake-up signal: event='%s', job='%s'", event.event_type, event.job_id)
+        logger.info(
+            "Received valid wake-up signal: event='%s', job='%s'", event.event_type, event.job_id
+        )
 
         # Trigger immediate atomic claim & backlog drain
         self.reconcile_backlog()
@@ -584,7 +606,9 @@ class RealtimeClaimCoordinator:
                     last_reconciliation = now
 
             except Exception as recv_err:
-                logger.warning("Realtime receive error: %s; disconnecting to trigger reconnect", recv_err)
+                logger.warning(
+                    "Realtime receive error: %s; disconnecting to trigger reconnect", recv_err
+                )
                 with contextlib.suppress(Exception):
                     self.transport.disconnect()
 

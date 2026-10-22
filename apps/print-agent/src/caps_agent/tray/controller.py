@@ -144,7 +144,9 @@ class HeadlessTrayAdapter(BaseTrayAdapter):
     def update(self, snapshot: TrayStateSnapshot) -> None:
         with self._lock:
             self._history.append(snapshot)
-        logger.debug("Headless tray status updated: %s - %s", snapshot.status.value, snapshot.message)
+        logger.debug(
+            "Headless tray status updated: %s - %s", snapshot.status.value, snapshot.message
+        )
 
     @property
     def is_running(self) -> bool:
@@ -387,7 +389,9 @@ class TrayController:
                 self.set_status(TrayStatus.STOPPED, "Dispatcher stopped")
                 return
 
-            active_jobs = len(getattr(self.dispatcher, "_active_jobs", {})) if self.dispatcher else 0
+            active_jobs = (
+                len(getattr(self.dispatcher, "_active_jobs", {})) if self.dispatcher else 0
+            )
             if active_jobs > 0:
                 self.set_status(TrayStatus.PRINTING, f"Printing {active_jobs} active job(s)")
             else:

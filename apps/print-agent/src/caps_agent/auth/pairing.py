@@ -80,11 +80,15 @@ class PairingManager:
                 raise InvalidPairingCodeError("Pairing code cannot be empty")
 
             if self.api_client is None:
-                raise PairingError("CloudApiClient must be configured on PairingManager to execute pairing")
+                raise PairingError(
+                    "CloudApiClient must be configured on PairingManager to execute pairing"
+                )
 
             payload = {
                 "pairing_code": code,
                 "hostname": platform.node(),
+                "device_name": platform.node(),
+                "device_fingerprint": platform.node(),
                 "os_version": platform.platform(),
                 "agent_version": agent_version,
             }
@@ -95,12 +99,13 @@ class PairingManager:
                 logger.error("Pairing request failed: %s", err)
                 raise PairingError(f"Pairing request failed: {err}") from err
 
-            # Validate pairing response fields
-            shop_id = response.get("shop_id")
-            device_id = response.get("device_id")
-            device_token = response.get("device_token")
-            refresh_token = response.get("refresh_token")
-            expires_in = response.get("expires_in", 86400)
+            # Support both root envelope and nested data envelope
+            data = response.get("data") if isinstance(response.get("data"), dict) else response
+            shop_id = data.get("shop_id") or response.get("shop_id")
+            device_id = data.get("device_id") or response.get("device_id")
+            device_token = data.get("device_token") or response.get("device_token")
+            refresh_token = data.get("refresh_token") or response.get("refresh_token")
+            expires_in = data.get("expires_in") or response.get("expires_in", 86400)
 
             if not (shop_id and device_id and device_token):
                 raise PairingError("Malformed pairing response: missing required identity tokens")
@@ -140,7 +145,9 @@ class PairingManager:
             }
 
             try:
-                response = self.api_client.post_unauthenticated("/api/v1/agent/token/refresh", payload)
+                response = self.api_client.post_unauthenticated(
+                    "/api/v1/agent/token/refresh", payload
+                )
             except Exception as err:
                 logger.error("Token refresh request failed: %s", err)
                 raise TokenRefreshError(f"Token refresh request failed: {err}") from err
@@ -166,7 +173,9 @@ class PairingManager:
             )
 
             self.store.save(updated_creds)
-            logger.info("Device token refreshed successfully for Device '%s'", current_creds.device_id)
+            logger.info(
+                "Device token refreshed successfully for Device '%s'", current_creds.device_id
+            )
             return updated_creds
 
     def revoke_pairing(self) -> None:

@@ -121,7 +121,34 @@ export class AgentPairingService {
       );
     }
 
-    // 2. Invoke RPC generate_agent_pairing_code
+    // 2. Invoke Cloud API or fallback to RPC generate_agent_pairing_code
+    const apiUrl =
+      typeof process !== 'undefined'
+        ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
+        : 'http://localhost:4000';
+
+    try {
+      const apiRes = await this.fetchFn(`${apiUrl}/api/v1/shops/${shopId}/agents/pairing-code`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ttl_seconds: ttlSeconds })
+      });
+      if (apiRes.ok) {
+        const json = await apiRes.json();
+        const data = json.data || json;
+        if (data && (data.code || data.pairing_code)) {
+          return {
+            pairingCodeId: data.id || data.pairing_code_id || 'pairing-code-id',
+            code: data.code || data.pairing_code,
+            expiresAt: data.expires_at || new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+            ttlSeconds
+          };
+        }
+      }
+    } catch {
+      // Continue to Supabase RPC
+    }
+
     try {
       const rpcUrl = `${this.supabaseUrl}/rest/v1/rpc/generate_agent_pairing_code`;
       const res = await this.fetchFn(rpcUrl, {

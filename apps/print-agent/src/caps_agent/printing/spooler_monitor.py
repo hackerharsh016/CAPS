@@ -62,11 +62,11 @@ class SpoolerOutcome(StrEnum):
     """Categorized outcome of a Windows Spooler print job."""
 
     ACCEPTED_BY_SPOOLER = "accepted_by_spooler"  # Initial state: handed off to spooler
-    SPOOLING = "spooling"                        # Job data actively spooling to local disk
-    PRINTING = "printing"                        # Spooler actively transferring data to printer
-    COMPLETED = "completed"                      # Spooler confirmed complete / job finished cleanly
-    FAILED = "failed"                            # Explicit driver error (jam, offline, out of paper)
-    UNKNOWN = "unknown"                          # Disappeared prematurely or watchdog timeout expired
+    SPOOLING = "spooling"  # Job data actively spooling to local disk
+    PRINTING = "printing"  # Spooler actively transferring data to printer
+    COMPLETED = "completed"  # Spooler confirmed complete / job finished cleanly
+    FAILED = "failed"  # Explicit driver error (jam, offline, out of paper)
+    UNKNOWN = "unknown"  # Disappeared prematurely or watchdog timeout expired
 
 
 @dataclass(frozen=True)
@@ -312,7 +312,8 @@ class SpoolerMonitor:
                         printer_name=printer_name,
                         outcome=SpoolerOutcome.FAILED,
                         is_terminal=True,
-                        failure_reason=previous_state.failure_reason or "Job failed before clearing queue.",
+                        failure_reason=previous_state.failure_reason
+                        or "Job failed before clearing queue.",
                         can_auto_reprint=False,
                     )
 

@@ -215,7 +215,9 @@ class LocalStateJournal:
 
         Idempotent: if attempt_id already exists, returns the existing record.
         """
-        status_str = initial_status.value if isinstance(initial_status, JobState) else str(initial_status)
+        status_str = (
+            initial_status.value if isinstance(initial_status, JobState) else str(initial_status)
+        )
         now = _now_iso()
         pdf_str = str(pdf_path) if pdf_path is not None else None
 
@@ -277,7 +279,9 @@ class LocalStateJournal:
 
             record = self.get_attempt(attempt_id)
             if not record:
-                raise RuntimeError(f"Failed to retrieve record for newly claimed attempt '{attempt_id}'")
+                raise RuntimeError(
+                    f"Failed to retrieve record for newly claimed attempt '{attempt_id}'"
+                )
             return record
 
     def update_status(
@@ -333,7 +337,9 @@ class LocalStateJournal:
 
             record = self.get_attempt(attempt_id)
             if not record:
-                raise RuntimeError(f"Failed to retrieve record after update for attempt '{attempt_id}'")
+                raise RuntimeError(
+                    f"Failed to retrieve record after update for attempt '{attempt_id}'"
+                )
             return record
 
     def record_spooler_submission(

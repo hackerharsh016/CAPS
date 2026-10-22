@@ -86,17 +86,23 @@ class TestAgentCredentials(unittest.TestCase):
 
         # Future expiration -> False
         future_dt = now + timedelta(hours=2)
-        creds_future = AgentCredentials("s", "d", "t", token_expires_at=future_dt.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        creds_future = AgentCredentials(
+            "s", "d", "t", token_expires_at=future_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
         self.assertFalse(creds_future.is_expired())
 
         # Expired in past -> True
         past_dt = now - timedelta(minutes=5)
-        creds_past = AgentCredentials("s", "d", "t", token_expires_at=past_dt.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        creds_past = AgentCredentials(
+            "s", "d", "t", token_expires_at=past_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
         self.assertTrue(creds_past.is_expired())
 
         # Expiring within skew window -> True
         soon_dt = now + timedelta(seconds=15)
-        creds_soon = AgentCredentials("s", "d", "t", token_expires_at=soon_dt.strftime("%Y-%m-%dT%H:%M:%SZ"))
+        creds_soon = AgentCredentials(
+            "s", "d", "t", token_expires_at=soon_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+        )
         self.assertTrue(creds_soon.is_expired(skew_seconds=30.0))
         self.assertFalse(creds_soon.is_expired(skew_seconds=5.0))
 

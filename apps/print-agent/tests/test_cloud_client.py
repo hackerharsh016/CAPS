@@ -80,14 +80,16 @@ class MockHttpTransport:
             except Exception:
                 parsed_body = body
 
-        self.recorded_requests.append({
-            "method": method,
-            "url": url,
-            "headers": headers,
-            "body": parsed_body,
-            "raw_body": body,
-            "timeout": timeout,
-        })
+        self.recorded_requests.append(
+            {
+                "method": method,
+                "url": url,
+                "headers": headers,
+                "body": parsed_body,
+                "raw_body": body,
+                "timeout": timeout,
+            }
+        )
 
         if self._responses:
             next_item = self._responses.pop(0)
@@ -172,11 +174,14 @@ class TestCloudApiClient(unittest.TestCase):
 
     def test_claim_job_rejects_missing_contract_fields(self) -> None:
         # Missing lease_id and settings
-        self.transport.queue_response(200, {
-            "job_id": "job-1",
-            "attempt_id": "att-1",
-            "download_url": "https://example.com/doc.pdf",
-        })
+        self.transport.queue_response(
+            200,
+            {
+                "job_id": "job-1",
+                "attempt_id": "att-1",
+                "download_url": "https://example.com/doc.pdf",
+            },
+        )
         with self.assertRaises(ContractValidationError) as ctx:
             self.client.claim_job()
         self.assertIn("missing fields", str(ctx.exception))

@@ -60,8 +60,8 @@ export class MockShopsRepository implements IShopsRepository {
     return { shops: paged, total };
   }
 
-  async create(dto: CreateShopDto): Promise<Shop> {
-    const id = crypto.randomUUID();
+  async create(dto: CreateShopDto & { id?: string }): Promise<Shop> {
+    const id = dto.id || crypto.randomUUID();
     const now = new Date().toISOString();
     const shop: Shop = {
       id,

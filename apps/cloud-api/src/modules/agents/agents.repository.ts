@@ -9,6 +9,7 @@ import type {
 
 export interface IAgentsRepository {
   findDeviceById(id: string): Promise<AgentDevice | null>;
+  findDeviceByTokenHash(tokenHash: string): Promise<AgentDevice | null>;
   findDeviceByFingerprint(shopId: string, fingerprint: string): Promise<AgentDevice | null>;
   listDevicesByShop(shopId: string): Promise<AgentDevice[]>;
   registerDevice(dto: RegisterAgentDeviceDto): Promise<AgentDevice>;
@@ -33,6 +34,15 @@ export class MockAgentsRepository implements IAgentsRepository {
   async findDeviceById(id: string): Promise<AgentDevice | null> {
     const device = this.devices.get(id);
     return device ? { ...device } : null;
+  }
+
+  async findDeviceByTokenHash(tokenHash: string): Promise<AgentDevice | null> {
+    for (const device of this.devices.values()) {
+      if (device.auth_token_hash === tokenHash && !device.is_revoked) {
+        return { ...device };
+      }
+    }
+    return null;
   }
 
   async findDeviceByFingerprint(shopId: string, fingerprint: string): Promise<AgentDevice | null> {

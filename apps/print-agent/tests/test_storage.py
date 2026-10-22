@@ -91,7 +91,9 @@ class TestLocalStateJournal(unittest.TestCase):
         )
 
         journal.update_status("att-2", JobState.DOWNLOADING, reason="Fetch PDF from cloud")
-        journal.update_status("att-2", JobState.VALIDATING, reason="Validate PDF format and page count")
+        journal.update_status(
+            "att-2", JobState.VALIDATING, reason="Validate PDF format and page count"
+        )
         journal.update_status("att-2", JobState.RENDERING, reason="Rasterize at 300 DPI")
         journal.update_status("att-2", JobState.PRINTING, reason="Submitted to spooler")
 
