@@ -42,7 +42,7 @@ export async function calculateQuote(
 
   try {
     return await client.post<QuoteResponse>('quotes/calculate', payload, { idempotent: true });
-  } catch (err: unknown) {
+  } catch {
     return await client.post<QuoteResponse>('quotes', payload, { idempotent: true });
   }
 }

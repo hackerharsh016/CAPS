@@ -162,7 +162,7 @@ function createDefaultStorageClient(
               },
               error: null
             };
-          } catch (err) {
+          } catch {
             // Offline/simulation fallback with HMAC
             const exp =
               Math.floor(Date.now() / 1000) + (options?.expiresIn ?? DEFAULT_UPLOAD_EXPIRY_SECONDS);
@@ -212,7 +212,7 @@ function createDefaultStorageClient(
               data: { signedUrl: fullUrl },
               error: null
             };
-          } catch (err) {
+          } catch {
             // Offline/simulation fallback with HMAC
             const exp = Math.floor(Date.now() / 1000) + expiresIn;
             const token = crypto
