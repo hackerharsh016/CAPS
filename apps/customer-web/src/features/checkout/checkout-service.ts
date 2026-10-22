@@ -53,8 +53,8 @@ export class CheckoutService {
       return { allowed: override.allowed, reason: override.reason };
     }
 
-    // Metro transit hub requires online cashless payment
-    if (shop.id === 'shop-9999-metro-prints') {
+    // Commercial transit hub or cashless configured shop requires online cashless payment
+    if (shop.allow_pay_at_counter === false || shop.id === 'shop-9999-metro-prints') {
       return {
         allowed: false,
         reason:

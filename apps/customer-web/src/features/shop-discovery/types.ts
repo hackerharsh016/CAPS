@@ -39,6 +39,7 @@ export interface Shop {
   capabilities: ShopCapabilities;
   pricing: ShopPricingSummary;
   distance_meters?: number | undefined; // Computed relative to customer location
+  allow_pay_at_counter?: boolean | undefined;
 }
 
 export interface ShopFilterOptions {

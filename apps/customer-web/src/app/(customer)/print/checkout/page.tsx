@@ -50,10 +50,12 @@ function CheckoutPageContent() {
   // Fallback test customer ID (authenticated session)
   const customerId = 'usr-customer-111-rohit';
 
+  const targetShopId = shopId || shop?.id || '';
+
   // 1. Load shop details
   useEffect(() => {
-    const targetShopId = shopId || 'shop-8888-campus-xerox';
-    defaultShopsService.getShopById(targetShopId).then(found => {
+    if (!shopId) return;
+    defaultShopsService.getShopById(shopId).then(found => {
       setShop(found);
     });
   }, [shopId]);
@@ -97,14 +99,16 @@ function CheckoutPageContent() {
     };
     setDocData(mockDoc);
 
-    const generated = generateAuthoritativeQuote({
-      shop_id: shopId || 'shop-8888-campus-xerox',
-      settings: DEFAULT_PRINT_SETTINGS,
-      priority_tier: 'flexible',
-      document_page_count: 10
-    });
-    setQuote(generated);
-  }, [docId, shopId]);
+    if (targetShopId) {
+      const generated = generateAuthoritativeQuote({
+        shop_id: targetShopId,
+        settings: DEFAULT_PRINT_SETTINGS,
+        priority_tier: 'flexible',
+        document_page_count: 10
+      });
+      setQuote(generated);
+    }
+  }, [docId, targetShopId]);
 
   const handleOrderConfirmed = (result: CheckoutResult) => {
     setConfirmedResult(result);
@@ -138,6 +142,28 @@ function CheckoutPageContent() {
         <h1 className="text-xl font-bold text-slate-900">No Document Specified</h1>
         <p className="text-sm text-slate-600">
           Please select and upload a document to proceed with print checkout.
+        </p>
+        <div className="pt-2">
+          <a
+            href="/shops"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
+          >
+            Browse Shops →
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (!targetShopId) {
+    return (
+      <div className="mx-auto max-w-xl text-center py-16 space-y-4">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-3xl">
+          🏪
+        </div>
+        <h1 className="text-xl font-bold text-slate-900">No Shop Selected</h1>
+        <p className="text-sm text-slate-600">
+          Please select a photocopy shop before completing your print order checkout.
         </p>
         <div className="pt-2">
           <a

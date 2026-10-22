@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { ShopsService } from '../../src/features/shop-discovery/shops-service';
+import { ShopsService, mapCloudShopToCustomerShop } from '../../src/features/shop-discovery/shops-service';
 import { MOCK_SHOPS } from '../../src/features/shop-discovery/fixtures';
 import type { Coordinates } from '../../src/features/shop-discovery/types';
 
@@ -173,6 +173,70 @@ describe('ShopsService', () => {
     it('returns null for a non-existent shop ID', async () => {
       const shop = await service.getShopById('shop-non-existent-999');
       expect(shop).toBeNull();
+    });
+  });
+
+  describe('Dynamic Marketplace & Clean State (No Mock Profiles)', () => {
+    it('defaults to empty store when initialized without arguments', async () => {
+      const emptyService = new ShopsService();
+      const res = await emptyService.getShops();
+      expect(res.shops).toEqual([]);
+      expect(res.totalCount).toBe(0);
+    });
+
+    it('returns null for shop by ID when empty store has no records', async () => {
+      const emptyService = new ShopsService();
+      const shop = await emptyService.getShopById('shop-8888-campus-xerox');
+      expect(shop).toBeNull();
+    });
+
+    it('dynamically maps live backend shops from Cloud API schema', async () => {
+      const liveService = new ShopsService();
+      const rawCloudShop = {
+        id: 'real-shop-uuid-1',
+        name: 'Live Staging Xerox Hub',
+        address: '100 Main Street, Cyber Park',
+        landmark: 'Tech Tower A',
+        geo_lat: 12.9352,
+        geo_lng: 77.6245,
+        status: 'open',
+        phone: '+91 91234 56789',
+        pricing_config: {
+          A4: {
+            bw_single_paise: 150,
+            bw_double_paise: 250,
+            color_single_paise: 800,
+            color_double_paise: 1400
+          },
+          binding_prices_paise: {
+            none: 0,
+            spiral: 3000,
+            staple: 500,
+            lamination: 2000
+          },
+          gst_percentage: 18
+        },
+        urgent_surcharge_config: {
+          type: 'flat',
+          amount: 1500
+        },
+        allow_pay_at_counter: false
+      };
+
+      const mappedShop = mapCloudShopToCustomerShop(rawCloudShop);
+      expect(mappedShop.id).toBe('real-shop-uuid-1');
+      expect(mappedShop.name).toBe('Live Staging Xerox Hub');
+      expect(mappedShop.capabilities.color).toBe(true);
+      expect(mappedShop.capabilities.duplex).toBe(true);
+      expect(mappedShop.allow_pay_at_counter).toBe(false);
+
+      liveService.setShops([mappedShop]);
+
+      const res = await liveService.getShops({ searchQuery: 'Live Staging' });
+      expect(res.shops.length).toBe(1);
+      expect(res.shops[0]?.id).toBe('real-shop-uuid-1');
+      expect(res.shops[0]?.name).toBe('Live Staging Xerox Hub');
+      expect(res.shops[0]?.allow_pay_at_counter).toBe(false);
     });
   });
 });

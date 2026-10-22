@@ -129,7 +129,29 @@ function QuotePageContent() {
     );
   }
 
-  const effectiveShopId = shopId || shop?.id || 'shop-8888-campus-xerox';
+  const effectiveShopId = shopId || shop?.id;
+
+  if (!effectiveShopId) {
+    return (
+      <div className="mx-auto max-w-xl text-center py-16 space-y-4">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 text-3xl">
+          🏪
+        </div>
+        <h1 className="text-xl font-bold text-slate-900">No Shop Selected</h1>
+        <p className="text-sm text-slate-600">
+          Please select a photocopy shop first to calculate accurate pricing.
+        </p>
+        <div className="pt-2">
+          <a
+            href="/shops"
+            className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-blue-700 transition-colors"
+          >
+            Browse Shops →
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
