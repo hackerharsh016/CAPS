@@ -36,15 +36,11 @@ function assertNoServerSecrets(): void {
 export function getSupabaseEnv(): SupabaseEnvConfig {
   assertNoServerSecrets();
 
-  const env = typeof process !== 'undefined' ? process.env : undefined;
-
   const supabaseUrl =
-    (env ? env['NEXT_PUBLIC_SUPABASE_URL'] : undefined) ||
-    'http://localhost:54321';
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] || 'http://localhost:54321';
 
   const supabaseAnonKey =
-    (env ? env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] : undefined) ||
-    'mock-anon-key-caps-customer-web';
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || 'mock-anon-key-caps-customer-web';
 
   return { supabaseUrl, supabaseAnonKey };
 }
