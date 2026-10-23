@@ -234,19 +234,19 @@ export function UploadDropzone({
         <div
           role="region"
           aria-label="Uploaded document details"
-          className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 space-y-4"
+          className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 sm:p-6 space-y-4"
         >
-          <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
             <div className="flex items-center space-x-3">
-              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-2xl text-emerald-700 font-bold">
+              <span className="flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-emerald-100 text-xl sm:text-2xl text-emerald-700 font-bold shrink-0">
                 ✓
               </span>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-base font-bold text-slate-900 truncate max-w-sm sm:max-w-md">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate max-w-[200px] xs:max-w-xs sm:max-w-md">
                     {state.uploadedDoc.name}
                   </h3>
-                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800 shrink-0">
                     Uploaded
                   </span>
                 </div>
@@ -260,17 +260,17 @@ export function UploadDropzone({
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+              className="w-full sm:w-auto rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors text-center"
             >
               Replace Document
             </button>
           </div>
 
-          <div className="rounded-xl bg-white p-3.5 text-xs text-slate-600 border border-emerald-100 flex items-center justify-between">
+          <div className="rounded-xl bg-white p-3 text-xs text-slate-600 border border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <span className="truncate">
               <strong>Storage ID:</strong> {state.uploadedDoc.id}
             </span>
-            <span className="text-emerald-700 font-medium ml-2 shrink-0">🔒 Encrypted at rest</span>
+            <span className="text-emerald-700 font-medium shrink-0">🔒 Encrypted at rest</span>
           </div>
         </div>
       )}
@@ -280,15 +280,15 @@ export function UploadDropzone({
         <div
           role="alert"
           aria-live="polite"
-          className={`rounded-2xl border p-5 ${
+          className={`rounded-2xl border p-4 sm:p-5 ${
             state.status === 'aborted'
               ? 'border-amber-200 bg-amber-50 text-amber-900'
               : 'border-red-200 bg-red-50 text-red-900'
           }`}
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start space-x-2.5">
-              <span className="text-lg">{state.status === 'aborted' ? '⚠️' : '❌'}</span>
+              <span className="text-lg shrink-0">{state.status === 'aborted' ? '⚠️' : '❌'}</span>
               <div>
                 <p className="text-sm font-bold">
                   {state.status === 'aborted' ? 'Upload Cancelled' : 'Upload Error'}
@@ -297,12 +297,12 @@ export function UploadDropzone({
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col xs:flex-row items-center gap-2 w-full sm:w-auto">
               {state.file && (
                 <button
                   type="button"
                   onClick={() => startUpload(state.file!)}
-                  className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                  className="w-full xs:w-auto rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors text-center"
                 >
                   Retry Upload
                 </button>
@@ -310,7 +310,7 @@ export function UploadDropzone({
               <button
                 type="button"
                 onClick={handleReset}
-                className="rounded-lg border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+                className="w-full xs:w-auto rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors text-center"
               >
                 Choose Another File
               </button>

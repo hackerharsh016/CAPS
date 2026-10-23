@@ -356,8 +356,8 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
       </section>
 
       {/* Action / Order Selection Footer */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="w-full sm:w-auto text-center sm:text-left">
           <a
             href="/shops"
             className="inline-flex items-center text-sm font-semibold text-slate-600 hover:text-blue-600 transition-colors"
@@ -366,21 +366,21 @@ export function ShopDetailsView({ shopId }: ShopDetailsViewProps) {
           </a>
         </div>
 
-        <div>
+        <div className="w-full sm:w-auto">
           {shop.is_open ? (
             <a
               href={`/print/new?shopId=${shop.id}`}
-              className="inline-flex items-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md hover:bg-blue-700 transition-colors"
             >
               Select Shop & Configure Order →
             </a>
           ) : (
-            <div className="text-right">
+            <div className="text-center sm:text-right">
               <button
                 type="button"
                 disabled
                 aria-disabled="true"
-                className="inline-flex items-center rounded-xl bg-slate-200 px-6 py-3 text-sm font-bold text-slate-400 cursor-not-allowed shadow-none"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-slate-200 px-6 py-3 text-sm font-bold text-slate-400 cursor-not-allowed shadow-none"
               >
                 Shop Closed — Orders Disabled
               </button>

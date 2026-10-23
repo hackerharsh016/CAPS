@@ -58,18 +58,18 @@ export function OrderHistoryList() {
   return (
     <div className="w-full space-y-6">
       {/* Page Title & Subtitle */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             My Print Orders
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-xs sm:text-sm text-slate-600">
             Track active print jobs, view completion receipts, and monitor document privacy.
           </p>
         </div>
         <a
           href="/shops"
-          className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors w-full sm:w-auto"
         >
           + New Print Order
         </a>
@@ -79,7 +79,7 @@ export function OrderHistoryList() {
       <div
         role="tablist"
         aria-label="Filter orders by status"
-        className="flex flex-wrap gap-2 border-b border-slate-200 pb-3"
+        className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200"
       >
         {(
           [
@@ -95,9 +95,9 @@ export function OrderHistoryList() {
             type="button"
             aria-selected={filter === tab.id}
             onClick={() => handleFilterChange(tab.id)}
-            className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            className={`shrink-0 rounded-lg px-3.5 py-1.5 text-xs sm:text-sm font-medium transition-colors ${
               filter === tab.id
-                ? 'bg-blue-600 text-white shadow-sm'
+                ? 'bg-blue-600 text-white shadow-xs'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >

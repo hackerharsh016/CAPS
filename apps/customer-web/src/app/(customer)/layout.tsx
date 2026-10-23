@@ -13,9 +13,9 @@ import { NotificationCenter } from '../../features/notifications/components/Noti
 export default function CustomerPortalLayout({ children }: { children: React.ReactNode }) {
   return (
     <RouteGuard requiredRole="customer">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
+      <div className="mx-auto max-w-7xl px-3.5 py-4 sm:px-6 sm:py-8 space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex-1 min-w-0">
             <PushStatusBanner />
           </div>
           <div className="shrink-0">

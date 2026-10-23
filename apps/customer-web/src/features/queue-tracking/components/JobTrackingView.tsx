@@ -52,9 +52,9 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-3.5 py-4 sm:px-6 sm:py-8 space-y-4 sm:space-y-6">
       {/* Top Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-2">
             <Link
@@ -64,13 +64,13 @@ export const JobTrackingView: React.FC<JobTrackingViewProps> = ({
               ← Back to My Orders
             </Link>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mt-1">Live Queue & Job Status</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">Live Queue & Job Status</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Realtime printer status and counter pickup token
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
           {/* Realtime Connection Status Pill */}
           <ConnectionStatusBadge
             state={connectionState}

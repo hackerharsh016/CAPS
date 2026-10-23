@@ -98,10 +98,10 @@ export default function CheckoutPage() {
   const gstRupees = (orderSummary.gstPaise / 100).toFixed(2);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 py-6 sm:py-10 px-3.5 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
         {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <Link
               href="/orders"
@@ -109,14 +109,14 @@ export default function CheckoutPage() {
             >
               &larr; Back to Order Selection
             </Link>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
               Order Review & Payment
             </h1>
-            <p className="text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-500">
               Review print job details and proceed to secure Razorpay checkout
             </p>
           </div>
-          <span className="text-xs font-semibold uppercase tracking-wider bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full shadow-sm">
+          <span className="self-start sm:self-auto text-xs font-semibold uppercase tracking-wider bg-amber-400 text-slate-900 px-2.5 py-1 rounded-full shadow-xs">
             Sandbox Test Mode
           </span>
         </div>
@@ -184,7 +184,7 @@ export default function CheckoutPage() {
                 </span>
               </h2>
 
-              <dl className="grid grid-cols-2 gap-4 text-sm">
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <dt className="text-slate-500">Document</dt>
                   <dd className="font-semibold text-slate-800 truncate">
@@ -232,7 +232,7 @@ export default function CheckoutPage() {
                     placeholder="Enter your name"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label
                       htmlFor="customer-email"

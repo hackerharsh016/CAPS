@@ -135,7 +135,7 @@ export function LiveQuoteSummary({
           type="button"
           disabled={!quote || isExpired || isLoading}
           onClick={handleCheckoutClick}
-          className="w-full sm:w-auto flex items-center justify-center space-x-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all ml-auto"
+          className="w-full sm:w-auto flex items-center justify-center space-x-2 rounded-xl bg-blue-600 px-8 py-3 text-sm font-bold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all sm:ml-auto"
         >
           <span>Confirm & Proceed to Checkout →</span>
         </button>

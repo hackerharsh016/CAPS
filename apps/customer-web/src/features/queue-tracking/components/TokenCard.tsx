@@ -21,7 +21,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ tracking }) => {
   const isUrgent = tracking.priority_tier === 'urgent';
 
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-xl p-6 shadow-sm relative overflow-hidden">
+    <div className="bg-white border-2 border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs relative overflow-hidden">
       {/* Priority Ribbon */}
       <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
         <div>
@@ -32,7 +32,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ tracking }) => {
         </div>
 
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shrink-0 ${
             isUrgent
               ? 'bg-amber-100 text-amber-800 border border-amber-200'
               : 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -43,10 +43,10 @@ export const TokenCard: React.FC<TokenCardProps> = ({ tracking }) => {
       </div>
 
       {/* Prominent Token Display */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200 rounded-lg p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
         <div>
           <span className="text-xs font-medium text-slate-500">Your Token Number</span>
-          <div className="text-4xl sm:text-5xl font-black font-mono tracking-tight text-slate-900 mt-1">
+          <div className="text-3xl xs:text-4xl sm:text-5xl font-black font-mono tracking-tight text-slate-900 mt-1">
             {tracking.token_number}
           </div>
           <p className="text-xs text-slate-500 mt-1">
@@ -54,11 +54,11 @@ export const TokenCard: React.FC<TokenCardProps> = ({ tracking }) => {
           </p>
         </div>
 
-        <div className="flex sm:flex-col items-center sm:items-end justify-between gap-2">
+        <div className="flex sm:flex-col items-stretch sm:items-end justify-between gap-2">
           <button
             type="button"
             onClick={handleCopyToken}
-            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
             aria-label="Copy token number"
           >
             {copied ? (

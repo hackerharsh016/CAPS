@@ -277,12 +277,12 @@ export function ProfileForm() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-slate-100 pt-5">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-5">
             <button
               type="submit"
               disabled={isSaving}
               aria-busy={isSaving}
-              className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-300"
+              className="w-full sm:w-auto rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-300 transition-colors"
             >
               {isSaving ? 'Saving changes...' : 'Save Changes'}
             </button>
@@ -290,7 +290,7 @@ export function ProfileForm() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="rounded-lg border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+              className="w-full sm:w-auto rounded-xl border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
             >
               Sign Out
             </button>

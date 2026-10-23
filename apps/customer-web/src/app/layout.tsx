@@ -1,11 +1,18 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '../features/auth/auth-context';
+import { Navbar } from '../components/layout/Navbar';
 
 export const metadata: Metadata = {
   title: 'CAPS — Cloud Automated Printing Solution',
   description:
     'Upload documents, configure print settings, pay online, and skip the xerox shop queue.'
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5
 };
 
 export default function RootLayout({
@@ -15,30 +22,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-50 antialiased">
-        <header className="border-b border-slate-200 bg-white">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <div className="flex items-center space-x-3">
-              <span className="rounded-lg bg-blue-600 px-3 py-1 font-mono text-sm font-bold text-white">
-                CAPS
-              </span>
-              <span className="text-lg font-semibold text-slate-900">Customer Portal</span>
-            </div>
-            <nav className="flex items-center space-x-4 text-sm font-medium text-slate-600">
-              <a href="/shops" className="text-blue-600 hover:text-blue-700">
-                Find Shops
-              </a>
-              <a href="/orders" className="hover:text-slate-900">
-                My Orders
-              </a>
-              <a href="/help" className="hover:text-slate-900">
-                Help
-              </a>
-            </nav>
-          </div>
-        </header>
+      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased flex flex-col">
         <AuthProvider>
-          <main>{children}</main>
+          <Navbar />
+          <main className="flex-1">{children}</main>
         </AuthProvider>
       </body>
     </html>

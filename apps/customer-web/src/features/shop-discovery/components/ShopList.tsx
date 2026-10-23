@@ -91,10 +91,10 @@ export function ShopList() {
     <div className="w-full space-y-6">
       {/* Header Banner */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Photocopy & Xerox Shops Near You
         </h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-xs sm:text-sm text-slate-600">
           Discover verified xerox shops, compare live prices, check color and duplex availability,
           and skip the line by ordering online.
         </p>
@@ -220,7 +220,7 @@ export function ShopList() {
       {!isLoading && totalPages > 1 && (
         <nav
           aria-label="Shop discovery pagination"
-          className="flex items-center justify-between border-t border-slate-200 pt-5"
+          className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5"
         >
           <button
             type="button"
@@ -228,7 +228,7 @@ export function ShopList() {
             onClick={() =>
               setFilters(prev => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))
             }
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+            className="rounded-lg border border-slate-300 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
           >
             ← Previous
           </button>
@@ -248,7 +248,7 @@ export function ShopList() {
                 page: Math.min(totalPages, (prev.page || 1) + 1)
               }))
             }
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
+            className="rounded-lg border border-slate-300 px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:hover:bg-transparent"
           >
             Next →
           </button>

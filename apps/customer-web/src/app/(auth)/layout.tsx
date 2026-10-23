@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-[calc(100vh-80px)] flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100vh-80px)] flex-col justify-center py-6 sm:py-12 px-3 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-6">
         <a href="/" className="inline-flex items-center space-x-2">
-          <span className="rounded-lg bg-blue-600 px-3.5 py-1.5 font-mono text-base font-bold text-white shadow-sm">
+          <span className="rounded-lg bg-blue-600 px-3.5 py-1.5 font-mono text-base font-bold text-white shadow-xs">
             CAPS
           </span>
           <span className="text-xl font-bold tracking-tight text-slate-900">
@@ -20,7 +20,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </a>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md flex justify-center px-4 sm:px-0">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md flex justify-center px-0">
         {children}
       </div>
 

@@ -96,7 +96,7 @@ export function PrintSettingsSummary({
 
       {/* Sheet & Page Calculations */}
       {calculation && isValid && (
-        <div className="rounded-xl bg-white border border-slate-200/80 p-3.5 flex items-center justify-between">
+        <div className="rounded-xl bg-white border border-slate-200/80 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="space-y-0.5">
             <p className="text-xs text-slate-500">
               Selected Pages:{' '}
@@ -110,7 +110,7 @@ export function PrintSettingsSummary({
             </p>
           </div>
 
-          <div className="text-right">
+          <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 block">
               Estimated Paper
             </span>

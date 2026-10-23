@@ -27,23 +27,23 @@ export function OrderCard({ order }: OrderCardProps) {
   return (
     <article
       aria-labelledby={`order-title-${order.id}`}
-      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+      className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs transition-shadow hover:shadow-md"
     >
       {/* Top Header: Token, Shop, Status */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-        <div className="flex items-center space-x-3">
-          <span className="rounded-md bg-blue-50 px-2.5 py-1 font-mono text-sm font-bold text-blue-700 border border-blue-200">
+        <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
+          <span className="shrink-0 rounded-md bg-blue-50 px-2.5 py-1 font-mono text-xs sm:text-sm font-bold text-blue-700 border border-blue-200">
             {order.token_number}
           </span>
-          <div>
-            <h3 id={`order-title-${order.id}`} className="text-base font-semibold text-slate-900">
+          <div className="min-w-0">
+            <h3 id={`order-title-${order.id}`} className="text-sm sm:text-base font-semibold text-slate-900 truncate">
               {order.shop_name}
             </h3>
-            <p className="text-xs text-slate-500">{formattedDate}</p>
+            <p className="text-[11px] sm:text-xs text-slate-500">{formattedDate}</p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 shrink-0">
           {order.priority_tier === 'urgent' && (
             <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800 border border-amber-200">
               ⚡ Urgent Queue
@@ -116,7 +116,7 @@ export function OrderCard({ order }: OrderCardProps) {
       )}
 
       {/* Bottom Footer: Price & Details Link */}
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-slate-100 pt-3">
         <div>
           <span className="text-xs text-slate-500">Total Paid: </span>
           <span className="text-base font-bold text-slate-900">
@@ -129,7 +129,7 @@ export function OrderCard({ order }: OrderCardProps) {
 
         <a
           href={`/jobs/${order.id}`}
-          className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors w-full sm:w-auto text-center shadow-xs"
         >
           View Token & Tracking →
         </a>

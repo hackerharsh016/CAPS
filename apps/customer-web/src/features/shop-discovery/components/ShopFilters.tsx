@@ -33,7 +33,7 @@ export function ShopFilters({ filters, onChange, onReset, hasActiveFilters }: Sh
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs space-y-3.5 sm:space-y-4">
       {/* Search Input Bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -73,8 +73,8 @@ export function ShopFilters({ filters, onChange, onReset, hasActiveFilters }: Sh
       </div>
 
       {/* Filter Chips Bar */}
-      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-100">
-        <span className="text-xs font-semibold text-slate-500 mr-1">Filter by:</span>
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-2 border-t border-slate-100">
+        <span className="text-xs font-semibold text-slate-500 mr-1 shrink-0">Filter by:</span>
 
         {/* Open Now Chip */}
         <button

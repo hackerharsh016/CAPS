@@ -143,7 +143,7 @@ export function RegisterForm({ redirectTo = '/orders', onSuccess }: RegisterForm
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 sm:p-8 shadow-xs">
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight text-slate-900">Create an account</h2>
         <p className="mt-2 text-sm text-slate-600">Get started with seamless zero-queue printing</p>

@@ -65,7 +65,7 @@ export function NotificationCenter() {
         <div
           role="dialog"
           aria-label="Notification center panel"
-          className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl z-50 space-y-4"
+          className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-96 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl z-50 space-y-4"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
