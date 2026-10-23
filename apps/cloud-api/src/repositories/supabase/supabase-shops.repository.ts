@@ -278,6 +278,11 @@ class RestQueryBuilder {
     return this;
   }
 
+  limit(count: number) {
+    this.limitCount = count;
+    return this;
+  }
+
   range(from: number, to: number) {
     this.offsetCount = from;
     this.limitCount = to - from + 1;

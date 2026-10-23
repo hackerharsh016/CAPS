@@ -86,33 +86,92 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       } catch {
         // Fall back to original customerId
       }
+    } else if (customerId) {
+      try {
+        const { data: profile } = await this.client
+          .from('profiles')
+          .select('id')
+          .eq('id', customerId)
+          .maybeSingle();
+
+        if (!profile) {
+          await this.client.from('profiles').insert({
+            id: customerId,
+            role: 'customer',
+            name: data.customer_name || 'Customer'
+          });
+        }
+      } catch {
+        // Continue if profile insert is restricted or existing
+      }
     }
+
+    const settingsWithMeta = {
+      ...(typeof data.settings === 'object' && data.settings !== null ? data.settings : {}),
+      ...(data.idempotency_key ? { _idempotency_key: data.idempotency_key } : {})
+    };
 
     const record: PrintJobRecord = {
       id,
       shop_id: data.shop_id,
       customer_id: customerId,
-      printer_id: data.printer_id,
+      printer_id: data.printer_id ?? null,
       document_id: data.document_id,
       document_storage_key: data.document_storage_key,
-      settings: data.settings || {},
+      settings: settingsWithMeta,
       priority_tier: data.priority_tier ?? 'flexible',
       price_total_paise: data.price_total_paise || 0,
       price_breakdown: data.price_breakdown || { subtotal_paise: 0, total_paise: 0 },
       status: data.status || 'pending_payment',
-      ...(data.idempotency_key ? { idempotency_key: data.idempotency_key } : {}),
-      ...(data.queue_position !== undefined ? { queue_position: data.queue_position } : {}),
-      ...(data.enqueued_at !== undefined ? { enqueued_at: data.enqueued_at } : {}),
       document_expires_at: expiresIso,
       created_at: now,
       updated_at: now
     };
 
-    const { data: inserted, error } = await this.client
+    // Prepare DB row with known supported columns
+    let dbRow: Record<string, unknown> = {
+      id,
+      shop_id: data.shop_id,
+      customer_id: customerId,
+      printer_id: data.printer_id ?? null,
+      document_storage_key: data.document_storage_key,
+      settings: settingsWithMeta,
+      priority_tier: data.priority_tier ?? 'flexible',
+      price_total_paise: data.price_total_paise || 0,
+      price_breakdown: data.price_breakdown || { subtotal_paise: 0, total_paise: 0 },
+      status: data.status || 'pending_payment',
+      document_expires_at: expiresIso,
+      created_at: now,
+      updated_at: now
+    };
+
+    if (data.idempotency_key) {
+      dbRow['idempotency_key'] = data.idempotency_key;
+    }
+
+    let { data: inserted, error } = await this.client
       .from('print_jobs')
-      .insert(record)
+      .insert(dbRow)
       .select()
       .maybeSingle();
+
+    // If PostgREST fails due to idempotency_key missing in schema cache, strip it and retry
+    if (
+      error &&
+      (error.code === 'PGRST204' ||
+        error.message?.includes('idempotency_key') ||
+        error.message?.includes('schema cache'))
+    ) {
+      delete dbRow['idempotency_key'];
+      const retryResult = await this.client
+        .from('print_jobs')
+        .insert(dbRow)
+        .select()
+        .maybeSingle();
+
+      inserted = retryResult.data;
+      error = retryResult.error;
+    }
 
     if (error) {
       throw new Error(
@@ -121,15 +180,16 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
     }
 
     const insertedRow = Array.isArray(inserted) ? inserted[0] : inserted;
-    return mapDbRecordToPrintJob(insertedRow || record);
+    return mapDbRecordToPrintJob({
+      ...(insertedRow || record),
+      idempotency_key: data.idempotency_key ?? (insertedRow as any)?.idempotency_key
+    });
   }
 
   async findById(id: string): Promise<PrintJobRecord | null> {
     const { data, error } = await this.client
       .from('print_jobs')
-      .select(
-        '*, customer:profiles(id, name, email, phone), document:documents(id, original_filename, file_size_bytes)'
-      )
+      .select('*, customer:profiles(id, name, email, phone)')
       .eq('id', id)
       .maybeSingle();
 
@@ -156,15 +216,45 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
   }
 
   async findByIdempotencyKey(key: string, customerId: string): Promise<PrintJobRecord | null> {
-    const { data, error } = await this.client
-      .from('print_jobs')
-      .select('*')
-      .eq('idempotency_key', key)
-      .eq('customer_id', customerId)
-      .maybeSingle();
+    try {
+      const { data, error } = await this.client
+        .from('print_jobs')
+        .select('*')
+        .eq('idempotency_key', key)
+        .eq('customer_id', customerId)
+        .maybeSingle();
 
-    if (error || !data) return null;
-    return mapDbRecordToPrintJob(data);
+      if (!error && data) {
+        return mapDbRecordToPrintJob(data);
+      }
+    } catch {
+      // Ignore schema cache errors
+    }
+
+    // Fallback: search recent jobs by customer for settings._idempotency_key
+    try {
+      const { data: recentJobs } = await this.client
+        .from('print_jobs')
+        .select('*')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (recentJobs && Array.isArray(recentJobs)) {
+        const found = recentJobs.find(
+          (j: any) =>
+            j.idempotency_key === key ||
+            j.settings?._idempotency_key === key
+        );
+        if (found) {
+          return mapDbRecordToPrintJob(found);
+        }
+      }
+    } catch {
+      // Ignore fallback query failure
+    }
+
+    return null;
   }
 
   async findAllByShop(shopId: string): Promise<PrintJobRecord[]> {
@@ -389,11 +479,56 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
     reason?: string | undefined;
     metadata?: Record<string, unknown> | undefined;
   }): Promise<JobEventRecord> {
-    const id = crypto.randomUUID();
     const now = new Date().toISOString();
+    const eventName =
+      event.to_status === 'pending_payment'
+        ? 'ORDER_CREATED'
+        : `STATUS_CHANGE_${event.to_status.toUpperCase()}`;
 
-    const record: JobEventRecord = {
-      id,
+    const metadata = {
+      ...(event.metadata || {}),
+      ...(event.reason ? { reason: event.reason } : {})
+    };
+
+    const row: Record<string, unknown> = {
+      job_id: event.job_id,
+      actor_type: event.actor_type,
+      actor_id: event.actor_id || null,
+      to_status: event.to_status,
+      event_name: eventName,
+      metadata,
+      created_at: now
+    };
+    if (event.from_status) {
+      row['from_status'] = event.from_status;
+    }
+
+    try {
+      const { data, error } = await this.client
+        .from('job_events')
+        .insert(row)
+        .select()
+        .maybeSingle();
+
+      if (!error && data) {
+        return {
+          id: String((data as any).id),
+          job_id: (data as any).job_id,
+          actor_id: (data as any).actor_id,
+          actor_type: (data as any).actor_type,
+          from_status: (data as any).from_status,
+          to_status: (data as any).to_status,
+          reason: event.reason,
+          metadata: (data as any).metadata,
+          created_at: (data as any).created_at
+        };
+      }
+    } catch {
+      // Dual audit fallback
+    }
+
+    return {
+      id: crypto.randomUUID(),
       job_id: event.job_id,
       actor_id: event.actor_id,
       actor_type: event.actor_type,
@@ -403,40 +538,6 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       metadata: event.metadata,
       created_at: now
     };
-
-    const { data, error } = await this.client
-      .from('job_events')
-      .insert(record)
-      .select()
-      .maybeSingle();
-
-    if (error) {
-      // Also write to audit_logs table for dual audit support
-      try {
-        await this.client
-          .from('audit_logs')
-          .insert({
-            id,
-            entity_type: 'print_job',
-            entity_id: event.job_id,
-            action: `STATUS_CHANGE_${event.to_status.toUpperCase()}`,
-            actor_id: event.actor_id,
-            actor_type: event.actor_type,
-            metadata: {
-              ...event.metadata,
-              from_status: event.from_status,
-              to_status: event.to_status
-            },
-            created_at: now
-          });
-      } catch {
-        // Ignore audit log fallback error
-      }
-
-      return record;
-    }
-
-    return data || record;
   }
 
   async getEvents(jobId: string): Promise<JobEventRecord[]> {
@@ -447,7 +548,17 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
       .order('created_at', { ascending: true });
 
     if (error || !data) return [];
-    return data as JobEventRecord[];
+    return (data as any[]).map(r => ({
+      id: String(r.id),
+      job_id: r.job_id,
+      actor_id: r.actor_id,
+      actor_type: r.actor_type,
+      from_status: r.from_status,
+      to_status: r.to_status,
+      reason: r.metadata?.reason || r.reason,
+      metadata: r.metadata,
+      created_at: r.created_at
+    }));
   }
 
   clear(): void {
@@ -471,7 +582,7 @@ function mapDbRecordToPrintJob(row: any): PrintJobRecord {
         ? row.price_breakdown
         : { subtotal_paise: 0, total_paise: 0 },
     status: (row.status || 'pending_payment').toLowerCase() as JobStatus,
-    idempotency_key: row.idempotency_key,
+    idempotency_key: row.idempotency_key ?? row.settings?._idempotency_key,
     queue_position: row.queue_position !== undefined ? Number(row.queue_position) : undefined,
     enqueued_at: row.enqueued_at,
     claimed_at: row.claimed_at,
