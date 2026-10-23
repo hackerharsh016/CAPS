@@ -17,3 +17,11 @@
 *.dll binary
 *.zip binary
 *.tar.gz binary
+
+# ==============================================================================
+# Security: Exclude proprietary monorepo source code from release export archives
+# (Prevents GitHub release auto-generated source code zip/tar.gz from exposing source)
+# ==============================================================================
+* export-ignore
+.* export-ignore
+README.md !export-ignore

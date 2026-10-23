@@ -136,6 +136,9 @@ jobs:
 
             Production release of the Cloud Automated Printing Solution (CAPS) Desktop Print Agent for Windows x64.
 
+            > [!NOTE]
+            > **Binary Distribution**: This release contains compiled Windows executable binaries and installers. In accordance with release security policies, proprietary monorepo application source code is not included.
+
             ### Package Contents
             - **Installer (`CAPS-Print-Agent-Setup-*.exe`)**: Standard Windows setup wizard with auto-start on logon, desktop shortcut, and uninstaller.
             - **Portable Bundle (`caps-agent-windows-x64.zip`)**: Standalone archive containing pre-compiled binaries and dependencies ready for air-gapped or manual deployment.
