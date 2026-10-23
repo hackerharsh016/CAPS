@@ -1,39 +1,163 @@
-name: Windows Agent Release Build & Signing
+name: Windows Print Agent Production Release
 
 on:
   push:
     tags:
       - 'print-agent/v*'
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release Tag (e.g. v0.1.0 or print-agent/v0.1.0)'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: write
 
 jobs:
-  build-windows-installer:
-    name: Package Signed-Ready Windows Installer
+  build-and-release:
+    name: Build, Package & Publish Windows Print Agent
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: 'apps/print-agent/pyproject.toml'
 
-      - name: Install Build & Packaging Tools
+      - name: Install Inno Setup Compiler
+        run: |
+          choco install innosetup --no-progress --yes
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
+      - name: Install Agent & Packaging Dependencies
         run: |
           cd apps/print-agent
           python -m pip install --upgrade pip
-          python -m pip install -e .
-          python -m pip install jsonschema pyinstaller
+          python -m pip install -e ".[dev,windows,packaging,rendering,desktop]"
+          python -m pip install jsonschema pyinstaller pefile ruff pytest
 
-      - name: Run Pre-Release Tests
+      - name: Run Pre-Release Quality Gates
         run: |
           cd apps/print-agent
-          $env:PYTHONPATH = "src"
-          python -m unittest discover -s tests -p "test_*.py" -v
+          $env:PYTHONPATH = "src;."
+          python -m pytest tests -q
+          python -m ruff check src tests
 
-      - name: Generate Release Manifest & SHA-256 Checksums
+      - name: Compile Windows Binary Bundle with PyInstaller
         shell: powershell
         run: |
-          Write-Host "Packaging validation passed. Pre-release artifacts verified."
+          cd apps/print-agent
+          .\scripts\build.ps1 -Clean -SkipTests
+
+      - name: Compile Windows Inno Setup Installer
+        shell: powershell
+        run: |
+          cd apps/print-agent
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging/installer.iss
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Inno Setup compilation failed with exit code $LASTEXITCODE"
+            exit $LASTEXITCODE
+          }
+          Get-ChildItem dist/installer
+
+      - name: Package Portable Windows Zip Bundle
+        shell: powershell
+        run: |
+          $distDir = "apps/print-agent/dist"
+          $bundleDir = "$distDir/caps-agent"
+          $zipPath = "$distDir/caps-agent-windows-x64.zip"
+          Compress-Archive -Path "$bundleDir\*" -DestinationPath $zipPath -Force
+          Get-Item $zipPath
+
+      - name: Generate Checksums & Integrity Manifest
+        id: checksums
+        shell: powershell
+        run: |
+          $distDir = "apps/print-agent/dist"
+          $artifacts = @()
+
+          $installer = Get-ChildItem "$distDir/installer/*.exe" | Select-Object -First 1
+          if ($installer) { $artifacts += $installer }
+
+          $zip = Get-Item "$distDir/caps-agent-windows-x64.zip"
+          if ($zip) { $artifacts += $zip }
+
+          $manifest = Get-Item "$distDir/build_manifest.json"
+          if ($manifest) { $artifacts += $manifest }
+
+          $checksumLines = @()
+          foreach ($item in $artifacts) {
+            $hash = (Get-FileHash -Path $item.FullName -Algorithm SHA256).Hash
+            $checksumLines += "$hash  $($item.Name)"
+            Write-Host "$hash  $($item.Name)"
+          }
+
+          $checksumsFile = "$distDir/checksums.txt"
+          [System.IO.File]::WriteAllText($checksumsFile, ($checksumLines -join "`r`n"), [System.Text.Encoding]::UTF8)
+
+      - name: Determine Release Tag
+        id: tag_info
+        shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          if ("${{ github.event_name }}" -eq "workflow_dispatch") {
+            $tag = "${{ github.event.inputs.tag_name }}"
+          }
+          if (-not $tag) {
+            $tag = "v0.1.0"
+          }
+          Write-Host "Releasing tag: $tag"
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Publish Production GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_info.outputs.tag }}
+          name: CAPS Print Agent ${{ steps.tag_info.outputs.tag }} (Windows Production Release)
+          draft: false
+          prerelease: false
+          files: |
+            apps/print-agent/dist/installer/*.exe
+            apps/print-agent/dist/*.zip
+            apps/print-agent/dist/build_manifest.json
+            apps/print-agent/dist/checksums.txt
+          body: |
+            ## CAPS Desktop Print Agent — Official Windows Production Release
+
+            Production release of the Cloud Automated Printing Solution (CAPS) Desktop Print Agent for Windows x64.
+
+            ### Package Contents
+            - **Installer (`CAPS-Print-Agent-Setup-*.exe`)**: Standard Windows setup wizard with auto-start on logon, desktop shortcut, and uninstaller.
+            - **Portable Bundle (`caps-agent-windows-x64.zip`)**: Standalone archive containing pre-compiled binaries and dependencies ready for air-gapped or manual deployment.
+            - **Integrity Manifest (`build_manifest.json`)**: Machine-readable JSON manifest with file-by-file hashes and compilation metadata.
+            - **Checksums (`checksums.txt`)**: SHA-256 verification hashes for all downloadable assets.
+
+            ### Features & Capabilities
+            - **Zero-Cloud-Trust Spooler Engine**: Direct rendering via PDFium and local Win32 spooler submission (`RAW` / raster stream).
+            - **Exclusive Realtime Queue Claim**: Leased single-agent job execution with automatic keepalive heartbeat.
+            - **Automated Privacy Retention**: Enforces strict post-print document shredding and memory flushing.
+            - **System Tray Management**: Background service with pairing wizard, connectivity diagnostics, and live queue status.
+
+            ### System Requirements
+            - **OS**: Windows 10 (Build 1809+) or Windows 11 / Windows Server 2019+ (64-bit)
+            - **Architecture**: x86_64 (win32-x64)
+            - **Hardware**: Any local or network printer with installed Windows print driver
+
+            ### Verification
+            Verify artifact authenticity using SHA-256:
+            ```powershell
+            Get-FileHash -Algorithm SHA256 .\CAPS-Print-Agent-Setup-*.exe
+            Get-FileHash -Algorithm SHA256 .\caps-agent-windows-x64.zip
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
