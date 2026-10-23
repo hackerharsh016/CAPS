@@ -126,56 +126,52 @@ export class ShopService {
       headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    try {
-      const payload: Record<string, unknown> = {
-        ...updates,
-        updated_at: new Date().toISOString()
-      };
+    const payload: Record<string, unknown> = {
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
 
-      let response = await this.fetchFn(endpoint, {
-        method: 'PATCH',
-        headers,
-        body: JSON.stringify(payload)
-      });
+    let response = await this.fetchFn(endpoint, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(payload)
+    });
 
-      // If the database schema cache does not have allow_pay_at_counter, retry without it
-      if (!response.ok && 'allow_pay_at_counter' in payload) {
-        try {
-          const clone = response.clone();
-          const errBody = (await clone.json()) as { message?: string; details?: string };
-          const msg = (errBody.message || errBody.details || '').toLowerCase();
-          if (msg.includes('allow_pay_at_counter') || msg.includes('schema cache')) {
-            delete payload['allow_pay_at_counter'];
-            response = await this.fetchFn(endpoint, {
-              method: 'PATCH',
-              headers,
-              body: JSON.stringify(payload)
-            });
-          }
-        } catch {
-          // ignore json parse errors
+    // If the database schema cache does not have allow_pay_at_counter, retry without it
+    if (!response.ok && 'allow_pay_at_counter' in payload) {
+      try {
+        const clone = response.clone();
+        const errBody = (await clone.json()) as { message?: string; details?: string };
+        const msg = (errBody.message || errBody.details || '').toLowerCase();
+        if (msg.includes('allow_pay_at_counter') || msg.includes('schema cache')) {
+          delete payload['allow_pay_at_counter'];
+          response = await this.fetchFn(endpoint, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify(payload)
+          });
         }
+      } catch {
+        // ignore json parse errors
       }
-
-      if (!response.ok) {
-        let errMessage = `Failed to update shop (status: ${response.status})`;
-        try {
-          const errBody = (await response.json()) as { message?: string; details?: string };
-          errMessage = errBody.message || errBody.details || errMessage;
-        } catch {
-          // ignore json parse errors
-        }
-        throw new Error(errMessage);
-      }
-
-      const data = (await response.json()) as Shop[];
-      if (!data[0]) {
-        throw new Error('Shop record not found or could not be updated.');
-      }
-      return data[0];
-    } catch (err) {
-      throw err;
     }
+
+    if (!response.ok) {
+      let errMessage = `Failed to update shop (status: ${response.status})`;
+      try {
+        const errBody = (await response.json()) as { message?: string; details?: string };
+        errMessage = errBody.message || errBody.details || errMessage;
+      } catch {
+        // ignore json parse errors
+      }
+      throw new Error(errMessage);
+    }
+
+    const data = (await response.json()) as Shop[];
+    if (!data[0]) {
+      throw new Error('Shop record not found or could not be updated.');
+    }
+    return data[0];
   }
 
   /**
@@ -245,50 +241,46 @@ export class ShopService {
       }
     }
 
-    try {
-      let response = await this.fetchFn(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(shopRecord)
-      });
+    let response = await this.fetchFn(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(shopRecord)
+    });
 
-      // If the database schema cache does not have allow_pay_at_counter, retry without it
-      if (!response.ok && 'allow_pay_at_counter' in shopRecord) {
-        try {
-          const clone = response.clone();
-          const errBody = (await clone.json()) as { message?: string; details?: string };
-          const msg = (errBody.message || errBody.details || '').toLowerCase();
-          if (msg.includes('allow_pay_at_counter') || msg.includes('schema cache')) {
-            delete shopRecord['allow_pay_at_counter'];
-            response = await this.fetchFn(endpoint, {
-              method: 'POST',
-              headers,
-              body: JSON.stringify(shopRecord)
-            });
-          }
-        } catch {
-          // ignore json parse errors
+    // If the database schema cache does not have allow_pay_at_counter, retry without it
+    if (!response.ok && 'allow_pay_at_counter' in shopRecord) {
+      try {
+        const clone = response.clone();
+        const errBody = (await clone.json()) as { message?: string; details?: string };
+        const msg = (errBody.message || errBody.details || '').toLowerCase();
+        if (msg.includes('allow_pay_at_counter') || msg.includes('schema cache')) {
+          delete shopRecord['allow_pay_at_counter'];
+          response = await this.fetchFn(endpoint, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(shopRecord)
+          });
         }
+      } catch {
+        // ignore json parse errors
       }
+    }
 
-      if (!response.ok) {
-        let errMessage = `Failed to create shop (status: ${response.status})`;
-        try {
-          const errBody = (await response.json()) as { message?: string; details?: string };
-          errMessage = errBody.message || errBody.details || errMessage;
-        } catch {
-          // ignore json parse errors
-        }
-        throw new Error(errMessage);
+    if (!response.ok) {
+      let errMessage = `Failed to create shop (status: ${response.status})`;
+      try {
+        const errBody = (await response.json()) as { message?: string; details?: string };
+        errMessage = errBody.message || errBody.details || errMessage;
+      } catch {
+        // ignore json parse errors
       }
+      throw new Error(errMessage);
+    }
 
-      const data = (await response.json()) as Shop[];
-      if (data[0]) {
-        this.setActiveShopId(data[0].id);
-        return data[0];
-      }
-    } catch (err) {
-      throw err;
+    const data = (await response.json()) as Shop[];
+    if (data[0]) {
+      this.setActiveShopId(data[0].id);
+      return data[0];
     }
 
     throw new Error('Unexpected response while creating shop.');
