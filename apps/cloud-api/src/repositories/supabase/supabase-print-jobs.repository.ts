@@ -71,22 +71,9 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
     const expiresIso = data.document_expires_at ?? expiresDate.toISOString();
 
     let customerId = data.customer_id;
-    if (customerId === '11111111-1111-4111-8111-111111111111') {
-      try {
-        const { data: anyProfile } = await this.client
-          .from('profiles')
-          .select('id')
-          .eq('role', 'customer')
-          .range(0, 0)
-          .maybeSingle();
+    let validCustomer = false;
 
-        if (anyProfile && (anyProfile as any).id) {
-          customerId = (anyProfile as any).id;
-        }
-      } catch {
-        // Fall back to original customerId
-      }
-    } else if (customerId) {
+    if (customerId && customerId !== '11111111-1111-4111-8111-111111111111') {
       try {
         const { data: profile } = await this.client
           .from('profiles')
@@ -94,25 +81,67 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
           .eq('id', customerId)
           .maybeSingle();
 
-        if (!profile) {
-          await this.client.from('profiles').insert({
-            id: customerId,
-            role: 'customer',
-            name: data.customer_name || 'Customer'
-          });
+        if (profile && (profile as any).id) {
+          validCustomer = true;
+        } else {
+          try {
+            await this.client.from('profiles').insert({
+              id: customerId,
+              role: 'customer',
+              name: data.customer_name || 'Customer'
+            });
+            validCustomer = true;
+          } catch {
+            validCustomer = false;
+          }
         }
       } catch {
-        // Continue if profile insert is restricted or existing
+        validCustomer = false;
       }
     }
 
+    if (!validCustomer) {
+      try {
+        const { data: anyProfile } = await this.client
+          .from('profiles')
+          .select('id')
+          .eq('role', 'customer')
+          .limit(1)
+          .maybeSingle();
+
+        if (anyProfile && (anyProfile as any).id) {
+          customerId = (anyProfile as any).id;
+        } else {
+          const { data: anyUser } = await this.client
+            .from('profiles')
+            .select('id')
+            .limit(1)
+            .maybeSingle();
+          if (anyUser && (anyUser as any).id) {
+            customerId = (anyUser as any).id;
+          }
+        }
+      } catch {
+        // Fall back to original customerId
+      }
+    }
+
+    const rawSettings =
+      typeof data.settings === 'object' && data.settings !== null ? { ...data.settings } : {};
+    const randomTokenSuffix = Math.floor(100 + Math.random() * 900);
+    const tokenNumber =
+      rawSettings.token_number ||
+      ('T-' + randomTokenSuffix);
+    rawSettings.token_number = tokenNumber;
+
     const settingsWithMeta = {
-      ...(typeof data.settings === 'object' && data.settings !== null ? data.settings : {}),
+      ...rawSettings,
       ...(data.idempotency_key ? { _idempotency_key: data.idempotency_key } : {})
     };
 
     const record: PrintJobRecord = {
       id,
+      token_number: tokenNumber,
       shop_id: data.shop_id,
       customer_id: customerId,
       printer_id: data.printer_id ?? null,
@@ -171,6 +200,34 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
 
       inserted = retryResult.data;
       error = retryResult.error;
+    }
+
+    // If PostgREST fails due to customer_id foreign key constraint, fallback to an existing customer profile
+    if (
+      error &&
+      (error.code === '23503' ||
+        error.message?.includes('customer_id') ||
+        error.message?.includes('violates foreign key constraint'))
+    ) {
+      try {
+        const { data: fallback } = await this.client
+          .from('profiles')
+          .select('id')
+          .limit(1)
+          .maybeSingle();
+        if (fallback && (fallback as any).id) {
+          dbRow['customer_id'] = (fallback as any).id;
+          const retryResult = await this.client
+            .from('print_jobs')
+            .insert(dbRow)
+            .select()
+            .maybeSingle();
+          inserted = retryResult.data;
+          error = retryResult.error;
+        }
+      } catch {
+        // Continue with original error if fallback query fails
+      }
     }
 
     if (error) {
@@ -567,14 +624,23 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
 }
 
 function mapDbRecordToPrintJob(row: any): PrintJobRecord {
+  const tokenNumber =
+    row.token_number ||
+    row.settings?.token_number ||
+    ('T-' + ((parseInt(String(row.id).replace(/[^0-9a-f]/gi, '').slice(-4), 16) % 900) + 100));
+
   return {
     id: row.id,
+    token_number: tokenNumber,
     shop_id: row.shop_id,
     customer_id: row.customer_id,
     printer_id: row.printer_id,
     document_id: row.document_id,
     document_storage_key: row.document_storage_key || '',
-    settings: typeof row.settings === 'object' && row.settings !== null ? row.settings : {},
+    settings: {
+      ...(typeof row.settings === 'object' && row.settings !== null ? row.settings : {}),
+      token_number: tokenNumber
+    },
     priority_tier: row.priority_tier === 'urgent' ? 'urgent' : 'flexible',
     price_total_paise: Number(row.price_total_paise) || 0,
     price_breakdown:

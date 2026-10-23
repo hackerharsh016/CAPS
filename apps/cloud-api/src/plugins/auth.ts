@@ -462,7 +462,7 @@ export function createAuthHooks(
     // Convenience fallback: Allow dev customer token for demo/guest checkout
     if (token === 'dev_customer_token') {
       request.user = {
-        id: '11111111-1111-4111-8111-111111111111',
+        id: '088c87a0-42e3-4f84-b4cf-ccf1e2732c6f',
         role: 'customer',
         email: 'customer@caps.local',
         user_metadata: { role: 'customer', name: 'Customer Demo' },

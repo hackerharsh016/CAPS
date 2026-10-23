@@ -22,11 +22,28 @@ export default function JobStatusPage() {
   const [errorCode, setErrorCode] = useState<'UNAUTHORIZED' | 'NOT_FOUND' | 'ERROR' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const resolveEffectiveCustomerId = useCallback(() => {
+    if (user?.id) return user.id;
+    if (typeof window !== 'undefined') {
+      try {
+        const latest = sessionStorage.getItem('caps_latest_order');
+        if (latest) {
+          const parsed = JSON.parse(latest);
+          if ((parsed.order_id === jobId || parsed.id === jobId) && parsed.customer_id) {
+            return parsed.customer_id;
+          }
+        }
+      } catch {
+        // Ignore session storage error
+      }
+    }
+    return '088c87a0-42e3-4f84-b4cf-ccf1e2732c6f';
+  }, [user?.id, jobId]);
+
+  const effectiveCustomerId = resolveEffectiveCustomerId();
+
   const fetchTracking = useCallback(async () => {
     if (!jobId) return;
-
-    // Default to mock customer alpha if user is not loaded in dev/mock environment
-    const effectiveCustomerId = user?.id || 'usr-customer-alpha';
 
     setIsLoading(true);
     setErrorCode(null);
@@ -58,15 +75,13 @@ export default function JobStatusPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [jobId, user?.id]);
+  }, [jobId, effectiveCustomerId]);
 
   useEffect(() => {
     if (!isAuthLoading) {
       fetchTracking();
     }
   }, [isAuthLoading, fetchTracking]);
-
-  const effectiveCustomerId = user?.id || 'usr-customer-alpha';
 
   const {
     tracking: liveTracking,

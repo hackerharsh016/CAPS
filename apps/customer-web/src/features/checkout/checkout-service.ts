@@ -39,9 +39,6 @@ export class CheckoutService {
     { allowed: boolean; reason?: string | undefined }
   >();
 
-  // Counter for generating human-readable sequential tokens (e.g. T-045)
-  private tokenCounter = 42;
-
   /**
    * Evaluates whether pay-at-counter is permitted for a specific shop.
    * Commercial / transit locations (like metro stations) mandate cashless online payment.
@@ -170,6 +167,9 @@ export class CheckoutService {
           ? process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000'
           : 'http://localhost:4000';
 
+      const randomSuffix = Math.floor(100 + Math.random() * 900);
+      let tokenNumber = `T-${randomSuffix}`;
+
       // Submit print job to live Cloud API if available
       try {
         let sessionToken: string | null = null;
@@ -205,7 +205,8 @@ export class CheckoutService {
             orientation: input.settings.orientation,
             copies: input.settings.copies,
             page_range: input.settings.page_range,
-            binding: input.settings.binding
+            binding: input.settings.binding,
+            token_number: tokenNumber
           }
         };
 
@@ -230,6 +231,11 @@ export class CheckoutService {
           if (liveJob?.id) {
             orderId = liveJob.id;
           }
+          if (liveJob?.token_number) {
+            tokenNumber = liveJob.token_number;
+          } else if (liveJob?.settings?.token_number) {
+            tokenNumber = liveJob.settings.token_number;
+          }
         } else if (process.env.NODE_ENV === 'test') {
           // In unit test runner without backend database, proceed with local orderId
         } else {
@@ -251,8 +257,6 @@ export class CheckoutService {
         }
       }
 
-      this.tokenCounter++;
-      const tokenNumber = `T-${this.tokenCounter.toString().padStart(3, '0')}`;
       const nowIso = new Date().toISOString();
       const docExpiresIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 

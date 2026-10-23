@@ -54,7 +54,7 @@ function CheckoutPageContent() {
 
   // Authenticated customer context with fallback
   const { user, profile } = useAuth();
-  const customerId = user?.id || '11111111-1111-4111-8111-111111111111';
+  const customerId = user?.id || '088c87a0-42e3-4f84-b4cf-ccf1e2732c6f';
   const customerDetails: CustomerDetails = {
     name: profile?.name || (user?.user_metadata?.name as string) || 'Customer Demo',
     email: user?.email || 'customer@caps.local',

@@ -91,6 +91,9 @@ export const QueueMetricsCard: React.FC<QueueMetricsCardProps> = ({ tracking }) 
                 ~{tracking.estimated_minutes_remaining}
               </span>
               <span className="text-sm font-medium text-slate-500">mins</span>
+              {formattedEta && (
+                <span className="text-xs font-semibold text-slate-600 ml-1">({formattedEta})</span>
+              )}
             </>
           ) : (
             <span className="text-2xl font-bold text-slate-400">--</span>

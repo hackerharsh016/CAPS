@@ -21,6 +21,7 @@ export type JobStatus =
 
 export interface PrintJobRecord {
   id: string; // UUID primary key & queue token
+  token_number?: string | undefined;
   shop_id: string; // UUID references Shop
   customer_id: string; // UUID references UserProfile
   printer_id?: string | undefined; // UUID references Printer

@@ -60,6 +60,15 @@ export function useRealtimeTracking({
     }
   }, [initialTracking]);
 
+  // Active realtime polling heartbeat to guarantee live queue and status updates
+  useEffect(() => {
+    if (!enabled || !jobId || !customerId) return;
+    const interval = setInterval(() => {
+      refresh();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [enabled, jobId, customerId, refresh]);
+
   useEffect(() => {
     if (!enabled || !jobId || !customerId) {
       setConnectionState('disconnected');
