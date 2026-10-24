@@ -49,6 +49,8 @@ import {
 } from './modules/print-jobs/print-jobs.repository.js';
 import { SupabasePrintJobsRepository } from './repositories/supabase/supabase-print-jobs.repository.js';
 import { SupabasePaymentsRepository } from './repositories/supabase/supabase-payments.repository.js';
+import { SupabaseDocumentsRepository } from './repositories/supabase/supabase-documents.repository.js';
+import { SupabaseJobEventsRepository } from './repositories/supabase/supabase-job-events.repository.js';
 import { PrintJobsService } from './modules/print-jobs/print-jobs.service.js';
 import { printJobsRoutes } from './modules/print-jobs/print-jobs.routes.js';
 import { telemetryRoutes } from './common/telemetry/telemetry.routes.js';
@@ -108,6 +110,9 @@ import { notificationsRoutes } from './modules/notifications/notifications.route
 
 import { DocumentCleanupJob } from './jobs/document-cleanup.job.js';
 import { PrivacyCleanupWorker } from './jobs/privacy-cleanup.worker.js';
+
+import { StorageService } from './services/storage.service.js';
+import { uploadsRoutes } from './routes/uploads.routes.js';
 
 export interface ReadinessCheckResult {
   name: string;
@@ -298,14 +303,29 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
       keySecret: env.RAZORPAY_KEY_SECRET,
       useMock: env.NODE_ENV === 'test' || !env.RAZORPAY_KEY_ID
     });
-  const jobEventsRepo = options.jobEventsRepo ?? new MockJobEventsRepository();
+  const jobEventsRepo =
+    options.jobEventsRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabaseJobEventsRepository(supabaseRepoOpts)
+      : new MockJobEventsRepository());
   const deletionLogsRepo = options.deletionLogsRepo ?? new MockDocumentDeletionLogsRepository();
   const firebaseClient = options.firebaseClient ?? new MockFirebaseClient();
   const userFcmTokensRepo = options.userFcmTokensRepo ?? new MockUserFcmTokensRepository();
   const notificationOutboxRepo =
     options.notificationOutboxRepo ?? new MockNotificationOutboxRepository();
-  const documentsRepo = options.documentsRepo ?? new MockDocumentsRepository();
-  const storageService = options.storageService ?? new MockStorageService();
+  const documentsRepo =
+    options.documentsRepo ??
+    (isSupabaseConfigured && supabaseRepoOpts
+      ? new SupabaseDocumentsRepository(supabaseRepoOpts)
+      : new MockDocumentsRepository());
+  const realStorageService =
+    isSupabaseConfigured
+      ? new StorageService({
+          supabaseUrl: env.SUPABASE_URL || 'http://localhost:54321',
+          supabaseKey: env.SUPABASE_SERVICE_ROLE_KEY || process.env['SUPABASE_SERVICE_ROLE_KEY'] || ''
+        })
+      : undefined;
+  const storageService = options.storageService ?? (realStorageService || new MockStorageService());
   const documentConverter = options.documentConverter ?? new TrustedDocumentConverter();
   const quotesRepo =
     options.quotesRepo ??
@@ -437,6 +457,14 @@ export function buildApp(options: AppOptions = {}): FastifyInstance {
   app.register(paymentsRoutes, {
     prefix: '/api/v1/payments',
     paymentsService
+  });
+
+  // Register upload routes for presigned URL generation and document finalization
+  app.register(uploadsRoutes, {
+    storageService: realStorageService || (storageService as any),
+    documentsRepo,
+    jobsRepo: printJobsRepo,
+    attemptsRepo
   });
 
   app.register(webhookRoutes, {

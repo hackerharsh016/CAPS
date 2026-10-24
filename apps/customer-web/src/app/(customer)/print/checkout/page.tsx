@@ -37,6 +37,7 @@ interface StoredDocumentData {
   name: string;
   pageCount: number;
   sizeBytes?: number | undefined;
+  storageKey?: string | undefined;
 }
 
 function CheckoutPageContent() {
@@ -270,8 +271,9 @@ function CheckoutPageContent() {
       {shop && quote && (
         <CheckoutShell
           shop={shop}
+          documentId={docData?.id && docData.id.length === 36 ? docData.id : undefined}
           documentName={docData?.name || 'Document.pdf'}
-          documentStorageKey={`docs/${customerId}/${docId}.pdf`}
+          documentStorageKey={docData?.storageKey || `docs/${customerId}/${docId}.pdf`}
           fileSizeBytes={docData?.sizeBytes || 1024 * 1024}
           customerId={customerId}
           customerDetails={customerDetails}

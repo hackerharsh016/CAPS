@@ -166,18 +166,21 @@ export class PrintJobsService {
       priority_tier: priorityTier,
       price_total_paise: priceTotalPaise,
       price_breakdown: priceBreakdown,
-      status: 'pending_payment',
+      status: input.status || (input.payment_method === 'pay_at_counter' ? 'queued' : 'pending_payment'),
+      enqueued_at: (input.status === 'queued' || input.payment_method === 'pay_at_counter') ? new Date().toISOString() : undefined,
       idempotency_key: idempotencyKey,
       document_expires_at: documentExpiresAt
     });
+
+    const initialStatus = job.status || 'pending_payment';
 
     // 7. Audit log initial creation event
     await this.jobsRepo.recordEvent({
       job_id: job.id,
       actor_id: user.id,
       actor_type: 'customer',
-      to_status: 'pending_payment',
-      reason: 'Order created'
+      to_status: initialStatus,
+      reason: initialStatus === 'queued' ? 'Order admitted to queue (Pay at counter)' : 'Order created'
     });
 
     return { job, isIdempotentReplay: false };

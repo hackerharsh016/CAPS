@@ -219,51 +219,153 @@ export class LiveQueueService {
       });
       if (apiRes.ok) {
         const json = await apiRes.json();
-        const rawItems = (json.data?.queue || json.queue || json.data || json) as any[];
-        if (Array.isArray(rawItems)) {
-          if (rawItems.length === 0) {
-            return [];
-          }
-          const mappedItems: QueueItem[] = rawItems.map(item => ({
-            id: item.id,
-            shop_id: item.shop_id || shopId,
-            customer_id: item.customer_id || 'customer-anonymous',
-            customer_name: item.customer_name || 'Customer',
-            customer_phone: item.customer_phone || '',
-            printer_id: item.printer_id,
-            printer_name: item.printer_name,
-            document_name: item.document_name || 'document.pdf',
-            document_storage_key: item.document_storage_key || '',
-            settings: {
-              paper_size: item.settings?.paper_size || 'A4',
-              color_mode: item.settings?.color_mode || 'bw',
-              sides: item.settings?.sides || 'single',
-              orientation: item.settings?.orientation || 'portrait',
-              copies: item.settings?.copies || 1,
-              page_range: item.settings?.page_range || 'all',
-              binding: item.settings?.binding || 'none'
-            },
-            priority_tier: item.priority_tier || 'flexible',
-            price_total_paise: item.price_total_paise || 0,
-            price_breakdown: item.price_breakdown || {
-              base_pages_paise: item.price_total_paise || 0,
-              color_surcharge_paise: 0,
-              duplex_discount_paise: 0,
-              binding_fee_paise: 0,
-              urgent_surcharge_paise: 0,
-              subtotal_paise: item.price_total_paise || 0,
-              gst_paise: 0,
-              total_paise: item.price_total_paise || 0
-            },
-            status: item.status || 'queued',
-            payment_status: item.payment_status || 'paid',
-            queue_position: item.queue_position ?? 0,
-            is_currently_executing: item.status === 'printing' || item.status === 'downloading',
-            estimated_wait_minutes: item.estimated_wait_minutes ?? 0,
-            enqueued_at: item.enqueued_at || item.created_at || new Date().toISOString(),
-            created_at: item.created_at || new Date().toISOString(),
-            updated_at: item.updated_at || new Date().toISOString()
-          }));
+        const queueList = Array.isArray(json.data?.queue)
+          ? json.data.queue
+          : Array.isArray(json.queue)
+            ? json.queue
+            : Array.isArray(json.data)
+              ? json.data
+              : Array.isArray(json)
+                ? json
+                : [];
+        const currentlyPrinting = json.data?.currently_printing || json.currently_printing;
+        const rawItems = [
+          ...(currentlyPrinting ? [currentlyPrinting] : []),
+          ...queueList
+        ];
+
+        if (Array.isArray(rawItems) && rawItems.length > 0) {
+          const mappedItems: QueueItem[] = rawItems.map(item => {
+            const rawSides = item.settings?.sides || (item.duplex ? 'double' : 'single');
+            const docName =
+              item.document_name ||
+              (item.document_storage_key ? item.document_storage_key.split('/').pop() : 'document.pdf');
+
+            return {
+              id: item.id,
+              shop_id: item.shop_id || shopId,
+              customer_id: item.customer_id || 'customer-anonymous',
+              customer_name: item.customer_name || 'Customer',
+              customer_phone: item.customer_phone || '',
+              printer_id: item.printer_id,
+              printer_name: item.printer_name,
+              document_name: docName,
+              document_storage_key: item.document_storage_key || '',
+              settings: {
+                paper_size: item.settings?.paper_size || 'A4',
+                color_mode: item.settings?.color_mode || (item.color_mode === 'color' ? 'color' : 'bw'),
+                sides: rawSides === 'double' ? 'double' : 'single',
+                orientation: item.settings?.orientation || 'portrait',
+                copies: Number(item.settings?.copies || item.copies) || 1,
+                page_range: item.settings?.page_range || 'all',
+                binding: item.settings?.binding || item.binding || 'none'
+              },
+              priority_tier: item.priority_tier || 'flexible',
+              price_total_paise: item.price_total_paise || 0,
+              price_breakdown: item.price_breakdown || {
+                base_pages_paise: item.price_total_paise || 0,
+                color_surcharge_paise: 0,
+                duplex_discount_paise: 0,
+                binding_fee_paise: 0,
+                urgent_surcharge_paise: 0,
+                subtotal_paise: item.price_total_paise || 0,
+                gst_paise: 0,
+                total_paise: item.price_total_paise || 0
+              },
+              status: item.status || 'queued',
+              payment_status: item.payment_status || 'paid',
+              queue_position: item.queue_position ?? 0,
+              is_currently_executing:
+                item.is_currently_executing ||
+                item.status === 'printing' ||
+                item.status === 'downloading' ||
+                item.status === 'claimed',
+              estimated_wait_minutes:
+                typeof item.estimated_wait_minutes === 'number'
+                  ? item.estimated_wait_minutes
+                  : Math.round((item.estimated_wait_seconds || 0) / 60),
+              enqueued_at: item.enqueued_at || item.created_at || new Date().toISOString(),
+              created_at: item.created_at || new Date().toISOString(),
+              updated_at: item.updated_at || new Date().toISOString()
+            };
+          });
+          return computeQueueETAs(calculateQueuePositions(mappedItems));
+        } else if (Array.isArray(rawItems) && rawItems.length === 0) {
+          return [];
+        }
+      }
+    } catch {
+      // Continue to Supabase RPC / table query
+    }
+
+    // 2. Fallback to direct Supabase print_jobs table query
+    try {
+      const tableHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+        apikey: this.supabaseAnonKey
+      };
+      if (accessToken) {
+        tableHeaders['Authorization'] = `Bearer ${accessToken}`;
+      }
+      const tableUrl = `${this.supabaseUrl}/rest/v1/print_jobs?shop_id=eq.${shopId}&status=in.(queued,approved,claimed,downloading,printing)&select=*,customer:profiles(id,name,phone)&order=created_at.asc`;
+      const tableRes = await this.fetchFn(tableUrl, {
+        method: 'GET',
+        headers: tableHeaders
+      });
+
+      if (tableRes.ok) {
+        const rows = (await tableRes.json()) as any[];
+        if (Array.isArray(rows) && rows.length > 0) {
+          const mappedItems: QueueItem[] = rows.map(item => {
+            const rawSides = item.settings?.sides || 'single';
+            const docName =
+              item.document_name ||
+              (item.document_storage_key ? item.document_storage_key.split('/').pop() : 'document.pdf');
+            const custName = item.customer?.name || item.customer_name || 'Customer';
+            const custPhone = item.customer?.phone || item.customer_phone || '';
+
+            return {
+              id: item.id,
+              shop_id: item.shop_id || shopId,
+              customer_id: item.customer_id || 'customer-anonymous',
+              customer_name: custName,
+              customer_phone: custPhone,
+              printer_id: item.printer_id,
+              printer_name: item.printer_name,
+              document_name: docName,
+              document_storage_key: item.document_storage_key || '',
+              settings: {
+                paper_size: item.settings?.paper_size || 'A4',
+                color_mode: item.settings?.color_mode || 'bw',
+                sides: rawSides === 'double' ? 'double' : 'single',
+                orientation: item.settings?.orientation || 'portrait',
+                copies: Number(item.settings?.copies) || 1,
+                page_range: item.settings?.page_range || 'all',
+                binding: item.settings?.binding || 'none'
+              },
+              priority_tier: item.priority_tier || 'flexible',
+              price_total_paise: item.price_total_paise || 0,
+              price_breakdown: item.price_breakdown || {
+                base_pages_paise: item.price_total_paise || 0,
+                color_surcharge_paise: 0,
+                duplex_discount_paise: 0,
+                binding_fee_paise: 0,
+                urgent_surcharge_paise: 0,
+                subtotal_paise: item.price_total_paise || 0,
+                gst_paise: 0,
+                total_paise: item.price_total_paise || 0
+              },
+              status: item.status || 'queued',
+              payment_status: item.payment_status || 'paid',
+              queue_position: item.queue_position ?? 0,
+              is_currently_executing:
+                item.status === 'printing' || item.status === 'downloading' || item.status === 'claimed',
+              estimated_wait_minutes: item.estimated_wait_minutes ?? 0,
+              enqueued_at: item.enqueued_at || item.created_at || new Date().toISOString(),
+              created_at: item.created_at || new Date().toISOString(),
+              updated_at: item.updated_at || new Date().toISOString()
+            };
+          });
           return computeQueueETAs(calculateQueuePositions(mappedItems));
         }
       }

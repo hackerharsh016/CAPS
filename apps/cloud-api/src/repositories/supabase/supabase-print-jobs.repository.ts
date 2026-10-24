@@ -317,7 +317,7 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
   async findAllByShop(shopId: string): Promise<PrintJobRecord[]> {
     const { data, error } = await this.client
       .from('print_jobs')
-      .select('*')
+      .select('*, customer:profiles(id, name, email, phone)')
       .eq('shop_id', shopId)
       .order('created_at', { ascending: false });
 
@@ -328,7 +328,7 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
   async findQueueByShop(shopId: string): Promise<PrintJobRecord[]> {
     const { data, error } = await this.client
       .from('print_jobs')
-      .select('*')
+      .select('*, customer:profiles(id, name, email, phone)')
       .eq('shop_id', shopId)
       .eq('status', 'queued')
       .order('priority_tier', { ascending: true }) // 'urgent' before 'flexible'
@@ -360,7 +360,9 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
   async findAll(
     filter: ListPrintJobsFilter = {}
   ): Promise<{ jobs: PrintJobRecord[]; total: number }> {
-    let query = this.client.from('print_jobs').select('*', { count: 'exact' });
+    let query = this.client
+      .from('print_jobs')
+      .select('*, customer:profiles(id, name, email, phone)', { count: 'exact' });
 
     if (filter.shop_id) {
       query = query.eq('shop_id', filter.shop_id);
@@ -629,11 +631,16 @@ function mapDbRecordToPrintJob(row: any): PrintJobRecord {
     row.settings?.token_number ||
     ('T-' + ((parseInt(String(row.id).replace(/[^0-9a-f]/gi, '').slice(-4), 16) % 900) + 100));
 
+  const customerName = row.customer?.name || row.customer_name;
+  const customerPhone = row.customer?.phone || row.customer_phone;
+
   return {
     id: row.id,
     token_number: tokenNumber,
     shop_id: row.shop_id,
     customer_id: row.customer_id,
+    customer_name: customerName,
+    customer_phone: customerPhone,
     printer_id: row.printer_id,
     document_id: row.document_id,
     document_storage_key: row.document_storage_key || '',

@@ -161,6 +161,74 @@ export const paymentsRoutes: FastifyPluginAsync<PaymentsRoutesOptions> = async (
     }
   };
 
+  const reconcileSchema = z.object({
+    print_job_id: z.string().uuid(),
+    order_id: z.string().optional(),
+    payment_id: z.string().optional()
+  });
+
+  const handleReconcile = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parseResult = reconcileSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.status(400).send({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid reconcile request payload.',
+          details: parseResult.error.errors
+        }
+      });
+    }
+
+    const { print_job_id, order_id } = parseResult.data;
+    try {
+      if (options.printJobsRepo) {
+        const job = await options.printJobsRepo.findById(print_job_id);
+        if (job) {
+          if (job.status === 'pending_payment') {
+            await options.printJobsRepo.update(print_job_id, {
+              status: 'queued',
+              enqueued_at: new Date().toISOString()
+            });
+            if (typeof options.printJobsRepo.recordEvent === 'function') {
+              await options.printJobsRepo.recordEvent({
+                job_id: print_job_id,
+                actor_type: 'customer',
+                from_status: 'pending_payment',
+                to_status: 'queued',
+                reason: 'Payment captured and verified by client'
+              });
+            }
+          }
+        }
+      }
+
+      if (options.paymentsRepo && order_id) {
+        try {
+          const existing = await options.paymentsRepo.findByGatewayRef(order_id);
+          if (existing) {
+            await options.paymentsRepo.update(existing.id, { status: 'success' });
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
+
+      return reply.status(200).send({
+        success: true,
+        status: 'queued',
+        job_id: print_job_id
+      });
+    } catch (err: unknown) {
+      request.log.error(err);
+      return reply.status(500).send({
+        error: {
+          code: 'RECONCILIATION_FAILED',
+          message: err instanceof Error ? err.message : 'Failed to reconcile payment.'
+        }
+      });
+    }
+  };
+
   // Register endpoints:
   // Primary specification endpoints
   fastify.post('/razorpay/order', handleCreateOrder);
@@ -170,4 +238,6 @@ export const paymentsRoutes: FastifyPluginAsync<PaymentsRoutesOptions> = async (
   fastify.post('/orders', handleCreateOrder);
   fastify.post('/order', handleCreateOrder);
   fastify.post('/webhook', handleWebhook);
+  fastify.post('/reconcile', handleReconcile);
+  fastify.post('/api/v1/payments/reconcile', handleReconcile);
 };

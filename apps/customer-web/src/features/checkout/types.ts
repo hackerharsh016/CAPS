@@ -13,6 +13,7 @@ export interface CheckoutOrderInput {
   quote_id: string;
   shop_id: string;
   customer_id: string;
+  document_id?: string | undefined;
   document_storage_key: string;
   document_name: string;
   file_size_bytes: number;

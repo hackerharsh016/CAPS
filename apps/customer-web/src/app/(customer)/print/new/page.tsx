@@ -13,6 +13,7 @@ import type { Shop } from '../../../../features/shop-discovery/types';
 import { UploadDropzone } from '../../../../features/document-upload/components/UploadDropzone';
 import { DocumentPreview } from '../../../../features/document-upload/components/DocumentPreview';
 import { defaultConversionService } from '../../../../features/document-upload/conversion-service';
+import { useAuth } from '../../../../features/auth/auth-context';
 import type {
   UploadedDocumentMetadata,
   DocumentPreviewData
@@ -21,6 +22,8 @@ import type {
 function PrintOrderContent() {
   const searchParams = useSearchParams();
   const shopId = searchParams.get('shopId');
+  const { user } = useAuth();
+  const customerId = user?.id || '088c87a0-42e3-4f84-b4cf-ccf1e2732c6f';
 
   const [shop, setShop] = useState<Shop | null>(null);
   const [uploadedDoc, setUploadedDoc] = useState<UploadedDocumentMetadata | null>(null);
@@ -131,6 +134,7 @@ function PrintOrderContent() {
         </h2>
         <UploadDropzone
           targetShopId={shop?.id}
+          customerId={customerId}
           onUploadSuccess={handleUploadSuccess}
           onUploadReset={handleUploadReset}
         />

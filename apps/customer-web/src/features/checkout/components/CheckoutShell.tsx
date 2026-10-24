@@ -25,6 +25,7 @@ import {
 
 export interface CheckoutShellProps {
   shop: Shop;
+  documentId?: string | undefined;
   documentName: string;
   documentStorageKey: string;
   fileSizeBytes: number;
@@ -38,6 +39,7 @@ export interface CheckoutShellProps {
 
 export function CheckoutShell({
   shop,
+  documentId,
   documentName,
   documentStorageKey,
   fileSizeBytes,
@@ -52,6 +54,7 @@ export function CheckoutShell({
     useCheckout({
       shopId: shop.id,
       customerId,
+      documentId,
       documentStorageKey,
       documentName,
       fileSizeBytes,

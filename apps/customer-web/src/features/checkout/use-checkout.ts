@@ -13,6 +13,7 @@ import { CheckoutCustomError, CheckoutService, defaultCheckoutService } from './
 export interface UseCheckoutOptions {
   shopId: string;
   customerId: string;
+  documentId?: string | undefined;
   documentStorageKey: string;
   documentName: string;
   fileSizeBytes: number;
@@ -35,6 +36,7 @@ export interface UseCheckoutReturn {
 export function useCheckout({
   shopId,
   customerId,
+  documentId,
   documentStorageKey,
   documentName,
   fileSizeBytes,
@@ -73,6 +75,7 @@ export function useCheckout({
         quote_id: quote.quote_id,
         shop_id: shopId,
         customer_id: customerId,
+        document_id: documentId,
         document_storage_key: documentStorageKey,
         document_name: documentName,
         file_size_bytes: fileSizeBytes,

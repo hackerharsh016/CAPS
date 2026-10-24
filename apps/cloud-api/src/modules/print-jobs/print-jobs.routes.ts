@@ -33,7 +33,10 @@ const createPrintJobSchema = z.object({
   printerId: z.string().optional(),
   settings: printSettingsSchema.optional(),
   priority_tier: z.enum(['urgent', 'flexible']).optional(),
-  priorityTier: z.enum(['urgent', 'flexible']).optional()
+  priorityTier: z.enum(['urgent', 'flexible']).optional(),
+  payment_method: z.enum(['upi', 'card', 'wallet', 'pay_at_counter']).optional(),
+  paymentMethod: z.enum(['upi', 'card', 'wallet', 'pay_at_counter']).optional(),
+  status: z.enum(['pending_payment', 'queued']).optional()
 });
 
 const transitionStatusSchema = z.object({
@@ -128,7 +131,9 @@ export const printJobsRoutes: FastifyPluginAsync<PrintJobsPluginOptions> = async
           parsed.data.page_count,
         printer_id: parsed.data.printer_id || parsed.data.printerId,
         settings: parsed.data.settings,
-        priority_tier: parsed.data.priority_tier || parsed.data.priorityTier
+        priority_tier: parsed.data.priority_tier || parsed.data.priorityTier,
+        payment_method: parsed.data.payment_method || parsed.data.paymentMethod,
+        status: parsed.data.status
       };
 
       const { job, isIdempotentReplay } = await printJobsService.createPrintJob(

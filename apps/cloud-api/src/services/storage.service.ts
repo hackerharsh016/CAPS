@@ -8,8 +8,9 @@
  */
 
 import crypto from 'node:crypto';
+import type { IStorageService } from '../modules/documents/storage.service.js';
 
-export const DEFAULT_STORAGE_BUCKET = 'customer-documents';
+export const DEFAULT_STORAGE_BUCKET = 'caps-private-documents';
 export const MAX_FILE_SIZE_BYTES = 52_428_800; // 50 MB (52,428,800 bytes)
 export const ALLOWED_MIME_TYPES = ['application/pdf'] as const;
 export const DEFAULT_DOWNLOAD_EXPIRY_SECONDS = 300; // 5 minutes
@@ -153,7 +154,10 @@ function createDefaultStorageClient(
 
             const json = (await resp.json()) as any;
             const rawUrl = json.url || json.signedUrl || json.signedURL || '';
-            const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${cleanBase}${rawUrl}`;
+            const normalizedUrl = rawUrl.startsWith('/storage/v1')
+              ? rawUrl
+              : `/storage/v1${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+            const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${cleanBase}${normalizedUrl}`;
             return {
               data: {
                 signedUrl: fullUrl,
@@ -207,7 +211,10 @@ function createDefaultStorageClient(
 
             const json = (await resp.json()) as any;
             const rawUrl = json.signedURL || json.signedUrl || json.url || '';
-            const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${cleanBase}${rawUrl}`;
+            const normalizedUrl = rawUrl.startsWith('/storage/v1')
+              ? rawUrl
+              : `/storage/v1${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+            const fullUrl = rawUrl.startsWith('http') ? rawUrl : `${cleanBase}${normalizedUrl}`;
             return {
               data: { signedUrl: fullUrl },
               error: null
@@ -253,8 +260,9 @@ function createDefaultStorageClient(
   };
 }
 
-export class StorageService {
+export class StorageService implements IStorageService {
   private readonly client: SupabaseStorageClientLike;
+  private readonly objectStore = new Map<string, { buffer: Buffer; mimeType?: string }>();
   public readonly bucket: string;
   public readonly defaultDownloadExpirySeconds: number;
   public readonly defaultUploadExpirySeconds: number;
@@ -445,5 +453,51 @@ export class StorageService {
     expiresInSeconds: number = this.defaultDownloadExpirySeconds
   ): Promise<any> {
     return this.createSignedDownloadUrl(storageKey, expiresInSeconds);
+  }
+
+  public async putObject(
+    storageKey: string,
+    data: Buffer,
+    mimeType: string = 'application/octet-stream'
+  ): Promise<void> {
+    this.objectStore.set(storageKey, { buffer: Buffer.from(data), mimeType });
+    if (this.client.from(this.bucket).upload) {
+      try {
+        await this.client.from(this.bucket).upload!(storageKey, data, {
+          contentType: mimeType,
+          upsert: true
+        });
+      } catch {
+        // In-memory cache preserved
+      }
+    }
+  }
+
+  public async getObject(
+    storageKey: string
+  ): Promise<{ data: Buffer; mimeType?: string; contentType?: string } | null> {
+    const cached = this.objectStore.get(storageKey);
+    if (cached) {
+      return {
+        data: cached.buffer,
+        ...(cached.mimeType ? { mimeType: cached.mimeType, contentType: cached.mimeType } : {})
+      };
+    }
+    if (this.client.from(this.bucket).download) {
+      try {
+        const { data, error } = await this.client.from(this.bucket).download!(storageKey);
+        if (!error && data) {
+          const buf = Buffer.isBuffer(data) ? data : Buffer.from(await data.arrayBuffer());
+          return { data: buf, mimeType: 'application/pdf', contentType: 'application/pdf' };
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    return null;
+  }
+
+  public clear(): void {
+    this.objectStore.clear();
   }
 }

@@ -24,6 +24,8 @@ export interface PrintJobRecord {
   token_number?: string | undefined;
   shop_id: string; // UUID references Shop
   customer_id: string; // UUID references UserProfile
+  customer_name?: string | undefined;
+  customer_phone?: string | undefined;
   printer_id?: string | undefined; // UUID references Printer
   document_id?: string | undefined;
   document_storage_key: string;
@@ -71,6 +73,8 @@ export interface CreatePrintJobInput {
   price_total_paise?: number | undefined;
   price_breakdown?: PriceBreakdown | Record<string, unknown> | undefined;
   document_expires_at?: string | undefined;
+  payment_method?: 'upi' | 'card' | 'wallet' | 'pay_at_counter' | undefined;
+  status?: JobStatus | undefined;
 }
 
 export interface CreatePrintJobDto {

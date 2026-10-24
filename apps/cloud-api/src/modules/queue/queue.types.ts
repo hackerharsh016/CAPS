@@ -58,6 +58,8 @@ export interface QueueJobSummary {
   id: string;
   shop_id: string;
   customer_id: string;
+  customer_name?: string | undefined;
+  customer_phone?: string | undefined;
   printer_id?: string | undefined;
   document_storage_key: string;
   priority_tier: PriorityTier;

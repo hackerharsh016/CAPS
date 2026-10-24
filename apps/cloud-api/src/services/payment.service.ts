@@ -396,7 +396,12 @@ export class PaymentService {
 
       if (!isAlreadySuccessful && this.printJobsRepo && jobId) {
         const existingJob = await this.printJobsRepo.findById(jobId);
-        if (existingJob?.status === 'SUBMITTED' || existingJob?.status === 'QUEUED') {
+        if (
+          existingJob?.status === 'SUBMITTED' ||
+          existingJob?.status === 'QUEUED' ||
+          existingJob?.status === 'queued' ||
+          existingJob?.status === 'approved'
+        ) {
           isAlreadySuccessful = true;
         }
       }
@@ -478,12 +483,26 @@ export class PaymentService {
           const job = await this.printJobsRepo.findById(jobId);
           if (job) {
             shopId = shopId ?? job.shop_id ?? job.shopId;
-            if (typeof this.printJobsRepo.update === 'function') {
-              await this.printJobsRepo.update(jobId, { status: 'SUBMITTED' });
-            } else if (typeof this.printJobsRepo.updateStatus === 'function') {
-              await this.printJobsRepo.updateStatus(jobId, 'SUBMITTED');
+            if (typeof this.printJobsRepo.updateStatus === 'function') {
+              await this.printJobsRepo.updateStatus({
+                jobId,
+                status: 'queued',
+                reason: 'Payment confirmed via Razorpay'
+              });
+            } else if (typeof this.printJobsRepo.update === 'function') {
+              await this.printJobsRepo.update(jobId, { status: 'queued' });
             } else {
-              job.status = 'SUBMITTED';
+              job.status = 'queued';
+            }
+
+            if (typeof this.printJobsRepo.recordEvent === 'function') {
+              await this.printJobsRepo.recordEvent({
+                job_id: jobId,
+                actor_type: 'system',
+                from_status: job.status,
+                to_status: 'queued',
+                reason: 'Payment captured via Razorpay'
+              });
             }
           }
         } catch {

@@ -195,6 +195,8 @@ export class CheckoutService {
         const jobPayload: Record<string, unknown> = {
           shop_id: shop.id,
           priority_tier: input.priority_tier,
+          payment_method: input.payment_method,
+          status: input.payment_method === 'pay_at_counter' ? 'queued' : 'pending_payment',
           document_page_count: input.quote.page_count || 1,
           document_storage_key:
             input.document_storage_key || `docs/${input.customer_id}/${orderId}.pdf`,
@@ -217,6 +219,13 @@ export class CheckoutService {
           );
         if (isUuid) {
           jobPayload['quote_id'] = input.quote.quote_id;
+        }
+
+        if (
+          input.document_id &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.document_id)
+        ) {
+          jobPayload['document_id'] = input.document_id;
         }
 
         const jobRes = await fetch(`${apiUrl}/api/v1/print-jobs`, {

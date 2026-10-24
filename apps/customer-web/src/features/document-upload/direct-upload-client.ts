@@ -13,6 +13,7 @@ import type {
   UploadOptions,
   UploadValidationError
 } from './types';
+import { createDefaultStorage, loadSessionFromStorage } from '../auth/storage';
 
 export interface InternalUploadIntent {
   documentId: string;
@@ -26,6 +27,7 @@ export interface InternalUploadIntent {
   expiresAt: string;
   status: 'pending_upload' | 'uploaded_pending_finalize' | 'finalized' | 'cancelled';
   actualSha256?: string | undefined;
+  isRealCloudUpload?: boolean | undefined;
 }
 
 /**
@@ -57,12 +59,56 @@ export class DirectUploadClient {
       throw err;
     }
 
-    const documentId = `doc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    let documentId = `doc-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     const shopSegment = req.targetShopId ? `${req.targetShopId}/` : '';
-    const storagePath = `private/${customerId}/${shopSegment}${documentId}/${req.fileName}`;
-    const uploadUrl = `https://storage.caps.local/v1/private/upload/${documentId}?token=${Math.random().toString(36).substring(2)}`;
+    let storagePath = `private/${customerId}/${shopSegment}${documentId}/${req.fileName}`;
+    let uploadUrl = `https://storage.caps.local/v1/private/upload/${documentId}?token=${Math.random().toString(36).substring(2)}`;
     // Short-lived expiration: 15 minutes from now
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    let expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    let isRealCloudUpload = false;
+
+    // In browser environment, negotiate presigned URL with Cloud API
+    if (typeof window !== 'undefined') {
+      try {
+        const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000';
+        const storage = createDefaultStorage();
+        const session = loadSessionFromStorage(storage);
+        const token = session?.access_token;
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        headers['x-customer-id'] = customerId;
+
+        const res = await fetch(`${apiUrl}/api/v1/uploads/presigned-url`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            file_name: req.fileName,
+            file_size_bytes: req.fileSizeBytes,
+            mime_type: req.mimeType,
+            customer_id: customerId
+          })
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const data = json.data;
+          if (data?.upload_url) {
+            documentId = data.document_id || documentId;
+            uploadUrl = data.upload_url;
+            storagePath = data.storage_key || storagePath;
+            expiresAt = data.expires_at || expiresAt;
+            isRealCloudUpload = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Could not negotiate presigned URL with Cloud API, falling back to local intent:', e);
+      }
+    }
 
     const intent: InternalUploadIntent = {
       documentId,
@@ -74,7 +120,8 @@ export class DirectUploadClient {
       storagePath,
       uploadUrl,
       expiresAt,
-      status: 'pending_upload'
+      status: 'pending_upload',
+      isRealCloudUpload
     };
 
     this.intentsStore.set(documentId, intent);
@@ -128,6 +175,71 @@ export class DirectUploadClient {
         message: 'Upload was cancelled by user.'
       };
       throw err;
+    }
+
+    // Direct HTTP upload to signed Supabase Storage URL
+    if (intent.isRealCloudUpload && typeof XMLHttpRequest !== 'undefined') {
+      return new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', intent.uploadUrl, true);
+        xhr.setRequestHeader('Content-Type', intent.mimeType || 'application/pdf');
+
+        if (onProgress) {
+          xhr.upload.onprogress = evt => {
+            if (evt.lengthComputable) {
+              const loadedBytes = evt.loaded;
+              const totalBytes = evt.total;
+              const percentage = Math.min(100, Math.round((loadedBytes / totalBytes) * 100));
+              onProgress({ loadedBytes, totalBytes, percentage });
+            }
+          };
+        }
+
+        const handleAbort = () => {
+          xhr.abort();
+          const err: UploadValidationError = {
+            code: 'ABORTED',
+            message: 'Upload was cancelled by user.'
+          };
+          reject(err);
+        };
+
+        if (signal) {
+          signal.addEventListener('abort', handleAbort);
+        }
+
+        xhr.onload = () => {
+          if (signal) {
+            signal.removeEventListener('abort', handleAbort);
+          }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            intent.status = 'uploaded_pending_finalize';
+            if (onProgress) {
+              onProgress({ loadedBytes: file.size, totalBytes: file.size, percentage: 100 });
+            }
+            resolve();
+          } else {
+            const err: UploadValidationError = {
+              code: 'UPLOAD_FAILED',
+              message: `Storage upload failed with HTTP status ${xhr.status}: ${xhr.responseText}`
+            };
+            reject(err);
+          }
+        };
+
+        xhr.onerror = () => {
+          if (signal) {
+            signal.removeEventListener('abort', handleAbort);
+          }
+          const err: UploadValidationError = {
+            code: 'UPLOAD_FAILED',
+            message: 'Network error occurred while uploading document to storage.'
+          };
+          reject(err);
+        };
+
+        xhr.send(file);
+      });
     }
 
     const totalBytes = file.size;
@@ -250,6 +362,32 @@ export class DirectUploadClient {
 
     intent.status = 'finalized';
     intent.actualSha256 = req.sha256Checksum;
+
+    if (intent.isRealCloudUpload && typeof window !== 'undefined') {
+      try {
+        const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000';
+        const storage = createDefaultStorage();
+        const session = loadSessionFromStorage(storage);
+        const token = session?.access_token;
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        headers['x-customer-id'] = customerId;
+
+        await fetch(`${apiUrl}/api/v1/documents/${intent.documentId}/finalize`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            checksum_sha256: req.sha256Checksum
+          })
+        });
+      } catch (e) {
+        console.warn('Finalize call to Cloud API failed:', e);
+      }
+    }
 
     return {
       documentId: intent.documentId,
