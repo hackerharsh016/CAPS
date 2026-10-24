@@ -15,6 +15,7 @@ import type {
   QueueEventListener,
   ConnectionStateListener
 } from './types';
+import { getSupabaseEnv } from '../../lib/supabase';
 
 export interface RealtimeQueueClientOptions {
   shopId: string;
@@ -43,6 +44,8 @@ export class RealtimeQueueClient {
 
   private pollingTimer: ReturnType<typeof setInterval> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private ws: WebSocket | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: RealtimeQueueClientOptions) {
     if (!options.shopId) {
@@ -51,7 +54,7 @@ export class RealtimeQueueClient {
 
     this.shopId = options.shopId;
     this.enableFallbackPolling = options.enableFallbackPolling ?? true;
-    this.pollingIntervalMs = options.pollingIntervalMs ?? 10000;
+    this.pollingIntervalMs = options.pollingIntervalMs ?? 3000;
     this.reconnectDelayMs = options.reconnectDelayMs ?? 2000;
     this.dedupWindowSize = options.dedupWindowSize ?? 100;
   }
@@ -65,12 +68,116 @@ export class RealtimeQueueClient {
     this.isSubscribed = true;
     this.updateState('connecting');
 
-    // Simulate connection establishment
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        if (!this.isSubscribed) return;
-        this.updateState('connected');
-      }, 50);
+    // Start polling so queue updates consistently
+    this.startPolling();
+
+    // Establish WebSocket connection in browser if available
+    if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
+      try {
+        const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+        const wsProtocol = supabaseUrl.startsWith('https') ? 'wss' : 'ws';
+        const host = supabaseUrl.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+        const wsUrl = `${wsProtocol}://${host}/realtime/v1/websocket?apikey=${supabaseAnonKey}&vsn=1.0.0`;
+
+        const ws = new WebSocket(wsUrl);
+        this.ws = ws;
+
+        ws.onopen = () => {
+          if (!this.isSubscribed) {
+            ws.close();
+            return;
+          }
+          this.updateState('connected');
+
+          // Subscribe to postgres_changes on print_jobs
+          const joinMsg = {
+            topic: `realtime:public:print_jobs:shop_id=eq.${this.shopId}`,
+            event: 'phx_join',
+            payload: {
+              config: {
+                postgres_changes: [
+                  { event: '*', schema: 'public', table: 'print_jobs', filter: `shop_id=eq.${this.shopId}` }
+                ]
+              }
+            },
+            ref: '1',
+            join_ref: '1'
+          };
+          ws.send(JSON.stringify(joinMsg));
+
+          // Also subscribe to broadcast channel
+          const broadcastMsg = {
+            topic: `caps:shop:${this.shopId}`,
+            event: 'phx_join',
+            payload: {},
+            ref: '2',
+            join_ref: '2'
+          };
+          ws.send(JSON.stringify(broadcastMsg));
+
+          this.heartbeatTimer = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(
+                JSON.stringify({
+                  topic: 'phoenix',
+                  event: 'heartbeat',
+                  payload: {},
+                  ref: Date.now().toString()
+                })
+              );
+            }
+          }, 25000);
+        };
+
+        ws.onmessage = event => {
+          try {
+            const data = JSON.parse(event.data);
+            const evtName = data.event;
+            if (
+              evtName === 'postgres_changes' ||
+              evtName === 'INSERT' ||
+              evtName === 'UPDATE' ||
+              evtName === 'broadcast'
+            ) {
+              for (const listener of this.reconnectListeners) {
+                try {
+                  listener();
+                } catch {
+                  // ignore
+                }
+              }
+              for (const listener of this.eventListeners) {
+                try {
+                  listener({
+                    event_id: data.payload?.data?.id || `evt-${Date.now()}`,
+                    event_type: 'JOB_UPDATED',
+                    job_id: data.payload?.data?.id || 'job-changed',
+                    shop_id: this.shopId,
+                    sequence: Date.now(),
+                    timestamp: new Date().toISOString()
+                  });
+                } catch {
+                  // ignore
+                }
+              }
+            }
+          } catch {
+            // ignore
+          }
+        };
+
+        ws.onerror = () => {
+          this.startPolling();
+        };
+
+        ws.onclose = () => {
+          if (this.isSubscribed) {
+            this.startPolling();
+          }
+        };
+      } catch {
+        this.startPolling();
+      }
     } else {
       this.updateState('connected');
     }
@@ -83,6 +190,19 @@ export class RealtimeQueueClient {
     this.isSubscribed = false;
     this.stopPolling();
     this.clearReconnectTimer();
+
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    if (this.ws) {
+      try {
+        this.ws.close();
+      } catch {
+        // ignore
+      }
+      this.ws = null;
+    }
 
     this.eventListeners.clear();
     this.stateListeners.clear();

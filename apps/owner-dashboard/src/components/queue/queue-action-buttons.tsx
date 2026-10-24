@@ -120,7 +120,7 @@ export function QueueActionButtons({
     debounceMs
   ]);
 
-  const isApprovable = currentStatus === 'SUBMITTED' || currentStatus === 'QUEUED';
+  const isApprovable = currentStatus === 'SUBMITTED';
   const isQueued = currentStatus === 'QUEUED';
   const isPrinting = currentStatus === 'PRINTING';
 

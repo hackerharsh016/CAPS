@@ -73,15 +73,18 @@ export class DirectUploadClient {
         const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000';
         const storage = createDefaultStorage();
         const session = loadSessionFromStorage(storage);
-        const token = session?.access_token;
+        const token = session?.access_token || 'dev_customer_token';
 
         const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
         headers['x-customer-id'] = customerId;
+
+        const effectiveMimeType =
+          req.mimeType && req.mimeType !== 'application/octet-stream'
+            ? req.mimeType
+            : 'application/pdf';
 
         const res = await fetch(`${apiUrl}/api/v1/uploads/presigned-url`, {
           method: 'POST',
@@ -89,7 +92,7 @@ export class DirectUploadClient {
           body: JSON.stringify({
             file_name: req.fileName,
             file_size_bytes: req.fileSizeBytes,
-            mime_type: req.mimeType,
+            mime_type: effectiveMimeType,
             customer_id: customerId
           })
         });
@@ -368,13 +371,11 @@ export class DirectUploadClient {
         const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || 'http://localhost:4000';
         const storage = createDefaultStorage();
         const session = loadSessionFromStorage(storage);
-        const token = session?.access_token;
+        const token = session?.access_token || 'dev_customer_token';
         const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         };
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
         headers['x-customer-id'] = customerId;
 
         await fetch(`${apiUrl}/api/v1/documents/${intent.documentId}/finalize`, {

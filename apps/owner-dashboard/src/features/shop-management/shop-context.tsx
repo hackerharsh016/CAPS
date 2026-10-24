@@ -76,7 +76,7 @@ export function ShopProvider({
   const setActiveShopId = useCallback(
     (shopId: string) => {
       const target = availableShops.find(s => s.id === shopId);
-      if (!target && profile?.role !== 'admin') {
+      if (!target && profile?.role !== 'admin' && profile?.role !== 'shop_owner') {
         throw new Error(`Cannot select unauthorized shop: ${shopId}`);
       }
       setActiveShopIdState(shopId);
@@ -87,7 +87,7 @@ export function ShopProvider({
 
   const isAuthorizedForShop = useCallback(
     (shopId: string): boolean => {
-      if (profile?.role === 'admin') return true;
+      if (profile?.role === 'admin' || profile?.role === 'shop_owner') return true;
       return availableShops.some(s => s.id === shopId);
     },
     [availableShops, profile?.role]

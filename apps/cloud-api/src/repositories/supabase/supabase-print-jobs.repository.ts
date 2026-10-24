@@ -625,7 +625,8 @@ export class SupabasePrintJobsRepository implements IPrintJobsRepository {
   }
 }
 
-function mapDbRecordToPrintJob(row: any): PrintJobRecord {
+function mapDbRecordToPrintJob(rawRow: any): PrintJobRecord {
+  const row = Array.isArray(rawRow) ? rawRow[0] : rawRow;
   const tokenNumber =
     row.token_number ||
     row.settings?.token_number ||

@@ -11,7 +11,8 @@ import {
   createDefaultSupabaseClient
 } from './supabase-shops.repository.js';
 
-function mapDbRecordToEvent(row: any): JobEvent {
+function mapDbRecordToEvent(rawRow: any): JobEvent {
+  const row = Array.isArray(rawRow) ? rawRow[0] : rawRow;
   return {
     id: row.id,
     job_id: row.job_id,

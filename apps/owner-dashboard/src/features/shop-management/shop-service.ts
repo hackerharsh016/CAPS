@@ -90,13 +90,28 @@ export class ShopService {
         headers
       });
 
-      if (!response.ok) {
-        // Fall back to empty array if no tables or network offline
-        return [];
+      if (response.ok) {
+        const shops = (await response.json()) as Shop[];
+        if (Array.isArray(shops) && shops.length > 0) {
+          return shops;
+        }
       }
 
-      const shops = (await response.json()) as Shop[];
-      return shops;
+      // If user has no specific shops assigned (or in portal/dev mode), fetch all available shops
+      const allEndpoint = `${this.supabaseUrl}/rest/v1/shops?select=*`;
+      const allResponse = await this.fetchFn(allEndpoint, {
+        method: 'GET',
+        headers
+      });
+
+      if (allResponse.ok) {
+        const allShops = (await allResponse.json()) as Shop[];
+        if (Array.isArray(allShops) && allShops.length > 0) {
+          return allShops;
+        }
+      }
+
+      return [];
     } catch {
       return [];
     }

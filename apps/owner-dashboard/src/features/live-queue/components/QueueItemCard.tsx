@@ -16,6 +16,7 @@ export interface QueueItemCardProps {
   onReviewJob?: ((item: QueueItem) => void) | undefined;
   disabled?: boolean | undefined;
   isConfirming?: boolean | undefined;
+  isNextInQueue?: boolean | undefined;
 }
 
 export function QueueItemCard({
@@ -23,12 +24,17 @@ export function QueueItemCard({
   onConfirmPrint,
   onReviewJob,
   disabled = false,
-  isConfirming = false
+  isConfirming = false,
+  isNextInQueue: isNextInQueueProp
 }: QueueItemCardProps) {
   const isUrgent = item.priority_tier === 'urgent';
   const isExecuting = item.is_currently_executing;
   const isRequiresReview = item.status === 'requires_review' || item.status === 'failed';
-  const isNextInQueue = item.queue_position === 1 && !isExecuting && item.status === 'queued';
+  const isApproved = item.status === 'approved';
+  const isNextInQueue =
+    isNextInQueueProp !== undefined
+      ? isNextInQueueProp
+      : item.queue_position === 1 && !isExecuting && item.status === 'queued';
 
   const formattedPrice = (item.price_total_paise / 100).toLocaleString('en-IN', {
     style: 'currency',
@@ -73,6 +79,10 @@ export function QueueItemCard({
               <span className="flex items-center space-x-1 rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
                 <span className="h-1.5 w-1.5 animate-ping rounded-full bg-emerald-600" />
                 <span>Printing Now</span>
+              </span>
+            ) : isApproved ? (
+              <span className="flex items-center space-x-1 rounded bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-indigo-800">
+                <span>✓ Approved (Ready)</span>
               </span>
             ) : (
               <span className="rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 font-mono">
@@ -158,6 +168,14 @@ export function QueueItemCard({
             >
               <span>⚠️ Review & Recover</span>
             </button>
+          ) : isApproved ? (
+            <div
+              aria-label="Job is approved and waiting for printer agent"
+              className="inline-flex items-center space-x-1.5 rounded-lg bg-indigo-50 border border-indigo-200 px-3.5 py-2 text-xs font-semibold text-indigo-700"
+            >
+              <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span>Approved (Waiting for Agent)</span>
+            </div>
           ) : onConfirmPrint ? (
             <ConfirmPrintButton
               jobId={item.id}

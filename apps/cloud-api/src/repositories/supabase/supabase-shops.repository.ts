@@ -373,8 +373,8 @@ class RestQueryBuilder {
       }
 
       const json = await res.json().catch(() => null);
-      if (this.isMaybeSingle && Array.isArray(json)) {
-        return { data: json[0] ?? null, error: null };
+      if ((this.isSingle || this.isMaybeSingle) && Array.isArray(json)) {
+        return { data: json[0] ?? null, count: json.length, error: null };
       }
       return { data: json, count: Array.isArray(json) ? json.length : 1, error: null };
     } catch (err: unknown) {

@@ -31,8 +31,8 @@ export interface LiveQueueViewProps {
 
 export function LiveQueueView({ onConfirmPrint, shopId: customShopId }: LiveQueueViewProps) {
   const { profile } = useAuth();
-  const { activeShop, isLoading: isShopLoading } = useShop();
-  const shopId = customShopId ?? activeShop?.id ?? '';
+  const { activeShop, availableShops, setActiveShopId, isLoading: isShopLoading } = useShop();
+  const shopId = customShopId ?? activeShop?.id ?? (availableShops[0]?.id ?? '');
 
   const {
     queue,
@@ -110,6 +110,11 @@ export function LiveQueueView({ onConfirmPrint, shopId: customShopId }: LiveQueu
     await resolveJob(jobId, resolution, evidenceConfirmed, notes);
   };
 
+  // Find the first job waiting for owner approval
+  const nextEligibleJob = queue.find(
+    j => j.status === 'queued' && !j.is_currently_executing
+  );
+
   // Filter items based on active filter tab
   const displayedItems = queue.filter(item => {
     if (filter === 'all') return true;
@@ -150,6 +155,60 @@ export function LiveQueueView({ onConfirmPrint, shopId: customShopId }: LiveQueu
 
       {/* Hardware / Desktop Agent Incident Notifications */}
       <HardwareIncidentBanner incidents={incidents} onDismiss={dismissIncident} />
+
+      {/* Active Shop Indicator & Switcher Banner */}
+      {availableShops.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center space-x-3">
+            <span className="text-xl">🏪</span>
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                Current Shop Context
+              </p>
+              <div className="flex items-center space-x-2 mt-0.5">
+                <span className="text-base font-bold text-slate-900">
+                  {activeShop?.name || availableShops[0]?.name || 'Loading shop...'}
+                </span>
+                <span
+                  className={`inline-block h-2 w-2 rounded-full ${
+                    (activeShop?.status || availableShops[0]?.status) === 'open'
+                      ? 'bg-emerald-500'
+                      : 'bg-rose-500'
+                  }`}
+                />
+                <span className="text-xs text-slate-500 capitalize">
+                  ({activeShop?.status || availableShops[0]?.status || 'unknown'})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {availableShops.length > 1 && (
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-semibold text-slate-600">Switch Queue:</span>
+              <div className="flex rounded-lg bg-slate-100 p-1 border border-slate-200">
+                {availableShops.map(s => {
+                  const isActive = s.id === (activeShop?.id || availableShops[0]?.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => setActiveShopId(s.id)}
+                      className={`rounded-md px-3 py-1 text-xs font-bold transition-all ${
+                        isActive
+                          ? 'bg-white text-emerald-800 shadow-sm border border-slate-200 ring-1 ring-emerald-500/20'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+                      }`}
+                    >
+                      {s.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top Metrics Cards */}
       <QueueMetricsHeader metrics={metrics} />
@@ -320,6 +379,7 @@ export function LiveQueueView({ onConfirmPrint, shopId: customShopId }: LiveQueu
                 <div key={item.id} role="listitem">
                   <QueueItemCard
                     item={item}
+                    isNextInQueue={item.id === nextEligibleJob?.id}
                     onConfirmPrint={handleConfirm}
                     onReviewJob={setRecoveringItem}
                     isConfirming={isConfirming && confirmingJobId === item.id}

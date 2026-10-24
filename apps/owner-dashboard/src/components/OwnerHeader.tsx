@@ -36,11 +36,9 @@ export function OwnerHeader() {
             <span className="text-base font-bold text-slate-900">Owner Portal</span>
           </Link>
 
-          {isAuthenticated && (
-            <div className="border-l border-slate-200 pl-4">
-              <ShopSelector />
-            </div>
-          )}
+          <div className="border-l border-slate-200 pl-4">
+            <ShopSelector />
+          </div>
         </div>
 
         {isAuthenticated && (

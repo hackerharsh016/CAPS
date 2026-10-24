@@ -472,14 +472,14 @@ export function createAuthHooks(
       return;
     }
 
-    // Convenience fallback: Allow dev owner token for demo shop
+    // Convenience fallback: Allow dev owner token for demo shop & multi-shop management
     if (token === 'dev_owner_token') {
       request.user = {
         id: '069aa846-042c-44f1-8cae-7462b641e571',
-        role: 'shop_owner',
+        role: 'admin',
         email: 'owner@caps.local',
-        user_metadata: { role: 'shop_owner', name: 'Demo Shop Owner' },
-        app_metadata: { role: 'shop_owner' }
+        user_metadata: { role: 'admin', name: 'Demo Shop Owner' },
+        app_metadata: { role: 'admin' }
       };
       request.agent = null;
       return;

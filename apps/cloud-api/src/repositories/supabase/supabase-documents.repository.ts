@@ -18,7 +18,8 @@ import {
   createDefaultSupabaseClient
 } from './supabase-shops.repository.js';
 
-function mapDbRecordToDocument(row: any): DocumentMetadata {
+function mapDbRecordToDocument(rawRow: any): DocumentMetadata {
+  const row = Array.isArray(rawRow) ? rawRow[0] : rawRow;
   return {
     id: row.id,
     customer_id: row.customer_id,
