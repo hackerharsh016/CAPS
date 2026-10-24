@@ -93,3 +93,7 @@ Thumbs.db
 
 # Docs
 docs/CAPS_Gemini_CLI_Prompts/
+
+
+# Virtual Printer Emulation Output
+.virtual-printer-output/

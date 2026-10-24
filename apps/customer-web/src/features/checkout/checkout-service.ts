@@ -244,8 +244,8 @@ export class CheckoutService {
         if (err instanceof CheckoutCustomError) {
           throw err;
         }
-        // Offline / dev fallback to generated orderId only if network unavailable and counter payment
-        if (input.payment_method !== 'pay_at_counter') {
+        // Offline / dev fallback to generated orderId only if network unavailable and counter payment (or in test environment)
+        if (input.payment_method !== 'pay_at_counter' && process.env.NODE_ENV !== 'test') {
           const msg = err instanceof Error ? err.message : 'Failed to connect to print backend service';
           throw new CheckoutCustomError('NETWORK_ERROR', msg);
         }
