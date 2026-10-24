@@ -231,6 +231,7 @@ class RestQueryBuilder {
   private payload: any = null;
   private isSingle = false;
   private isMaybeSingle = false;
+  private selectColumns = '*';
 
   constructor(
     private readonly baseUrl: string,
@@ -238,7 +239,8 @@ class RestQueryBuilder {
     private readonly customFetch: typeof fetch
   ) {}
 
-  select(_columns = '*', _options: { count?: string } = {}) {
+  select(columns = '*', _options: { count?: string } = {}) {
+    this.selectColumns = columns;
     if (this.action !== 'insert' && this.action !== 'update' && this.action !== 'delete') {
       this.action = 'select';
     }
@@ -330,6 +332,9 @@ class RestQueryBuilder {
     }
     if (this.offsetCount !== undefined) {
       url.searchParams.append('offset', String(this.offsetCount));
+    }
+    if (this.action === 'select' || this.action === 'insert' || this.action === 'update') {
+      url.searchParams.append('select', this.selectColumns || '*');
     }
 
     const headers: Record<string, string> = {

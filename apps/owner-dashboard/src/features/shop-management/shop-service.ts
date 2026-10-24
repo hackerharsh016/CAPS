@@ -69,13 +69,16 @@ export class ShopService {
 
   /**
    * Fetches all shops owned by or delegated to the given owner user ID.
+   * If isAdmin is true, fetches all shops across the platform.
    */
-  async fetchOwnerShops(ownerId: string, accessToken?: string): Promise<Shop[]> {
+  async fetchOwnerShops(ownerId: string, accessToken?: string, isAdmin = false): Promise<Shop[]> {
     if (!ownerId) {
       return [];
     }
 
-    const endpoint = `${this.supabaseUrl}/rest/v1/shops?owner_id=eq.${ownerId}&select=*`;
+    const endpoint = isAdmin
+      ? `${this.supabaseUrl}/rest/v1/shops?select=*&order=name.asc`
+      : `${this.supabaseUrl}/rest/v1/shops?owner_id=eq.${ownerId}&select=*&order=created_at.desc`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       apikey: this.supabaseAnonKey
@@ -92,22 +95,8 @@ export class ShopService {
 
       if (response.ok) {
         const shops = (await response.json()) as Shop[];
-        if (Array.isArray(shops) && shops.length > 0) {
+        if (Array.isArray(shops)) {
           return shops;
-        }
-      }
-
-      // If user has no specific shops assigned (or in portal/dev mode), fetch all available shops
-      const allEndpoint = `${this.supabaseUrl}/rest/v1/shops?select=*`;
-      const allResponse = await this.fetchFn(allEndpoint, {
-        method: 'GET',
-        headers
-      });
-
-      if (allResponse.ok) {
-        const allShops = (await allResponse.json()) as Shop[];
-        if (Array.isArray(allShops) && allShops.length > 0) {
-          return allShops;
         }
       }
 

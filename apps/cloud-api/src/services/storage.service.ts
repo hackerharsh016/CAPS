@@ -10,7 +10,8 @@
 import crypto from 'node:crypto';
 import type { IStorageService } from '../modules/documents/storage.service.js';
 
-export const DEFAULT_STORAGE_BUCKET = 'caps-private-documents';
+export const DEFAULT_STORAGE_BUCKET =
+  process.env['SUPABASE_STORAGE_BUCKET'] || 'customer-documents';
 export const MAX_FILE_SIZE_BYTES = 52_428_800; // 50 MB (52,428,800 bytes)
 export const ALLOWED_MIME_TYPES = ['application/pdf'] as const;
 export const DEFAULT_DOWNLOAD_EXPIRY_SECONDS = 300; // 5 minutes

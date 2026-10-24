@@ -43,7 +43,8 @@ export function ShopProvider({
     setError(null);
 
     try {
-      const shops = await shopService.fetchOwnerShops(user.id, session?.access_token);
+      const isAdmin = profile?.role === 'admin';
+      const shops = await shopService.fetchOwnerShops(user.id, session?.access_token, isAdmin);
       setAvailableShops(shops);
 
       if (shops.length === 0) {
@@ -67,7 +68,7 @@ export function ShopProvider({
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, user, session?.access_token, shopService]);
+  }, [isAuthenticated, user, profile?.role, session?.access_token, shopService]);
 
   useEffect(() => {
     loadShops();
@@ -76,7 +77,7 @@ export function ShopProvider({
   const setActiveShopId = useCallback(
     (shopId: string) => {
       const target = availableShops.find(s => s.id === shopId);
-      if (!target && profile?.role !== 'admin' && profile?.role !== 'shop_owner') {
+      if (!target && profile?.role !== 'admin') {
         throw new Error(`Cannot select unauthorized shop: ${shopId}`);
       }
       setActiveShopIdState(shopId);
@@ -87,7 +88,7 @@ export function ShopProvider({
 
   const isAuthorizedForShop = useCallback(
     (shopId: string): boolean => {
-      if (profile?.role === 'admin' || profile?.role === 'shop_owner') return true;
+      if (profile?.role === 'admin') return true;
       return availableShops.some(s => s.id === shopId);
     },
     [availableShops, profile?.role]
